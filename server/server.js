@@ -15,6 +15,7 @@ const { loadPage } = require('../sim/page');
 const PORT = +process.env.PORT || 3000;
 const PAGE = path.join(__dirname, '..', 'playtest', 'index.html');
 const CLIENT = path.join(__dirname, 'online.js');
+const RULEBOOK = path.join(__dirname, '..', 'playtest', 'rulebook.pdf');
 const MAX_PLAYERS = 6, MIN_PLAYERS = 3;
 
 // Actions a player may take when it isn't their turn; everything else must come from the current player.
@@ -191,6 +192,11 @@ ${page}
 <script src="/online.js"></script></body></html>`;
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
     return res.end(html);
+  }
+  if (url.pathname === '/rulebook.pdf') {   // the printed rulebook, linked from the Rules pop-up and the start screen
+    if (!fs.existsSync(RULEBOOK)) { res.writeHead(404); return res.end('No rulebook yet'); }
+    res.writeHead(200, { 'content-type': 'application/pdf', 'content-disposition': 'inline; filename="Court rulebook.pdf"', 'cache-control': 'no-cache' });
+    return fs.createReadStream(RULEBOOK).pipe(res);
   }
   if (url.pathname === '/online.js') {
     res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store' });

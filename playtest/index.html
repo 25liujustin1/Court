@@ -148,6 +148,8 @@ button.namecell:hover{border-color:var(--accent)}
 .contracts{display:flex; flex-direction:column; gap:8px}
 .contract{border:1px solid var(--line); border-left:4px solid var(--danger); border-radius:6px; padding:10px 12px; background:var(--surface); display:flex; flex-direction:column; gap:6px}
 .contract q{font-style:italic}
+.rulebook-link{padding:8px 12px; border-left:3px solid var(--accent); background:var(--surface); margin-bottom:12px}
+.rulebook-link a{color:var(--accent); font-weight:600}
 .contract.kept, .contract.rejected, .contract.void{border-left-color:var(--line); opacity:.8}
 
 /* picker */
@@ -217,6 +219,7 @@ details summary{cursor:pointer; font-family:var(--font-display); font-size:1.2re
 
 <template id="rules-text">
 <div class="rules">
+<p class="rulebook-link"><a href="rulebook.pdf" target="_blank" rel="noopener">Full rulebook (PDF)</a>: the complete rules with examples. This is the quick reference.</p>
 <h3>Setup</h3>
 <p>Each player secretly picks a combination of 4 name tokens in their color, each with 1 to 4 dots (repeats allowed). The 35 combinations each map to a demon name, 7 per role. Sum of dots mod 5 is your role. Players may pick the same combination. Name tokens go in the bag, event cards form a face-down deck. Everyone starts with 2 souls. A die roll picks the first player; play goes counterclockwise.</p>
 <h3>Goal</h3>

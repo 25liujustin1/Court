@@ -55,7 +55,7 @@
     app().innerHTML = `${header("online")}
       <section style="max-width:520px">
         <h2>Join the court</h2>
-        <p class="muted">Each player uses their own device. One person creates a game and shares the code.</p>
+        <p class="muted">Each player uses their own device. One person creates a game and shares the code. New to the game? Read the <a href="rulebook.pdf" target="_blank" rel="noopener">Full rulebook (PDF)</a>.</p>
         <p><label class="label" for="on-name">Your name</label><input type="text" id="on-name" maxlength="20" autocomplete="nickname"></p>
         <div class="toolbar"><button class="btn primary" data-oact="create">Create a game</button></div>
         <p style="margin-top:8px"><label class="label" for="on-code">Or join with a code</label><input type="text" id="on-code" maxlength="4" style="text-transform:uppercase" autocomplete="off" value="${esc(roomInUrl())}"></p>
