@@ -47,6 +47,8 @@ p{margin:0}
 .label{font-family:var(--font-head); font-size:.74rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600}
 .masthead{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-block:18px 14px; border-bottom:2px solid var(--rule)}
 .masthead .brand{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
+.home-link{color:inherit; text-decoration:none; cursor:pointer}
+.home-link:hover{color:var(--accent)}
 .masthead .brand span{color:var(--muted); font-size:1rem; font-style:italic}
 .toolbar{display:flex; gap:8px; flex-wrap:wrap}
 .btn{font:inherit; font-weight:400; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:9px 14px; cursor:pointer; min-height:42px; text-align:left}
@@ -146,6 +148,7 @@ button.namecell:hover{border-color:var(--accent)}
 .contracts{display:flex; flex-direction:column; gap:8px}
 .contract{border:1px solid var(--line); border-left:4px solid var(--danger); border-radius:6px; padding:10px 12px; background:var(--surface); display:flex; flex-direction:column; gap:6px}
 .contract q{font-style:italic}
+.contract.kept, .contract.rejected, .contract.void{border-left-color:var(--line); opacity:.8}
 
 /* picker */
 .slots{display:flex; gap:12px; flex-wrap:wrap}
@@ -234,7 +237,7 @@ details summary{cursor:pointer; font-family:var(--font-display); font-size:1.2re
 <p>If a Prince names a Marquis correctly, or decides a Marquis's fate (for example, the Marquis names the Prince wrongly), the Prince devours the Marquis.</p>
 <p><b>Archduke:</b> compel one truthful yes/no answer, once per player; not other players' thralls. <b>Duke:</b> while holding an Arrogation card, can use the Archduke's question on up to half the other starting players (rounded down) over the whole game. <b>Prince:</b> cannot devour, except a Marquis it names correctly or whose fate it decides; buys tokens from own thralls for 2 souls each (paid to the bank). <b>Marquis:</b> cannot bind or be bound; once named correctly, anyone except a Prince may devour them later for 4 souls, cards, souls, tokens and the 4-soul devour bonus going to the original namer (or whoever devoured that namer). <b>Earl:</b> one free event card on each of their turns.</p>
 <h3>Event cards</h3>
-<p><b>Seize:</b> discard 2 to steal an event card; discard 4 to steal a random face-down token of a chosen color. <b>Collect:</b> trade for 2 souls. <b>Scrying:</b> either draw 3 tokens without looking at their dots, keep 1 by color, and put the others back unseen (only when name tokens can be bought; counts as your 1 token purchase that turn), or discard 2 Scrying cards to look at the top 4 event cards: any that act when drawn take effect at once and don't count; keep 2 of the others and discard the rest. <b>Ward:</b> when you would be bound or devoured because someone named you correctly, paid to devour you as a marked Marquis, or because you broke a Pact, you may discard 3 Wards: it waits until the end of your next turn, when you may discard 3 more to delay it again. Meanwhile you play normally, but no one else may name you or pay to devour you. If the player claiming you is bound or devoured first, the claim passes to whoever did it (they choose bind or devour). If you bind or devour them yourself, the claim ends, and if you had been named you are reborn. A broken Pact with yourself has no claimant; Ward only delays it. Not against your own wrong guess, and it doesn't stop a Marquis being marked. <b>Arrogation:</b> a Duke who draws it may keep it (while holding it, they have the Archduke's question with the Duke's limit). Otherwise, if any thrall could use it, you must give it to a thrall of your choice, who may try to name their binder (no token requirement): success swaps them and moves the other thralls; failure gives the binder all the thrall's tokens and bars further rebellion against that binder. Otherwise put it back anywhere in the deck or discard it. It can be traded or stolen; anyone but a Duke who ends up holding one gets no effect from it. <b>Meta:</b> on draw, immediately verbally/physically assault a player of your choice. <b>Rebirth:</b> a thrall who becomes free secretly chooses any new name except their old one, and their role follows the new name. Every one of their old tokens, in hands and in the bag, is replaced one for one by a random piece of the new name. <b>Pact:</b> a deal with a player (whoever breaks it is bound or devoured, as the other party chooses) or with yourself (the table must agree, and beforehand you say who will receive your souls, cards, tokens and thralls: one player each, or split evenly among the others who aren't thralls). Break a Pact with yourself and you are devoured, and everything goes where you said. <b>Welfare:</b> on draw, the player with the lowest net worth (souls + event cards + 2 × tokens) who isn't a thrall takes 1 soul from everyone with souls; ties split, any odd soul goes to the second-lowest.</p>
+<p><b>Seize:</b> discard 2 to steal an event card; discard 4 to steal a random face-down token of a chosen color. <b>Collect:</b> trade for 2 souls. <b>Scrying:</b> either draw 3 tokens without looking at their dots, keep 1 by color, and put the others back unseen (only when name tokens can be bought; counts as your 1 token purchase that turn), or discard 2 Scrying cards to look at the top 4 event cards: any that act when drawn take effect at once and don't count; keep 2 of the others and discard the rest. <b>Ward:</b> when you would be bound or devoured because someone named you correctly, paid to devour you as a marked Marquis, or because you broke a Pact, you may discard 3 Wards: it waits until the end of your next turn, when you may discard 3 more to delay it again. Meanwhile you play normally, but no one else may name you or pay to devour you. If the player claiming you is bound or devoured first, the claim passes to whoever did it (they choose bind or devour). If you bind or devour them yourself, the claim ends, and if you had been named you are reborn. A broken Pact with yourself has no claimant; Ward only delays it. Not against your own wrong guess, and it doesn't stop a Marquis being marked. <b>Arrogation:</b> a Duke who draws it may keep it (while holding it, they have the Archduke's question with the Duke's limit). Otherwise, if any thrall could use it, you must give it to a thrall of your choice, who may try to name their binder (no token requirement): success swaps them and moves the other thralls; failure gives the binder all the thrall's tokens and bars further rebellion against that binder. Otherwise put it back anywhere in the deck or discard it. It can be traded or stolen; anyone but a Duke who ends up holding one gets no effect from it. <b>Meta:</b> on draw, immediately verbally/physically assault a player of your choice. <b>Rebirth:</b> a thrall who becomes free secretly chooses any new name except their old one, and their role follows the new name. Every one of their old tokens, in hands and in the bag, is replaced one for one by a random piece of the new name. <b>Pact:</b> a deal with a player (they must accept it; whoever breaks it is bound or devoured, as the other party chooses) or with yourself (every other player must approve it, and the terms say who will receive your souls, cards, tokens and thralls if you break it). Rejected: the card comes back. A Pact is kept or broken when every player but one agrees (never fewer than two), and for a two-player deal, agrees on who broke it. Break a Pact with yourself and you are devoured, and everything goes where the terms said. Thralls can't be in Pacts (they still vote); a Pact is void when a party is bound or devoured. Votes are cast on the Pacts tab. <b>Welfare:</b> on draw, the player with the lowest net worth (souls + event cards + 2 × tokens) who isn't a thrall takes 1 soul from everyone with souls; ties split, any odd soul goes to the second-lowest.</p>
 </div>
 </template>
 
@@ -244,6 +247,7 @@ details summary{cursor:pointer; font-family:var(--font-display); font-size:1.2re
 const ROLES = ["Archduke","Duke","Prince","Marquis","Earl"];
 // Experimental setups (the sim sets globalThis.MADK_CONFIG); the defaults are the current rules.
 const CFG = Object.assign({TOKENS:4, MAX_DOTS:4, DECK:null}, globalThis.MADK_CONFIG || {});
+const ONLINE = !!CFG.ONLINE;   // set by the game server: prompts go to players' own devices, no "pass the device" screens
 const BASE_NAMES = {"1112":"Bael","1333":"Paimon","2233":"Belial","1113":"Astaroth","1122":"Agares","2333":"Gremory","1123":"Vassago","1222":"Stolas","3333":"Sitri","1133":"Shax","1223":"Amon","2222":"Andras","1111":"Furfur","1233":"Halphas","2223":"Raum"};
 // More Ars Goetia demons, given out in order to combinations outside the 15 above (for bigger name tables)
 const EXTRA_NAMES = ["Samigina","Marbas","Valefor","Barbatos","Buer","Gusion","Beleth","Leraje","Eligos","Zepar","Botis","Bathin","Sallos","Purson","Marax","Ipos","Aim","Naberius","Bune","Ronove","Berith","Forneus","Foras","Asmoday","Gaap","Marchosias","Phenex","Malphas","Focalor","Vepar","Sabnock","Vine","Bifrons","Vual","Haagenti"];
@@ -274,7 +278,7 @@ const CARD_TEXT = {
   "Collect":"Trade in for 2 souls.",
   "Scrying":"Draw 3 name tokens without seeing their dots and keep 1 by color (token rounds only; counts as your token purchase). Or discard 2 to look at the top 4 event cards and keep 2; cards that act when drawn take effect.",
   "Ward":"Discard 3 when you'd be bound or devoured by a correct naming, a paid Marquis devour or a broken Pact: it waits until the end of your next turn, and meanwhile no one else may name you.",
-  "Pact":"Make a deal with a player (a breaker is bound or devoured by the other) or with yourself (say beforehand who gets your things; break it and you're devoured).",
+  "Pact":"Propose a deal with a player (they accept; a breaker is bound or devoured by the other) or with yourself (all others approve; the terms say who gets your things; break it and you're devoured).",
   "Arrogation":"While a Duke holds this, they can use the Archduke's question on up to half the other starting players. Anyone may hold or trade it.",
 };
 const SPEND_CAP = CFG.SPEND_CAP ?? Infinity;   // no per-turn spending limit (was 10); the sim can set one to compare
@@ -346,7 +350,7 @@ function loadSaved(){ try{ const t=localStorage.getItem(SAVE_KEY); return t?JSON
 function clearSaved(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
 
 /* ---------- modal ---------- */
-function ask({title, body="", options=[], row=false}){
+function ask({title, body="", options=[], row=false, to}){
   return new Promise(res=>{
     const m = $("#modal");
     // The corner X (and Esc) only appears when the pop-up already has a way out, and does exactly what that button does.
@@ -372,11 +376,18 @@ function ask({title, body="", options=[], row=false}){
     const first = m.querySelector(".sheet-actions button:not(:disabled), [data-v]:not([disabled])") || m.querySelector("button:not(:disabled)"); if (first) first.focus();
   });
 }
-const info = (title, body) => ask({title, body:`<p>${body}</p>`, options:[{label:"OK", kind:"primary", value:true}]});
-function pick(title, items, {body="", cancel="Cancel"}={}){
+// A public announcement of something big (a naming, a bind, a devour). At a shared screen it's a pop-up; online the
+// server shows it to every player at once without stopping play (globalThis.__announce). Only public facts go in it.
+let captureWhy = null;   // set while a naming resolves, so the bind/devour announcement can say why
+function announce(title, body){
+  if (typeof globalThis.__announce === "function"){ globalThis.__announce(title, body); return Promise.resolve(true); }
+  return ONLINE ? Promise.resolve(true) : info(title, body);
+}
+const info = (title, body, to) => (ONLINE && /^Pass the device/.test(title)) ? Promise.resolve(true) : ask({title, body:`<p>${body}</p>`, options:[{label:"OK", kind:"primary", value:true}], to});
+function pick(title, items, {body="", cancel="Cancel", to}={}){
   const opts = items.map(it => ({label:it.label, sub:it.sub, value:it.value, disabled:it.disabled}));
   if (cancel) opts.push({label:cancel, kind:"quiet", value:null});
-  return ask({title, body, options:opts});
+  return ask({title, body, options:opts, to});
 }
 // One vertical table like the rulebook's: grouped by role, in the official (Ars Goetia) order within each role.
 // Clickable: each name is a button (used for naming guesses and choosing a new name at Rebirth).
@@ -388,8 +399,8 @@ function namesGrid(clickable){
   }).join("")}</tbody>`).join("");
   return `<table class="nametable"><thead><tr><th>Name</th><th>Combination</th><th class="n">Total</th><th>Role</th></tr></thead>${body}</table>`;
 }
-function pickName(title, lead=""){
-  return ask({title, body:`${lead?`<p>${lead}</p>`:""}${namesGrid(true)}`, options:[{label:"Cancel", kind:"quiet", value:null}]});
+function pickName(title, lead="", to){
+  return ask({title, body:`${lead?`<p>${lead}</p>`:""}${namesGrid(true)}`, options:[{label:"Cancel", kind:"quiet", value:null}], to});
 }
 
 /* ---------- setup ---------- */
@@ -473,7 +484,19 @@ async function enslave(master, s){
   }
   S.players.forEach(x=>{ if (x.status==="slave" && x.master===s.id) x.master=master.id; });
   log(`${master.name} bound ${s.name}, taking all ${ec} event card${ec===1?"":"s"} and ${took}.`);
+  voidPactsOf(s);
+  await announce(`${esc(s.name)} is bound`, `${captureWhy?esc(captureWhy)+". ":""}${esc(master.name)} bound ${esc(s.name)}${s.revealed?` (${NAME_OF[s.combo]}, the ${baseRole(s)})`:""}, who is now their thrall.`);
   await claimsOnCapture(master, s);
+}
+// Thralls can't be in Pacts, and the devoured are out: their open Pacts are void. A Pact card held by a proposal
+// goes back to the proposer if they are still free, otherwise to the discard pile.
+function voidPactsOf(x){
+  S.contracts.forEach(c=>{
+    if ((c.status!=="active" && c.status!=="pending") || (c.a!==x.id && c.b!==x.id)) return;
+    if (c.status==="pending"){ const a=P(c.a); if (a.status==="alive" && a.id!==x.id) a.events.push("Pact"); else S.discard.push("Pact"); }
+    c.status="void";
+    log(`The Pact "${c.terms}" is void: ${x.name} ${x.status==="dead"?"was devoured":"is a thrall"}.`);
+  });
 }
 async function consume(killer, victim, receiver=killer){
   if (victim.status!=="slave" || victim.master!==killer.id) killer.devours = (killer.devours||0) + 1;   // capture tally (Welfare "captures" variant)
@@ -508,9 +531,10 @@ async function consume(killer, victim, receiver=killer){
   S.players.forEach(x=>{ const before=x.tokens.length; x.tokens=x.tokens.filter(t=>t.owner!==victim.id); removed+=before-x.tokens.length; });
   const bb=S.bag.length; S.bag=S.bag.filter(t=>t.owner!==victim.id); removed+=bb-S.bag.length;
   S.players.forEach(x=>{ if (x.markedBy===victim.id) x.markedBy=killer.id; });
-  S.contracts.forEach(c=>{ if (c.status==="active" && (c.a===victim.id || c.b===victim.id)) c.status="void"; });
+  voidPactsOf(victim);
   S.queue = S.queue.filter(i=>i!==victim.id);
   log(`${killer.name} devoured ${victim.name} (${NAME_OF[victim.combo]}, ${baseRole(victim)}). ${receiver.name} took ${ec} event card${ec===1?"":"s"} and ${tc} token${tc===1?"":"s"}; ${removed} ${victim.name} token${removed===1?"":"s"} left the game.`);
+  await announce(`${esc(victim.name)} is devoured`, `${captureWhy?esc(captureWhy)+". ":""}${esc(killer.name)} devoured ${esc(victim.name)}, who was ${NAME_OF[victim.combo]}, the ${baseRole(victim)}.`);
   await claimsOnCapture(killer, victim);
 }
 // After binding or devouring, before looking at the name tokens you took, you may give any of them away, face down,
@@ -580,6 +604,7 @@ async function doNaming(a, {onTurn}){
       await info(`${esc(t.name)} is the Marquis`, `Correct! ${esc(t.name)} is ${NAME_OF[t.combo]}, the Marquis, who can't be bound. As the Prince, you devour them instead.`);
     } else if (baseRole(t)==="Marquis"){
       t.markedBy = a.id;
+      await announce(`${esc(t.name)} is named`, `${esc(a.name)} named ${esc(t.name)} correctly: ${NAME_OF[t.combo]}, the Marquis. The Marquis is marked, and anyone but a Prince may now pay ${MARQUIS_KILL} souls to devour them.`);
       log(`Correct. ${t.name} is the Marquis and cannot be bound. ${t.name} is now marked: anyone except a Prince may devour them for ${MARQUIS_KILL} souls, and their cards go to ${a.name}.`);
       const affordable = onTurn ? canSpend(a,MARQUIS_KILL) : a.souls>=MARQUIS_KILL;
       const go = await ask({title:`${esc(t.name)} is the Marquis`, body:`<p>Correct! ${chip(t)} is ${NAME_OF[t.combo]}, the Marquis. They keep playing until someone pays ${MARQUIS_KILL} souls to devour them. Their cards go to you.</p>`,
@@ -593,11 +618,13 @@ async function doNaming(a, {onTurn}){
       return;
     }
     if (!princeTakesMarquis) log(`Correct.`);
-    await applyAction(a, t, act);
+    captureWhy = `${a.name} named ${t.name} correctly`;
+    try { await applyAction(a, t, act); } finally { captureWhy = null; }
   } else {
     log(`Wrong. ${t.name} decides what happens to ${a.name}.`);
-    await info("Wrong name", `${esc(t.name)} is not ${NAME_OF[guess]}. ${esc(t.name)} now decides your fate.`);
-    await chooseFate(t, a, `${esc(t.name)} decides`);
+    await announce("Wrong name", `${esc(a.name)} named ${esc(t.name)} as ${NAME_OF[guess]}, and was wrong. ${esc(t.name)} now decides ${esc(a.name)}'s fate.`);
+    captureWhy = `${a.name} named ${t.name} wrongly`;
+    try { await chooseFate(t, a, `${esc(t.name)} decides`); } finally { captureWhy = null; }
   }
 }
 
@@ -652,7 +679,7 @@ async function resolveClaims(p){
       if (again){ discardN(p,"Ward",3); c.after=S.turnSerial; log(`${p.name} discarded 3 more Wards: the claim waits until the end of their next turn.`); continue; }
     }
     c.status="done";
-    if (c.kind==="selfpact"){ log(`${p.name}'s Ward runs out.`); await selfPactDevour(p, c.spec); continue; }
+    if (c.kind==="selfpact"){ log(`${p.name}'s Ward runs out.`); await selfPactDevour(p, c.spec, c.by, c.terms); continue; }
     const cl = P(c.claimant);
     if (!cl || cl.status!=="alive"){ c.status="void"; log(`The claim on ${p.name} lapses: ${cl?cl.name:"the claimant"} can't enforce it.`); continue; }
     log(`${p.name}'s Ward runs out: ${cl.name}'s claim resolves.`);
@@ -823,7 +850,7 @@ async function rebellion(p, card){
   if (sid==null) return;
   const s=P(sid), m=P(s.master);
   log(`${p.name} gave ${card} to ${s.name}, who may name their binder ${m.name}.`);
-  const guess = await pickName(`${esc(s.name)}: name your binder ${esc(m.name)}`, "Cancel to decline the rebellion.");
+  const guess = await pickName(`${esc(s.name)}: name your binder ${esc(m.name)}`, "Cancel to decline the rebellion.", s.id);
   if (!guess){ log(`${s.name} declined to rebel.`); return; }
   if (keyOf(guess)===keyOf(m.combo)){
     m.revealed=true;
@@ -831,14 +858,14 @@ async function rebellion(p, card){
     s.status="alive"; s.master=null;
     m.status="slave"; m.master=s.id;
     log(`${card} succeeded: ${s.name} named ${m.name} as ${NAME_OF[m.combo]}. ${s.name} is now the binder and ${m.name} the thrall; ${m.name}'s other thralls now serve ${s.name}.`);
-    await info(`${card} succeeded`, `${esc(s.name)} and ${esc(m.name)} switch places. ${esc(s.name)} is reborn with a new secret name.`);
+    await announce(`${card} succeeded`, `${esc(s.name)} named their binder ${esc(m.name)} correctly (${NAME_OF[m.combo]}, the ${baseRole(m)}). They switch places, and ${esc(s.name)} is reborn with a new secret name.`);
     await rebirth(s);
   } else {
     const ec=s.events.length, tc=s.tokens.length;
     m.events.push(...s.events.splice(0)); m.tokens.push(...s.tokens.splice(0));
     s.rebelBlocked.push(m.id);
     log(`${card} failed: ${s.name} guessed ${NAME_OF[guess]} and gave ${m.name} all ${ec} event cards and ${tc} tokens.`);
-    await info(`${card} failed`, `${esc(s.name)} gives all their cards to ${esc(m.name)} and can never rebel against them again.`);
+    await announce(`${card} failed`, `${esc(s.name)} named their binder ${esc(m.name)} wrongly, gives them all their cards and tokens, and can never rebel against them again.`);
   }
 }
 
@@ -1045,29 +1072,36 @@ ACT.theft4 = async () => {
   await info("Stolen", `${tokHTML(t.dots,P(t.owner).color)} ${esc(P(t.owner).name)}'s token, ${t.dots} dot${t.dots===1?"":"s"}.`);
 };
 ACT.playContract = async () => {
-  const p=me(); if (countCard(p,"Pact")<1) return;
-  const others = S.players.filter(o=>o.id!==p.id && o.status!=="dead");
-  const party = await pick("Pact with…", [{label:"Yourself", sub:"The other players must agree to the terms", value:"self"}, ...others.map(o=>({label:chip(o), value:o.id}))]);
+  const p=me(); if (countCard(p,"Pact")<1 || p.status!=="alive") return;   // thralls can't be in Pacts
+  const others = S.players.filter(o=>o.id!==p.id && o.status==="alive");
+  const party = await pick("Pact with…", [{label:"Yourself", sub:"Every other player must approve it", value:"self"}, ...others.map(o=>({label:chip(o), sub:"They must accept it", value:o.id}))]);
   if (party==null) return;
-  const terms = await ask({title:"Write the terms", body:`<p class="muted">Keep them checkable, e.g. "${esc(p.name)} won't name Cobalt for 2 rounds."</p><p style="margin-top:10px"><label class="label" for="ct">Terms</label><textarea id="ct"></textarea></p>`,
-    options:[{label:"Seal in blood", kind:"primary", read:m=>{ const v=m.querySelector("#ct").value.trim(); return v?{value:v}:{error:"Write the terms first."}; }},{label:"Cancel", kind:"quiet", value:null}]});
+  const self = party==="self";
+  const terms = await ask({title:"Write the terms", body:`<p class="muted">Keep them checkable, e.g. "${esc(p.name)} won't name Cobalt for 2 rounds."${self?" A Pact with yourself must also say who gets your souls, event cards, name tokens and thralls if you break it (you are devoured).":""}</p><p style="margin-top:10px"><label class="label" for="ct">Terms</label><textarea id="ct"></textarea></p>`,
+    options:[{label:"Propose", kind:"primary", read:m=>{ const v=m.querySelector("#ct").value.trim(); return v?{value:v}:{error:"Write the terms first."}; }},{label:"Cancel", kind:"quiet", value:null}]});
   if (!terms) return;
-  // A Pact with yourself: say now who gets what if you break it (you'll be devoured). The table must agree.
-  let spec = null;
-  if (party==="self"){
-    spec = {};
-    const recips = S.players.filter(o=>o.id!==p.id && o.status==="alive");
-    for (const [k, what] of [["souls","souls"],["cards","event cards"],["tokens","name tokens"],["thralls","thralls"]]){
-      const v = await ask({title:`If you break it, who gets your ${what}?`, body:`<p class="muted">The table must agree. If you break this Pact you are devoured, and your ${what} go here. Only players who aren't thralls can receive.</p>`,
-        options:[{label:"Split evenly among the other players", value:"split", kind:"primary"}, ...recips.map(o=>({label:chip(o), value:o.id})), {label:"Cancel", kind:"quiet", value:null}]});
-      if (v==null) return;
-      spec[k] = v;
+  // The Pact card is held on the Pact until it is approved (then discarded) or rejected (back to the hand).
+  p.events.splice(p.events.indexOf("Pact"),1);
+  S.contracts.push({id:S.contractSeq++, a:p.id, b:self?null:party, terms, status:"pending", round:S.round, approvals:{}, verdicts:{}});
+  log(`${p.name} proposed a Pact${self?" with themself":` with ${P(party).name}`}: "${terms}". It needs ${self?"every other player's approval":`${P(party).name}'s acceptance`}.`);
+  // At a shared screen, pass the device round so each player who must approve sees it now. (Online, each player's
+  // own screen pops it up; see online.js.) "Later" leaves the vote on the Pacts tab.
+  if (!ONLINE){
+    const c = S.contracts[S.contracts.length-1];
+    for (const id of pactApprovers(c)){
+      if (c.status!=="pending") break;
+      const v = await pactAsk(c, id);
+      if (v==="yes" || v==="no") await ACT.contractVote({dataset:{id:String(c.id), who:String(id), v}});
     }
   }
-  p.events.splice(p.events.indexOf("Pact"),1); S.discard.push("Pact");
-  S.contracts.push({id:S.contractSeq++, a:p.id, b:party==="self"?null:party, terms, spec, status:"active", round:S.round});
-  log(`${p.name} sealed a Pact${party==="self"?" with themself":` with ${P(party).name}`}: "${terms}"`);
 };
+// The approval pop-up, shared by the local table and the online client.
+function pactAsk(c, id){
+  const from = P(c.a);
+  return ask({title: ONLINE ? `${esc(from.name)} proposes a Pact` : `Pass the device to ${esc(P(id).name)}: ${esc(from.name)} proposes a Pact`,
+    body:`<p>${c.b==null?`A Pact with themself. Every other player must approve it.`:`A Pact with ${c.b===id&&ONLINE?"you":esc(P(c.b).name)}. It needs ${ONLINE?"your":"their"} acceptance.`}</p><p><q>${esc(c.terms)}</q></p>`,
+    options:[{label: c.b==null?"Approve":"Accept", kind:"primary", value:"yes"},{label:"Reject", value:"no"},{label:"Later", kind:"quiet", sub:"Vote on the Pacts tab", value:null}]});
+}
 function cardChecks(p, prefix){
   if (!p.events.length) return `<p class="muted">No event cards.</p>`;
   return `<div style="display:flex;flex-direction:column;gap:6px">${p.events.map((c,i)=>`<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="${prefix}${i}" data-idx="${i}"> ${c}</label>`).join("")}</div>`;
@@ -1106,7 +1140,7 @@ ACT.trade = async () => {
   const offeredToks = give.tidx.map(i=>p.tokens[i]);
   await info(`Pass the device to ${esc(o.name)}`, `Only ${esc(o.name)} should see the next screen.`);
   const offerText = describeGive(give.souls, offered) + (offeredToks.length?` and face-down tokens: ${tokColors(offeredToks)}`:"");
-  const back = await ask({title:`${esc(o.name)}: ${esc(p.name)} offers ${esc(offerText)}`,
+  const back = await ask({to:o.id, title:`${esc(o.name)}: ${esc(p.name)} offers ${esc(offerText)}`,
     body:`<p><label class="label" for="tb-souls">Souls you give back</label><input type="text" id="tb-souls" inputmode="numeric" value="0"></p>
       <p class="label" style="margin-top:12px">Event cards you give back</p>${cardChecks(o,"tb-")}
       ${o.status==="slave"?`<p class="muted" style="margin-top:12px">Thralls can't trade away name tokens.</p>`:`<p class="label" style="margin-top:12px">Name tokens you give back (${TRADE_FEE} souls each for both of you)</p>${tokenChecks(o,"tb-")}`}`,
@@ -1138,37 +1172,78 @@ ACT.trade = async () => {
   }
   await info(`Pass the device back to ${esc(p.name)}`, `Trade done. You received ${esc(describeGive(back.souls, oCards))}${oToks.length?` and tokens: ${esc(tokList(oToks))}`:""}.`);
 };
-ACT.contractDone = async b => { const c=S.contracts.find(x=>x.id===+b.dataset.id); if(c){ c.status="kept"; log(`Contract fulfilled: "${c.terms}"`);} };
-ACT.contractBroken = async b => {
-  const c=S.contracts.find(x=>x.id===+b.dataset.id); if(!c) return;
-  let breaker, executor;
+// Who is voting: online, the player who clicked; at a shared table, the button names the voter.
+function voterOf(b){ return ONLINE ? S.actor : +b.dataset.who; }
+// A Pact with yourself needs every other player's approval; a Pact with another player needs theirs.
+function pactApprovers(c){ return c.b==null ? S.players.filter(x=>x.id!==c.a && x.status!=="dead").map(x=>x.id) : (P(c.b).status!=="dead" ? [c.b] : []); }
+// Everyone still in the game (not devoured) gives a verdict on a Pact; it closes when all but one agree.
+function pactJudges(){ return S.players.filter(x=>x.status!=="dead").map(x=>x.id); }
+// Never fewer than 2: with only two players left, one of them alone could otherwise declare the other a breaker.
+function pactNeeded(){ return Math.max(2, pactJudges().length - 1); }
+function pactTally(c){ const t={}; for (const [k,v] of Object.entries(c.verdicts||{})) if (pactJudges().includes(+k)) t[v]=(t[v]||0)+1; return t; }
+ACT.contractVote = async b => {
+  const c=S.contracts.find(x=>x.id===+b.dataset.id); if (!c || c.status!=="pending") return;
+  const who=voterOf(b); if (!pactApprovers(c).includes(who)) return;
+  c.approvals[who] = b.dataset.v==="yes";
+  if (!c.approvals[who]){
+    c.status="rejected"; const a=P(c.a);
+    if (a.status!=="dead") a.events.push("Pact"); else S.discard.push("Pact");
+    log(`${P(who).name} rejected the Pact "${c.terms}". The Pact card goes back to ${a.name}.`);
+    return;
+  }
+  log(`${P(who).name} approved the Pact "${c.terms}".`);
+  if (pactApprovers(c).every(id=>c.approvals[id])){ c.status="active"; S.discard.push("Pact"); log(`The Pact is sealed: "${c.terms}".`); }
+};
+// A verdict is "kept", or the id of the player who broke it. Clicking your current verdict again takes it back.
+ACT.contractVerdict = async b => {
+  const c=S.contracts.find(x=>x.id===+b.dataset.id); if (!c || c.status!=="active") return;
+  const who=voterOf(b); if (!pactJudges().includes(who)) return;
+  const v = b.dataset.v==="kept" ? "kept" : +b.dataset.v;
+  if (v!=="kept" && v!==c.a && v!==c.b) return;
+  if (c.verdicts[who]===v){ delete c.verdicts[who]; return; }
+  c.verdicts[who]=v;
+  if ((pactTally(c)[v]||0) < pactNeeded()) return;
+  if (v==="kept"){ c.status="kept"; log(`The table agrees the Pact was kept: "${c.terms}".`); return; }
+  await breakPact(c, P(v), P(who));
+};
+async function breakPact(c, breaker, by){
+  c.status="broken"; c.breaker=breaker.id;
   if (c.b==null){
-    breaker=P(c.a); c.status="broken";
-    log(`${breaker.name} broke their Pact with themself: "${c.terms}".`);
+    log(`The table agrees ${breaker.name} broke their Pact with themself: "${c.terms}".`);
     if (await offerWard(breaker, `You broke your Pact with yourself.`)){
-      addClaim({target:breaker.id, claimant:null, kind:"selfpact", named:false, spec:c.spec});
+      addClaim({target:breaker.id, claimant:null, kind:"selfpact", named:false, by:by.id, terms:c.terms});
       log(`${breaker.name} raised a Ward against a broken Pact: their devour waits until the end of their next turn.`);
       return;
     }
-    await selfPactDevour(breaker, c.spec);
+    await selfPactDevour(breaker, null, by.id, c.terms);
     return;
-  } else {
-    const bid = await pick("Who broke the contract?", [P(c.a),P(c.b)].map(x=>({label:chip(x), value:x.id})));
-    if (bid==null) return; breaker=P(bid); executor=P(bid===c.a?c.b:c.a);
   }
-  if (executor.status!=="alive"){ await info("Can't enforce", `${esc(executor.name)} is a thrall and can't enforce it. Settle this at the table.`); return; }
-  c.status="broken"; log(`${breaker.name} broke the Pact "${c.terms}".`);
+  const executor=P(breaker.id===c.a?c.b:c.a);
+  log(`The table agrees ${breaker.name} broke the Pact "${c.terms}".`);
+  if (executor.status!=="alive"){ log(`${executor.name} is a thrall and can't enforce it.`); return; }
   if (await offerWard(breaker, `You broke your Pact with ${esc(executor.name)}.`)){
     addClaim({target:breaker.id, claimant:executor.id, act:null, kind:"pact", named:false});
     log(`${breaker.name} raised a Ward against a broken Pact: ${executor.name}'s punishment waits until the end of ${breaker.name}'s next turn.`);
     return;
   }
   await chooseFate(executor, breaker, `${esc(executor.name)} punishes ${esc(breaker.name)}`);
-};
+}
+// The player whose verdict broke the Pact hands out the breaker's things as the written terms say.
+async function pactForfeit(p, byId, terms){
+  const recips = S.players.filter(o=>o.id!==p.id && o.status==="alive");
+  const to = byId!=null && P(byId) && P(byId).status!=="dead" && byId!==p.id ? byId : (recips[0]||{}).id;
+  const spec={};
+  for (const [k, what] of [["souls","souls"],["cards","event cards"],["tokens","name tokens"],["thralls","thralls"]]){
+    const v = await ask({to, title:`Who gets ${esc(p.name)}'s ${what}?`, body:`<p>Follow the Pact's terms:</p><p><q>${esc(terms||"")}</q></p><p class="muted">Only players who aren't thralls can receive.</p>`,
+      options:[{label:"Split evenly among the other players", value:"split", kind:"primary"}, ...recips.map(o=>({label:chip(o), value:o.id}))]});
+    spec[k] = v==null ? "split" : v;
+  }
+  return spec;
+}
 // Broken Pact with yourself: you are devoured. Your souls, cards, tokens and thralls go where the Pact said: to one player,
 // or split one at a time among the other players who aren't thralls (in turn order after you). No devour bonus.
-async function selfPactDevour(p, spec){
-  spec = spec || {};
+async function selfPactDevour(p, spec, byId, terms){
+  spec = spec || await pactForfeit(p, byId, terms);
   const others = seatOrderFrom(p.id).map(P).filter(x=>x.id!==p.id && x.status==="alive");
   p.status="dead"; p.master=null; p.revealed=true;
   const dealer = key => { const who=spec[key]; const one = (who!=="split" && who!=null && P(who).status==="alive") ? P(who) : null; let k=0; return () => one || others[k++ % others.length]; };
@@ -1178,14 +1253,14 @@ async function selfPactDevour(p, spec){
   next = dealer("thralls"); for (const x of slavesOf(p)) { const r=next(); if (r) x.master=r.id; }
   S.players.forEach(x=>{ x.tokens=x.tokens.filter(t=>t.owner!==p.id); if (x.markedBy===p.id) x.markedBy=null; });
   S.bag=S.bag.filter(t=>t.owner!==p.id);
-  S.contracts.forEach(c=>{ if (c.status==="active" && (c.a===p.id || c.b===p.id)) c.status="void"; });
+  voidPactsOf(p);
   (S.claims||[]).forEach(c=>{ if (c.status==="waiting" && (c.claimant===p.id || c.target===p.id)) c.status="void"; });
   S.queue = S.queue.filter(i=>i!==p.id);
   log(`${p.name} broke their Pact with themself and is devoured (${NAME_OF[p.combo]}, ${baseRole(p)}). Their souls, cards, tokens and thralls go where the Pact said.`);
-  await info("Pact broken", `${esc(p.name)} is devoured. Everything they had goes where their Pact said.`);
+  await announce(`${esc(p.name)} is devoured`, `${esc(p.name)} broke their Pact with themself and is devoured (${NAME_OF[p.combo]}, the ${baseRole(p)}). Everything they had goes where their Pact said.`);
 }
 ACT.interrupt = async () => {
-  const who = await pick("Who is acting out of turn?", free().map(x=>({label:chip(x), value:x.id})), {body:`<p class="muted">Naming can happen at any time. A marked Marquis can be devoured at any time for ${MARQUIS_KILL} souls.</p>`});
+  const who = (S.actor!=null) ? S.actor : await pick("Who is acting out of turn?", free().map(x=>({label:chip(x), value:x.id})), {body:`<p class="muted">Naming can happen at any time. A marked Marquis can be devoured at any time for ${MARQUIS_KILL} souls.</p>`});
   if (who==null) return;
   const a=P(who);
   const ms=S.players.filter(x=>x.status!=="dead" && x.markedBy!=null && x.id!==a.id && !activeClaim(x));
@@ -1246,8 +1321,8 @@ ACT.namesRef = async () => { await ask({title:"Name table", body:namesGrid(false
 
 /* ---------- rendering ---------- */
 function masthead(){
-  return `<header class="masthead"><div class="brand"><h1>Court</h1><span>${S&&S.phase==="play"?`Round ${S.round}`:"playtest table"}</span></div>
-  <div class="toolbar"><button class="btn small" data-act="rules">Rules</button><button class="btn small" data-act="namesRef">Name table</button>${S?`<button class="btn small quiet" data-act="newGame">New game</button>`:""}</div></header>`;
+  return `<header class="masthead"><div class="brand"><h1><a href="#" class="home-link" data-act="home" title="Back to the main screen">Court</a></h1><span>${S&&S.phase==="play"?`Round ${S.round}`:"playtest table"}</span></div>
+  <div class="toolbar"><button class="btn small" data-act="rules">Rules</button><button class="btn small" data-act="namesRef">Name table</button>${S&&S.phase==="play"?`<button class="btn small" data-act="pactsTab">Pacts${pactsOpen().length?` (${pactsOpen().length})`:""}</button>`:""}${S?`<button class="btn small quiet" data-act="newGame">New game</button>`:""}</div></header>`;
 }
 function statusText(p){
   if (p.status==="dead") return `<span class="tag warn">Devoured</span> <span class="muted">${NAME_OF[p.combo]}, ${baseRole(p)}</span>`;
@@ -1273,14 +1348,48 @@ function ledger(){
   </tbody></table></div>
   <p class="muted mono" style="font-size:.85rem">Bag: ${S.bag.length} tokens · Event deck: ${S.deck.length} · Discard: ${S.discard.length} · ${S.capLifted?"Tokens can be bought in any round":(S.round%2===1?"Token round: name tokens can be bought":"Card round: no name token buying")}</p></section>`;
 }
-function contractsHTML(){
-  const act=S.contracts.filter(c=>c.status==="active");
-  if (!act.length) return "";
-  return `<section><div class="section-head"><h2>Pacts</h2></div><div class="contracts">${act.map(c=>`<div class="contract">
-    <div>${chip(P(c.a))} ${c.b==null?"<span class='muted'>with themself</span>":`<span class="muted">and</span> ${chip(P(c.b))}`} <span class="muted mono" style="font-size:.8rem">· round ${c.round}</span></div>
-    <q>${esc(c.terms)}</q>
-    <div class="toolbar"><button class="btn small" data-act="contractDone" data-id="${c.id}">Fulfilled</button><button class="btn small" data-act="contractBroken" data-id="${c.id}">Report broken</button></div></div>`).join("")}</div></section>`;
+// Pacts tab: every Pact, its terms, and the votes. VIEWER is the player on this device online (null at a shared table,
+// where each vote button names the player casting it). PACT_TAB is per device, not part of the game state.
+let VIEWER = null, PACT_TAB = false;
+const PACT_STATUS = {pending:"Waiting for approval", active:"In force", kept:"Kept", broken:"Broken", rejected:"Rejected", void:"Void (a party was bound or devoured)"};
+function pactCard(c){
+  const who = id => chip(P(id));
+  const parties = `${who(c.a)} ${c.b==null?"<span class='muted'>with themself</span>":`<span class="muted">and</span> ${who(c.b)}`}`;
+  const voters = list => VIEWER==null ? list : list.filter(id=>id===VIEWER);
+  let body = "";
+  if (c.status==="pending"){
+    const need = pactApprovers(c);
+    body = `<div class="muted" style="font-size:.9rem">Approved by: ${need.filter(id=>c.approvals[id]).map(who).join(" ")||"nobody yet"} · waiting on ${need.filter(id=>!c.approvals[id]).map(id=>esc(P(id).name)).join(", ")}</div>
+      <div class="toolbar">${voters(need.filter(id=>!c.approvals[id])).map(id=>`<button class="btn small primary" data-act="contractVote" data-id="${c.id}" data-who="${id}" data-v="yes">${VIEWER==null?esc(P(id).name)+" approves":"Approve"}</button><button class="btn small" data-act="contractVote" data-id="${c.id}" data-who="${id}" data-v="no">${VIEWER==null?esc(P(id).name)+" rejects":"Reject"}</button>`).join("")}</div>`;
+  } else if (c.status==="active"){
+    const t = pactTally(c), need = pactNeeded();
+    const choices = [...(c.b==null?[[c.a,"Broken"]]:[[c.a,`${P(c.a).name} broke it`],[c.b,`${P(c.b).name} broke it`]]), ["kept","Kept"]];
+    const label = v => v==="kept" ? "kept" : (c.b==null ? "broken" : `broken by ${P(v).name}`);
+    const tally = choices.filter(([v])=>t[v]).map(([v])=>`${t[v]} of ${need} say ${esc(label(v))}`).join(" · ");
+    body = `<div class="muted" style="font-size:.9rem">Closes when ${need} players agree. ${tally||"No verdicts yet."}</div>
+      ${voters(pactJudges()).map(id=>`<div class="toolbar">${VIEWER==null?`<span class="label" style="align-self:center">${esc(P(id).name)}</span>`:""}${choices.map(([v,l])=>`<button class="btn small${c.verdicts[id]===v?" primary":""}" data-act="contractVerdict" data-id="${c.id}" data-who="${id}" data-v="${v}" aria-pressed="${c.verdicts[id]===v}">${esc(l)}</button>`).join("")}</div>`).join("")}`;
+  } else if (c.status==="broken" && c.breaker!=null) body = `<div class="muted" style="font-size:.9rem">Broken by ${esc(P(c.breaker).name)}</div>`;
+  return `<div class="contract ${c.status}"><div>${parties} <span class="tag${c.status==="active"?" gold":c.status==="broken"?" warn":""}">${PACT_STATUS[c.status]||c.status}</span> <span class="muted mono" style="font-size:.8rem">· round ${c.round}</span></div>
+    <q>${esc(c.terms)}</q>${body}</div>`;
 }
+function pactsOpen(){ return (S.contracts||[]).filter(c=>c.status==="pending"||c.status==="active"); }
+function renderPacts(){
+  const open = pactsOpen(), closed = (S.contracts||[]).filter(c=>!open.includes(c)).reverse();
+  return `${masthead()}<section><div class="section-head"><h2>Pacts</h2><button class="btn small primary" data-act="pactsTab">Back to the game</button></div>
+    <p class="muted">A Pact with yourself needs every other player's approval; a Pact with another player needs theirs. A Pact is kept or broken when every player but one agrees, and never fewer than two.</p>
+    ${open.length?`<div class="contracts">${open.map(pactCard).join("")}</div>`:'<p class="muted">No open Pacts.</p>'}</section>
+    ${closed.length?`<section><div class="section-head"><h2>Closed</h2></div><div class="contracts">${closed.map(pactCard).join("")}</div></section>`:""}`;
+}
+// A short notice on the main screens; the full list is on the Pacts tab.
+function contractsHTML(){
+  const open = pactsOpen(); if (!open.length) return "";
+  const pend = open.filter(c=>c.status==="pending").length;
+  return `<section><div class="section-head"><h2>Pacts</h2><button class="btn small" data-act="pactsTab">Open the Pacts tab</button></div>
+    <p class="muted">${open.length-pend} in force${pend?`, ${pend} waiting for approval`:""}.</p></section>`;
+}
+ACT.pactsTab = async () => { PACT_TAB = !PACT_TAB; };
+// The title goes back to the main screen; once the game is over, to the start screen for a new game.
+ACT.home = async () => { PACT_TAB = false; if (S && S.phase==="over"){ clearSaved(); S=null; } };
 function logHTML(){
   return `<section><div class="section-head"><h2>Court record</h2><span class="label">Newest first</span></div>
   <div class="log">${S.log.map(l=>`<div><span>R${l.r}</span>${esc(l.t)}</div>`).join("")}</div></section>`;
@@ -1352,7 +1461,7 @@ function cardRows(p){
     if (c==="Seize") btns=`<button class="btn small" data-act="theft2" ${n<2?"disabled":""}>Use 2: steal a card</button><button class="btn small" data-act="theft4" ${n<4?"disabled":""}>Use 4: steal a token</button>`;
     if (c==="Collect") btns=`<button class="btn small" data-act="playSoul">Trade for 2 souls</button>`;
     if (c==="Scrying") btns=`<button class="btn small" data-act="playName" ${S.bag.length&&tokenRound()&&!S.tokenBought?"":"disabled"} title="${!tokenRound()?"Card round: only when name tokens can be bought":S.tokenBought?"Already bought a token this turn":""}">Draw 3, keep 1</button><button class="btn small" data-act="scry2" ${n<2?"disabled":""}>Use 2: look at the top 4</button>`;
-    if (c==="Pact") btns=`<button class="btn small" data-act="playContract">Make a deal</button>`;
+    if (c==="Pact") btns=`<button class="btn small" data-act="playContract" ${p.status!=="alive"?"disabled title=\"Thralls can't be in Pacts\"":""}>Make a deal</button>`;
     if (c==="Arrogation") btns=`<span class="muted" style="font-size:.85rem">${br==="Duke"?"Active: you have the Archduke's question":"Tradeable"}</span>`;
     if (c==="Ward") btns=`<span class="muted" style="font-size:.85rem">${n>=3?"Ready: offered when you'd be bound or devoured":`${3-n} more needed`}</span>`;
     return cardFace(c, n, btns);
@@ -1413,7 +1522,7 @@ function renderTurn(){
   <section><div class="section-head"><h2>Your name tokens</h2><span class="label">Only you see the dots</span></div>${myTokens(p)}</section>
   <section><div class="section-head"><h2>Your event cards</h2></div>${cardRows(p)}</section>
   <div class="toolbar"><button class="btn primary" data-act="endTurn">End turn and hide</button></div>
-  ${ledger()}${contractsHTML()}`;
+  ${ledger()}${contractsHTML()}${logHTML()}`;
 }
 function renderOver(){
   const w=P(S.winner);
@@ -1429,23 +1538,52 @@ function render(){
   if (!S){ app.innerHTML=renderSetup(); fillNameInputs(); $("#np").onchange=fillNameInputs; return; }
   if (S.phase==="pick") app.innerHTML=renderPick();
   else if (S.phase==="over") app.innerHTML=renderOver();
-  else app.innerHTML = S.view==="turn" ? renderTurn() : renderHandoff();
+  else app.innerHTML = PACT_TAB ? renderPacts() : S.view==="turn" ? renderTurn() : renderHandoff();
 }
 
 document.addEventListener("click", async e=>{
-  const b=e.target.closest("[data-act]");
+  const b=e.target.closest("[data-act]"); if (b && b.tagName==="A") e.preventDefault();
   if (!b || b.disabled || busy || !$("#modal").hidden) return;
   const fn=ACT[b.dataset.act]; if (!fn) return;
   busy=true;
-  try { await fn(b); if (S && S.phase==="play"){ slaveSoulSweep(); await capSweep(); } } catch(err){ console.error(err); }
+  try { await fn(b); await afterAction(); } catch(err){ console.error(err); }
   busy=false;
-  if (S && S.phase==="play" && !checkWin()){
-    if (P(S.current).status==="dead" && !(topInt() && topInt().target===S.current)) nextTurn();
-  }
   if (S) save();
   render();
-  if (["showTurn","hide","endTurn","lockPick","revealPick","setupStart"].includes(b.dataset.act)) window.scrollTo(0,0);
+  if (["showTurn","hide","endTurn","lockPick","revealPick","setupStart","home","pactsTab"].includes(b.dataset.act)) window.scrollTo(0,0);
 });
+
+// After any action: thrall souls to binders, token-round check, win check, and skip a turn owner who was devoured.
+async function afterAction(){
+  if (!S || S.phase!=="play") return;
+  slaveSoulSweep(); await capSweep();
+  if (S.phase==="play" && !checkWin()){
+    if (P(S.current).status==="dead" && !(topInt() && topInt().target===S.current)) nextTurn();
+  }
+}
+
+// Online: each prompt goes to one player. These rules functions act on behalf of a specific player, so every prompt
+// raised inside them goes to that player (S.promptTo); anything else goes to whoever took the action (S.actor).
+const actingFor = (fn, who) => async function(...args){
+  if (!S) return fn.apply(this, args);
+  const prev = S.promptTo; S.promptTo = who(...args);
+  try { return await fn.apply(this, args); } finally { if (S) S.promptTo = prev; }
+};
+enslave = actingFor(enslave, (master) => master.id);
+consume = actingFor(consume, (killer, victim, receiver=killer) => receiver.id);
+giftTokens = actingFor(giftTokens, (giver) => giver.id);
+chooseFate = actingFor(chooseFate, (chooser) => chooser.id);
+doNaming = actingFor(doNaming, (a) => a.id);
+offerWard = actingFor(offerWard, (t) => t.id);
+resolveClaims = actingFor(resolveClaims, (p) => p.id);
+drawEvent = actingFor(drawEvent, (p) => p.id);
+onDrawn = actingFor(onDrawn, (p) => p.id);
+rebellion = actingFor(rebellion, (p) => p.id);
+rebirth = actingFor(rebirth, (p) => p.id);
+runAscension = actingFor(runAscension, (p) => p.id);
+putBackAscension = actingFor(putBackAscension, (p) => p.id);
+selectiveDraw = actingFor(selectiveDraw, (p) => p.id);
+selfPactDevour = actingFor(selfPactDevour, (p) => p.id);
 
 /* ---------- boot ---------- */
 window.claude?.hot?.snapshot?.(()=>({S}));

@@ -65,7 +65,15 @@ async function playOne(browser, g) {
       if (await page.evaluate(() => S.view) !== 'turn') break;
     }
     if (Math.random() < 0.08) await act('interrupt');
-    if (Math.random() < 0.05) await act('contractBroken');
+    if (Math.random() < 0.15 && await act('pactsTab')) {   // open the Pacts tab, cast a few random votes, go back
+      for (let v = 0; v < 3; v++) {
+        const bs = await page.$$('[data-act="contractVote"]:not(:disabled), [data-act="contractVerdict"]:not(:disabled)');
+        if (!bs.length) break;
+        await bs[Math.floor(Math.random() * bs.length)].click(); await page.waitForTimeout(10); await drainModals();
+        if (await phase() === 'over') break;
+      }
+      if (await phase() !== 'over') await act('pactsTab');
+    }
     if (await phase() === 'over') break;
     if (await page.evaluate(() => S.view) === 'turn') await act('endTurn');
   }
@@ -83,7 +91,8 @@ async function playOne(browser, g) {
     }
     return {
       phase: S.phase, round: S.round, winner: S.winner, n: S.players.length,
-      cards: S.deck.length + S.discard.length + S.players.reduce((a, p) => a + p.events.length, 0),
+      // a proposed Pact holds its card until it is approved or rejected
+      cards: S.deck.length + S.discard.length + S.players.reduce((a, p) => a + p.events.length, 0) + S.contracts.filter(c => c.status === 'pending').length,
       deckSize: Object.values(DECK_COUNTS).reduce((a, b) => a + b, 0),
       negSouls: S.players.filter(p => p.souls < 0).map(p => p.name),
       byOwner, offRound, offLines, nearby: (() => { const L = [...S.log].reverse(); const i = L.findIndex(l => !/x/.test('') && l.r % 2 === 0 && /bought a name token\.|paid \d+ souls, drew|played Scrying/.test(l.t)); return i < 0 ? [] : L.slice(Math.max(0, i - 8), i + 2).map(l => `R${l.r}: ${l.t}`); })(),

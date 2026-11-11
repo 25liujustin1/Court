@@ -95,7 +95,7 @@ const cases = {
       S.players[0].souls = 5; S.players[0].events.push('Collect');
       S.current = 0; S.view = 'turn';
       const before = S.players[1].souls;
-      const q = [1, 'consume', '1111', true, true]; // A names B as Furfur (wrong); two info dialogs
+      const q = [1, 'consume', '1111', true]; // A names B as Furfur (wrong); one info dialog (the "Wrong name" one is an announcement now)
       window.ask = async () => q.shift();
       await doNaming(S.players[0], { onTurn: true });
       const A = S.players[0], B = S.players[1];
@@ -188,6 +188,7 @@ const cases = {
       S.players.forEach((p, i) => p.combo = ['1112', '2233', '1111', '1122'][i]);
       startGame();
       const [A, B, C, D] = S.players;
+      window.ask = async () => true;   // answer pop-ups (the devour announcements)
       B.status = 'slave'; B.master = 0;
       A.souls = 0; B.souls = 0;
       // slave's turn: 2 souls to the master
@@ -287,7 +288,7 @@ const cases = {
     assert.deepStrictEqual(r, { thrallSeesTrade: false, thrallDisabled: true });
   },
 
-  async 'Broken Pact with yourself: you are devoured and everything goes where the Pact said; a Ward delays it'(page) {
+  async 'Broken Pact with yourself: approved by all, broken when all but one agree; devoured, forfeit handed out; a Ward delays it'(page) {
     const r = await page.evaluate(async () => {
       const run = async wards => {
         newGame(['A', 'B', 'C', 'D']);
@@ -299,33 +300,138 @@ const cases = {
         A.tokens = S.bag.filter(t => t.owner === 2).slice(0, 2);   // 2 of C's tokens
         B.souls = 0; C.souls = 0; B.events = []; C.events = []; B.tokens = []; C.tokens = [];
         S.current = 0;
+        const asked = [];
+        const forfeit = o => /A's souls/.test(o.title) ? 1 : /A's event cards/.test(o.title) ? 2 : /A's name tokens/.test(o.title) ? 'split' : /A's thralls/.test(o.title) ? 1 : undefined;
         window.ask = async o => {
+          asked.push(o.title);
           if (o.title === 'Pact with…') return 'self';
-          if (o.title === 'Write the terms') return 'No naming Cobalt';
-          if (/who gets your souls/.test(o.title)) return 1;        // all souls to B
-          if (/who gets your event cards/.test(o.title)) return 2;  // cards to C
-          if (/who gets your name tokens/.test(o.title)) return 'split';
-          if (/who gets your thralls/.test(o.title)) return 1;      // thralls to B
+          if (o.title === 'Write the terms') return 'No naming Cobalt. If broken: souls to B, cards to C, tokens split, thralls to B';
+          const f = forfeit(o); if (f !== undefined) return f;
           return true;
         };
         await ACT.playContract();
         const c = S.contracts[0];
-        await ACT.contractBroken({ dataset: { id: String(c.id) } });
+        const noForfeitQuestions = !asked.some(t => /who gets/i.test(t));
+        const pending = c.status;
+        const vote = (who, v) => ACT.contractVote({ dataset: { id: String(c.id), who: String(who), v } });
+        const verdict = (who, v) => ACT.contractVerdict({ dataset: { id: String(c.id), who: String(who), v: String(v) } });
+        await vote(1, 'yes'); await vote(2, 'yes');
+        const half = c.status;
+        await vote(3, 'yes');
+        const sealed = c.status, cardDiscarded = S.discard.includes('Pact');
+        await verdict(1, 0); await verdict(2, 0);
+        const twoOfFour = c.status;                          // 4 players: needs 3
+        await verdict(3, 0);
         const mid = A.status;
-        if (wards) { S.turnSerial++; S.current = 0; S.queue = [3]; window.ask = async o => o.options && o.options[0] ? o.options[0].value === true ? false : o.options[0].value : true; await ACT.endTurn(); }
-        return { mid, A: A.status, B: [B.souls, B.events.length, B.tokens.length], C: [C.souls, C.events.length, C.tokens.length], D: [D.status, D.master] };
+        if (wards) {
+          S.turnSerial++; S.current = 0; S.queue = [3];
+          window.ask = async o => { const f = forfeit(o); if (f !== undefined) return f; return o.options && o.options[0] ? (o.options[0].value === true ? false : o.options[0].value) : true; };
+          await ACT.endTurn();
+        }
+        return { noForfeitQuestions, pending, half, sealed, cardDiscarded, twoOfFour, mid, A: A.status, B: [B.souls, B.events.length, B.tokens.length], C: [C.souls, C.events.length, C.tokens.length], D: [D.status, D.master] };
       };
       return { plain: await run(0), warded: await run(3) };
     });
-    // A had 6 souls, 2 cards (Seize, Collect; the Pact was played), 2 of C's tokens. Souls to B, cards to C, tokens split
-    // (C's own tokens go to whoever; the one dealt to C still counts), thrall D to B.
+    assert.ok(r.plain.noForfeitQuestions, 'the forfeit is written into the terms, not asked when proposing');
+    assert.deepStrictEqual([r.plain.pending, r.plain.half, r.plain.sealed, r.plain.cardDiscarded], ['pending', 'pending', 'active', true]);
+    assert.strictEqual(r.plain.twoOfFour, 'active', 'two of four verdicts are not enough');
     assert.strictEqual(r.plain.mid, 'dead');
+    // A had 6 souls, 2 cards (Seize, Collect), 2 of C's tokens: souls to B, cards to C, tokens split, thrall D to B.
     assert.deepStrictEqual(r.plain.B[0], 6);
     assert.deepStrictEqual(r.plain.C[1], 2);
     assert.strictEqual(r.plain.B[2] + r.plain.C[2], 2);
     assert.deepStrictEqual(r.plain.D, ['slave', 1]);
     assert.strictEqual(r.warded.mid, 'alive', 'the Ward delays the devour');
     assert.strictEqual(r.warded.A, 'dead', 'and it happens at the end of their next turn');
+  },
+
+  async 'Pacts between two players: the other party must accept; a rejection returns the card; the table picks the breaker'(page) {
+    const r = await page.evaluate(async () => {
+      newGame(['A', 'B', 'C']);
+      S.players.forEach((p, i) => p.combo = ['1112', '2233', '1111'][i]);
+      startGame();
+      const [A, B, C] = S.players;
+      A.events = ['Pact', 'Pact']; S.current = 0;
+      let fate = false;
+      window.ask = async o => {
+        if (o.title === 'Pact with…') return 1;
+        if (o.title === 'Write the terms') return 'A and B leave each other alone';
+        if (o.options && o.options.some(x => x.value === 'consume')) { fate = true; return 'consume'; }
+        return false;   // no Ward, etc.
+      };
+      await ACT.playContract();
+      const c1 = S.contracts[0];
+      await ACT.contractVote({ dataset: { id: String(c1.id), who: '2', v: 'yes' } });   // C can't approve a Pact between A and B
+      const afterC = c1.status;
+      await ACT.contractVote({ dataset: { id: String(c1.id), who: '1', v: 'no' } });
+      const rejected = [c1.status, A.events.filter(x => x === 'Pact').length];
+      await ACT.playContract();
+      const c2 = S.contracts[1];
+      await ACT.contractVote({ dataset: { id: String(c2.id), who: '1', v: 'yes' } });
+      const sealed = c2.status;
+      await ACT.contractVerdict({ dataset: { id: String(c2.id), who: '0', v: '1' } });     // A says B broke it
+      await ACT.contractVerdict({ dataset: { id: String(c2.id), who: '1', v: '0' } });     // B says A broke it
+      const split = c2.status;
+      await ACT.contractVerdict({ dataset: { id: String(c2.id), who: '2', v: '1' } });     // C agrees with A: 2 of 3
+      return { afterC, rejected, sealed, split, final: c2.status, breaker: c2.breaker, B: B.status, fate };
+    });
+    assert.strictEqual(r.afterC, 'pending');
+    assert.deepStrictEqual(r.rejected, ['rejected', 2], 'rejected: the Pact card goes back');
+    assert.strictEqual(r.sealed, 'active');
+    assert.strictEqual(r.split, 'active', 'a split table decides nothing');
+    assert.deepStrictEqual([r.final, r.breaker, r.B, r.fate], ['broken', 1, 'dead', true]);
+  },
+
+  async 'Thralls cannot be in Pacts: none can be proposed to them, and binding a party voids the Pact'(page) {
+    const r = await page.evaluate(async () => {
+      newGame(['A', 'B', 'C', 'D']);
+      S.players.forEach((p, i) => p.combo = ['1112', '2233', '1111', '1122'][i]);
+      startGame();
+      const [A, B, C, D] = S.players;
+      D.status = 'slave'; D.master = 2;
+      A.events = ['Pact', 'Pact']; S.current = 0;
+      let offered = null;
+      window.ask = async o => {
+        if (o.title === 'Pact with…') { offered = o.options.map(x => x.value); return 1; }
+        if (o.title === 'Write the terms') return 'Truce';
+        return false;
+      };
+      await ACT.playContract();                       // pending with B
+      const c1 = S.contracts[0];
+      await enslave(C, B);                            // B is bound while it waits: void, card back to A
+      const pendingVoid = [c1.status, A.events.filter(x => x === 'Pact').length];
+      B.status = 'alive'; B.master = null;
+      await ACT.playContract();
+      const c2 = S.contracts[1];
+      await ACT.contractVote({ dataset: { id: String(c2.id), who: '1', v: 'yes' } });
+      const sealed = c2.status;
+      await enslave(C, A);                            // a party is bound: void
+      return { offered, pendingVoid, sealed, activeVoid: c2.status };
+    });
+    assert.ok(!r.offered.includes(3), 'no Pact can be proposed to a thrall');
+    assert.deepStrictEqual(r.pendingVoid, ['void', 2], 'a waiting Pact card goes back to the free proposer');
+    assert.deepStrictEqual([r.sealed, r.activeVoid], ['active', 'void']);
+  },
+
+  async 'Pacts with two players left: one player alone cannot declare the other a breaker'(page) {
+    const r = await page.evaluate(async () => {
+      newGame(['A', 'B', 'C']);
+      S.players.forEach((p, i) => p.combo = ['1112', '2233', '1111'][i]);
+      startGame();
+      const [A, B, C] = S.players;
+      C.status = 'dead';
+      A.events = ['Pact']; S.current = 0;
+      window.ask = async o => o.title === 'Pact with…' ? 1 : o.title === 'Write the terms' ? 'Truce' : (o.options && o.options.some(x => x.value === 'consume')) ? 'consume' : false;
+      await ACT.playContract();
+      const c = S.contracts[0];
+      await ACT.contractVote({ dataset: { id: String(c.id), who: '1', v: 'yes' } });
+      await ACT.contractVerdict({ dataset: { id: String(c.id), who: '0', v: '1' } });   // A alone says B broke it
+      const alone = [c.status, B.status];
+      await ACT.contractVerdict({ dataset: { id: String(c.id), who: '1', v: '1' } });   // B admits it
+      return { alone, both: [c.status, B.status] };
+    });
+    assert.deepStrictEqual(r.alone, ['active', 'alive']);
+    assert.deepStrictEqual(r.both, ['broken', 'dead']);
   },
 
   async 'Scrying, second mode: cards that act when drawn take effect, keep 2 of the others'(page) {
@@ -402,6 +508,37 @@ const cases = {
     assert.deepStrictEqual(r.souls, [4, 0], 'no fee (A only gained the 4-soul devour bonus)');
   },
 
+  async 'Announcements: a correct naming and the devour that follows make one public announcement; a wrong naming says who was wrong'(page) {
+    const r = await page.evaluate(async () => {
+      newGame(['A', 'B', 'C', 'D']);
+      S.players.forEach((p, i) => p.combo = ['1112', '2233', '1111', '1122'][i]);
+      startGame();
+      const [A, B] = S.players;
+      const said = [];
+      globalThis.__announce = (title, body) => said.push(title + ' :: ' + body);
+      let target = 1;
+      window.ask = async o => {
+        if (o.title === 'Who are you naming?') return target;
+        if (/^Announce:/.test(o.title)) return 'consume';
+        if (o.options && o.options.some(x => x.value === 'consume')) return 'consume';   // the wrongly named target decides
+        if (/Ward/.test(o.title)) return false;
+        return o.options && o.options[0] ? o.options[0].value : true;
+      };
+      window.pickName = async () => '2233';
+      S.current = 0; A.tokens.push(S.bag.find(t => t.owner === 1));
+      await doNaming(A, { onTurn: true });
+      const right = said.splice(0);
+      const C = S.players[2]; A.status = 'alive'; A.tokens.push(S.bag.find(t => t.owner === 2));
+      target = 2; window.pickName = async () => '4444';
+      await doNaming(A, { onTurn: true });
+      return { right, wrong: said };
+    });
+    assert.strictEqual(r.right.length, 1, JSON.stringify(r.right));
+    assert.match(r.right[0], /^B is devoured :: A named B correctly\. A devoured B, who was .+, the /);
+    assert.match(r.wrong[0], /^Wrong name :: A named C as .+, and was wrong\. C now decides A's fate\./);
+    assert.match(r.wrong[1], /A named C wrongly\. C (bound|devoured) A/);
+  },
+
   async 'Old saves with a single interrupt still load'(page) {
     const r = await page.evaluate(() => {
       const s = normalize({ interrupt: { target: 1 } });
@@ -420,6 +557,8 @@ const cases = {
     const ctx = await browser.newContext(); const page = await ctx.newPage();
     const errors = []; page.on('pageerror', e => errors.push(e.message));
     await page.goto('file://' + path.resolve(__dirname, '../index.html'));
+    // Announcements are pop-ups at a shared table; most tests don't answer pop-ups, so they are off unless a test turns them on.
+    if (!/announce/i.test(name)) await page.evaluate(() => { globalThis.__announce = () => {}; });
     try { await fn(page); assert.deepStrictEqual(errors, [], 'page errors'); console.log('ok  ' + name); }
     catch (e) { failed++; console.error('FAIL ' + name + '\n     ' + e.message); }
     await ctx.close();

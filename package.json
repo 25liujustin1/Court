@@ -3,11 +3,16 @@
   "private": true,
   "description": "MADK hidden-identity card game: rules, playtest page, and tests",
   "scripts": {
-    "test": "node playtest/test/random-games.js && node playtest/test/rebirth.js && node playtest/test/duke.js && node playtest/test/regressions.js",
+    "test": "node playtest/test/random-games.js && node playtest/test/rebirth.js && node playtest/test/duke.js && node playtest/test/regressions.js && node server/test-online.js",
     "sim": "node sim/run.js",
-    "replay": "node sim/run.js --replay sim/replays/replay.html --players mix --bots mix:aggressor,turtle,hoarder --games 8"
+    "replay": "node sim/run.js --replay sim/replays/replay.html --players mix --bots mix:aggressor,turtle,hoarder --games 8",
+    "server": "node server/server.js",
+    "test:online": "node server/test-online.js"
   },
   "devDependencies": {
     "playwright": "^1.47.0"
+  },
+  "dependencies": {
+    "ws": "^8.22.2"
   }
 }

@@ -22,11 +22,12 @@ function loadPage(config = {}, file = path.resolve(__dirname, '../playtest/index
   vm.runInContext(`
     Math.random = () => globalThis.__rng();
     ask = o => globalThis.__ask(o);
+    globalThis.__announce = () => {};   // announcements are only for people; the server replaces this
     const __origLog = log;
     log = t => { __origLog(t); if (globalThis.__onLog) globalThis.__onLog(t); };
     globalThis.__api = {
       get S(){ return S; },
-      ACT, newGame, startGame, activeClaim, capSweep, slaveSoulSweep, checkWin, nextTurn, topInt, eligibility, baseRole, roleOfCombo,
+      ACT, newGame, startGame, activeClaim, afterAction, capSweep, slaveSoulSweep, checkWin, nextTurn, topInt, eligibility, baseRole, roleOfCombo,
       countColor, countCard, isArch, archLimit, tokenRound, canSpend, slavesOf, free, keyOf,
       COMBOS, NAME_OF, NAME_LIST, ROLES, MARQUIS_KILL, TRADE_FEE, RANDOM_TOKEN_COST, SPEND_CAP, CFG, DECK_COUNTS, CONSUME_BONUS, SLAVE_INCOME,
     };
