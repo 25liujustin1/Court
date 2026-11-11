@@ -1,0 +1,66 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+
+\begin{document}
+
+\begin{center}
+{\Large \textbf{Court --- Name Table}}\\[4pt]
+Combination = 4 symbols, each with 1 to 4 dots (repeats allowed, order doesn't matter).\\
+Role = (sum of dots) mod 5. 35 names, 7 per role. Within each role, names are in the order they appear in the Ars Goetia.
+\end{center}
+
+\vspace{4pt}
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{l >{\ttfamily}c c c l}
+\toprule
+\textbf{Name} & \textbf{\rmfamily Combination} & \textbf{Sum} & \textbf{Mod 5} & \textbf{Role} \\
+\midrule
+Bael        & 1112 & 5  & 0 & Archduke \\
+Paimon      & 1144 & 10 & 0 & Archduke \\
+Beleth      & 1234 & 10 & 0 & Archduke \\
+Purson      & 1333 & 10 & 0 & Archduke \\
+Asmoday     & 2224 & 10 & 0 & Archduke \\
+Balam       & 2233 & 10 & 0 & Archduke \\
+Belial      & 3444 & 15 & 0 & Archduke \\
+\midrule
+Agares      & 1113 & 6  & 1 & Duke \\
+Valefor     & 1122 & 6  & 1 & Duke \\
+Barbatos    & 1244 & 11 & 1 & Duke \\
+Gusion      & 1334 & 11 & 1 & Duke \\
+Eligos      & 2234 & 11 & 1 & Duke \\
+Astaroth    & 2333 & 11 & 1 & Duke \\
+Gremory     & 4444 & 16 & 1 & Duke \\
+\midrule
+Vassago     & 1114 & 7  & 2 & Prince \\
+Sitri       & 1123 & 7  & 2 & Prince \\
+Ipos        & 1222 & 7  & 2 & Prince \\
+Gaap        & 1344 & 12 & 2 & Prince \\
+Stolas      & 2244 & 12 & 2 & Prince \\
+Orobas      & 2334 & 12 & 2 & Prince \\
+Seere       & 3333 & 12 & 2 & Prince \\
+\midrule
+Samigina    & 1124 & 8  & 3 & Marquis \\
+Amon        & 1133 & 8  & 3 & Marquis \\
+Leraje      & 1223 & 8  & 3 & Marquis \\
+Naberius    & 2222 & 8  & 3 & Marquis \\
+Forneus     & 1444 & 13 & 3 & Marquis \\
+Shax        & 2344 & 13 & 3 & Marquis \\
+Andras      & 3334 & 13 & 3 & Marquis \\
+\midrule
+Botis       & 1111 & 4  & 4 & Earl \\
+Marax       & 1134 & 9  & 4 & Earl \\
+Furfur      & 1224 & 9  & 4 & Earl \\
+Halphas     & 1233 & 9  & 4 & Earl \\
+Raum        & 2223 & 9  & 4 & Earl \\
+Bifrons     & 2444 & 14 & 4 & Earl \\
+Andromalius & 3344 & 14 & 4 & Earl \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}

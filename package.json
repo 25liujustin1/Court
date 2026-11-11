@@ -1,0 +1,13 @@
+{
+  "name": "madk",
+  "private": true,
+  "description": "MADK hidden-identity card game: rules, playtest page, and tests",
+  "scripts": {
+    "test": "node playtest/test/random-games.js && node playtest/test/rebirth.js && node playtest/test/duke.js && node playtest/test/regressions.js",
+    "sim": "node sim/run.js",
+    "replay": "node sim/run.js --replay sim/replays/replay.html --players mix --bots mix:aggressor,turtle,hoarder --games 8"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  }
+}

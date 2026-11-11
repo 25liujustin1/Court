@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Court Replay</title>
+<style>
+/* Step-through viewer for sim games. Everything is shown, including secret names and what each bot knows. */
+:root{
+  --bg:#ecebf1; --surface:#f7f6fa; --sunk:#e2e0ea; --ink:#211b2c; --muted:#655d74; --line:#cfcadb;
+  --accent:#7d1d3f; --gold:#87620f; --danger:#a3271c; --ok:#2c6a3d; --hi:#fff3c4;
+  --c0:#b0281f; --c1:#2350a8; --c2:#1f7646; --c3:#a5600a; --c4:#6c3fa3; --c5:#11777a;
+  --font-display:Georgia, "Iowan Old Style", serif;
+  --font-body:"Segoe UI", system-ui, sans-serif;
+  --font-data:Consolas, ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16121d; --surface:#201a29; --sunk:#110e17; --ink:#ebe5f2; --muted:#a59bb4; --line:#3a3147;
+    --accent:#d8749a; --gold:#dbb45c; --danger:#e8705f; --ok:#6fc88b; --hi:#3b3320;
+    --c0:#f0635a; --c1:#76a2ff; --c2:#4fcf8c; --c3:#f2a640; --c4:#bb92f2; --c5:#43c9c9;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 var(--font-body); padding:0 16px 48px}
+.wrap{max-width:1280px; margin:0 auto; display:flex; flex-direction:column; gap:16px}
+h1,h2{font-family:var(--font-display); font-weight:400; margin:0}
+h1{font-size:1.8rem}
+h2{font-size:1.15rem}
+.muted{color:var(--muted)}
+.mono{font-family:var(--font-data); font-variant-numeric:tabular-nums}
+.label{font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:700}
+header{display:flex; flex-wrap:wrap; gap:12px; align-items:baseline; justify-content:space-between; padding:16px 0 10px; border-bottom:1px solid var(--line)}
+select,button{font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:6px 10px; min-height:36px; cursor:pointer}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent); color:var(--bg); border-color:var(--accent)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.controls{display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+.controls input[type=range]{flex:1 1 220px; min-width:160px; accent-color:var(--accent)}
+.layout{display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:16px; align-items:start}
+@media (max-width:980px){ .layout{grid-template-columns:1fr} }
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:12px 14px}
+.step-head{display:flex; flex-direction:column; gap:6px}
+.action{font-size:1.1rem}
+.action b{font-weight:700}
+.loglines{font-family:var(--font-data); font-size:.82rem; display:flex; flex-direction:column; gap:2px}
+.board{display:flex; flex-wrap:wrap; gap:16px; font-size:.9rem}
+.players{display:grid; grid-template-columns:repeat(auto-fill, minmax(270px,1fr)); gap:10px}
+.pcard{background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--pc); border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; gap:7px}
+.pcard.actor{box-shadow:0 0 0 2px var(--accent)}
+.pcard.target{box-shadow:0 0 0 2px var(--gold)}
+.pcard.dead{opacity:.55}
+.prow{display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+.who{display:inline-flex; align-items:center; gap:6px; font-weight:700}
+.who i{width:11px; height:11px; border-radius:50%; background:var(--pc); flex:none}
+.tag{display:inline-block; font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; font-weight:700; border:1px solid currentColor; border-radius:999px; padding:0 7px}
+.tag.warn{color:var(--danger)} .tag.gold{color:var(--gold)} .tag.ok{color:var(--ok)} .tag.mut{color:var(--muted)}
+.secret{font-family:var(--font-display); font-size:1.05rem}
+.stats{display:flex; gap:14px; font-size:.9rem}
+.delta{font-family:var(--font-data); font-size:.8rem; margin-left:3px}
+.delta.up{color:var(--ok)} .delta.down{color:var(--danger)}
+.changed{background:var(--hi); border-radius:4px; padding:0 3px}
+.chips{display:flex; flex-wrap:wrap; gap:4px}
+.chip{font-size:.78rem; border:1px solid var(--line); border-radius:999px; padding:0 7px; background:var(--bg)}
+.chip.theft{border-color:var(--gold); color:var(--gold); font-weight:700}
+.tok{--pc:var(--muted); width:22px; height:22px; border-radius:50%; border:2px solid var(--pc); display:inline-flex; flex-wrap:wrap; align-content:center; justify-content:center; gap:1px; padding:3px; vertical-align:middle; background:var(--surface)}
+.tok i{width:4px; height:4px; border-radius:50%; background:var(--pc)}
+.tokgroup{display:inline-flex; gap:2px; align-items:center; margin-right:6px}
+.know{display:flex; flex-wrap:wrap; gap:4px; font-size:.8rem}
+.know span{border:1px solid var(--line); border-radius:4px; padding:0 5px; font-family:var(--font-data)}
+.know span.elig{border-color:var(--ink); font-weight:700}
+.know span.sure{background:var(--danger); color:var(--bg); border-color:var(--danger)}
+.side{display:flex; flex-direction:column; gap:12px}
+.moments{display:flex; flex-direction:column; gap:3px; max-height:320px; overflow:auto; font-size:.84rem}
+.moments button{text-align:left; min-height:0; padding:4px 8px; border:0; background:transparent; border-radius:4px}
+.moments button:hover{background:var(--sunk)}
+.moments button.here{background:var(--hi)}
+.fulllog{font-family:var(--font-data); font-size:.78rem; max-height:420px; overflow:auto; display:flex; flex-direction:column; gap:2px}
+.fulllog div.now{background:var(--hi)}
+.legend{font-size:.8rem}
+kbd{font-family:var(--font-data); font-size:.75rem; border:1px solid var(--line); border-radius:3px; padding:0 4px; background:var(--bg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><h1>Court replay</h1><div class="muted" id="setup"></div></div>
+    <label class="muted">Game <select id="game"></select></label>
+  </header>
+
+  <div class="panel controls">
+    <button id="first" title="First step">⏮</button>
+    <button id="prevTurn" title="Previous turn (Shift+←)">◀◀ turn</button>
+    <button id="prev" title="Previous step (←)">◀</button>
+    <button id="play" class="primary" title="Play / pause (Space)">Play</button>
+    <button id="next" title="Next step (→)">▶</button>
+    <button id="nextTurn" title="Next turn (Shift+→)">turn ▶▶</button>
+    <button id="last" title="Last step">⏭</button>
+    <input type="range" id="slider" min="0" value="0" aria-label="Step">
+    <span class="mono" id="pos"></span>
+    <select id="speed" aria-label="Playback speed"><option value="900">slow</option><option value="400" selected>normal</option><option value="120">fast</option></select>
+    <button id="nextMoment" title="Jump to the next naming, capture, steal or Ward (N)">next key moment ▶</button>
+  </div>
+
+  <div class="layout">
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <div class="panel step-head">
+        <span class="label" id="when"></span>
+        <div class="action" id="action"></div>
+        <div class="loglines" id="loglines"></div>
+      </div>
+      <div class="panel board" id="board"></div>
+      <div class="players" id="players"></div>
+      <p class="legend muted">
+        <b>Knows</b> = how many names are still possible for each opponent, from that bot's point of view.
+        Bold = allowed to name them now. Red = certain. Accent outline = acting player; gold = their target.
+        Keys: <kbd>←</kbd> <kbd>→</kbd> step, <kbd>Shift</kbd>+arrows turn, <kbd>Space</kbd> play, <kbd>N</kbd> next key moment.
+      </p>
+    </div>
+    <div class="side">
+      <div class="panel"><h2>Key moments</h2><div class="moments" id="moments"></div></div>
+      <div class="panel"><h2>Court record</h2><div class="fulllog" id="fulllog"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const DATA = /*REPLAY_DATA*/null;
+const COLORS = ["Crimson","Cobalt","Emerald","Amber","Violet","Teal"];
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const KEY_RE = /devoured|bound P\d|named P\d as|raised a Ward|discarded 4 Seize|(Insubordination|Arrogation) (succeeded|failed)|devour the marked Marquis|rules the court|reborn/;
+
+let G = null, i = 0, timer = null;
+
+function pname(id){ return `P${id} ${COLORS[id]}`; }
+function chip(id){ return `<span class="who" style="--pc:var(--c${id})"><i></i>${esc(pname(id))}</span>`; }
+function tok(owner, dots){ return `<span class="tok" style="--pc:var(--c${owner})" title="${esc(pname(owner))}'s token, ${dots} dot${dots===1?"":"s"}">${"<i></i>".repeat(dots)}</span>`; }
+function comboPips(combo, owner){ return [...combo].map(d => tok(owner, +d)).join(""); }
+function nameOf(c){ return DATA.names[c] || c; }
+
+function describe(step){
+  const a = step.actor, p = step.plan || {}, T = p.target != null ? chip(p.target) : "", who = a != null ? chip(a) : "";
+  switch (step.act){
+    case "start": return "The names are chosen and the game begins.";
+    case "endTurn": return `${who} ends their turn.`;
+    case "buyEvent": return `${who} buys an event card.`;
+    case "buyToken": return `${who} buys a random name token (2 souls).`;
+    case "draw2": return `${who} pays 3 souls to draw 2 tokens and keep 1.`;
+    case "playName": return `${who} plays a Scrying card: draws 3 tokens, keeps 1.`;
+    case "playSoul": return `${who} cashes in a Collect card.`;
+    case "earl": return `${who} takes the Earl's free card <span class="muted">(reveals role)</span>.`;
+    case "archQ": return `${who} compels ${T} to answer a yes/no question <span class="muted">(Archduke; reveals role)</span>.`;
+    case "name": return `${who} names ${T} as <b>${esc(nameOf(p.guess))}</b> <span class="mono">${esc(p.guess)}</span>, announcing <b>${esc(p.act)}</b> <span class="muted">· ${p.cands} possible name${p.cands===1?"":"s"} (${Math.round(100/p.cands)}% odds)</span>`;
+    case "killMarquis": return `${who} pays 4 souls to devour the marked Marquis ${T}.`;
+    case "theft4": return `${who} discards 4 Seize cards to steal a ${chip(p.color)} token from ${T}.`;
+    case "theft2": return `${who} discards 2 Seize cards to steal an event card from ${T}.`;
+    case "trade": return p.kind === "cards"
+      ? `${who} buys ${p.n} Seize card${p.n===1?"":"s"} from ${chip(p.partner)} for ${p.n*p.price} souls.`
+      : `${who} buys a ${chip(p.color)} token from ${chip(p.partner)} for ${p.price} souls <span class="muted">(+fee each side)</span>.`;
+    case "princeBuy": return `${who} buys a token from their thrall ${T} <span class="muted">(Prince; reveals role)</span>.`;
+    case "consumeSlave": return `${who} devours their thrall ${T}.`;
+    default: return `${who} ${esc(step.act)}`;
+  }
+}
+
+function playerCard(id, s, prev){
+  const p = s.players[id], q = prev ? prev.players[id] : null, step = s;
+  const cls = ["pcard"];
+  if (step.actor === id) cls.push("actor");
+  if (step.plan && (step.plan.target === id || step.plan.partner === id)) cls.push("target");
+  if (p.status === "dead") cls.push("dead");
+  const tags = [];
+  tags.push(`<span class="tag mut">${esc(G.types[id])}</span>`);
+  if (p.status === "dead") tags.push(`<span class="tag warn">devoured</span>`);
+  if (p.status === "slave") tags.push(`<span class="tag">thrall of ${esc(pname(p.master))}</span>`);
+  if (p.marked != null) tags.push(`<span class="tag warn">marked Marquis</span>`);
+  if (p.revealed && p.status !== "dead") tags.push(`<span class="tag gold">role public</span>`);
+  if (p.slaves) tags.push(`<span class="tag ok">${p.slaves} thrall${p.slaves===1?"":"s"}</span>`);
+  if (G.winner === id && i === G.steps.length - 1) tags.push(`<span class="tag ok">winner</span>`);
+
+  const d = (now, before) => { if (before == null || now === before) return ""; const x = now - before; return `<span class="delta ${x>0?"up":"down"}">${x>0?"+":""}${x}</span>`; };
+  const cardsN = Object.values(p.cards).reduce((a,b)=>a+b,0), cardsP = q ? Object.values(q.cards).reduce((a,b)=>a+b,0) : null;
+  const cards = Object.entries(p.cards).sort().map(([c,n]) => `<span class="chip${c==="Seize"?" theft":""}">${esc(c)} ×${n}</span>`).join("") || `<span class="muted">no cards</span>`;
+  const byOwner = {}; p.tokens.forEach(([o,dots]) => (byOwner[o] = byOwner[o] || []).push(dots));
+  const toks = Object.keys(byOwner).map(o => `<span class="tokgroup" title="${esc(pname(+o))}'s tokens">${byOwner[o].map(dots => tok(+o, dots)).join("")}</span>`).join("") || `<span class="muted">no tokens</span>`;
+  const tokChanged = q && JSON.stringify(q.tokens.map(t=>t.join()).sort()) !== JSON.stringify(p.tokens.map(t=>t.join()).sort());
+  const know = Object.entries(p.know).map(([t,n]) => {
+    const cls = [p.elig.includes(+t) ? "elig" : "", n === 1 ? "sure" : ""].join(" ");
+    return `<span class="${cls}" style="color:${n===1?"":"var(--c"+t+")"}" title="${esc(pname(+t))}: ${n} possible name${n===1?"":"s"}${p.elig.includes(+t)?" · allowed to name":""}">${COLORS[t]} ${n}</span>`;
+  }).join("");
+
+  return `<div class="${cls.join(" ")}" style="--pc:var(--c${id})">
+    <div class="prow">${chip(id)} ${tags.join(" ")}</div>
+    <div class="prow"><span class="secret">${esc(nameOf(p.combo))}</span> ${comboPips(p.combo, id)} <span class="muted">${esc(p.role)}</span></div>
+    <div class="stats"><span>Souls <b class="mono">${p.souls}</b>${d(p.souls, q && q.souls)}</span><span>Cards <b class="mono">${cardsN}</b>${d(cardsN, cardsP)}</span><span>Tokens <b class="mono">${p.tokens.length}</b>${d(p.tokens.length, q && q.tokens.length)}</span></div>
+    <div class="chips">${cards}</div>
+    <div class="${tokChanged?"changed":""}">${toks}</div>
+    ${p.status !== "dead" && know ? `<div class="know"><span class="label" style="border:0;padding:0">Knows</span>${know}</div>` : ""}
+  </div>`;
+}
+
+function render(){
+  const s = G.steps[i], prev = i > 0 ? G.steps[i-1] : null;
+  $("#slider").value = i;
+  $("#pos").textContent = `${i + 1} / ${G.steps.length}`;
+  $("#when").textContent = `Round ${s.round} · ${s.actor != null ? pname(s.actor) + "'s turn" : "setup"}`;
+  $("#action").innerHTML = describe(s);
+  $("#loglines").innerHTML = s.log.map(l => `<div>${esc(l)}</div>`).join("") || `<div class="muted">(nothing logged)</div>`;
+  $("#board").innerHTML = `<span>Bag <b class="mono">${s.bag}</b> tokens</span><span>Deck <b class="mono">${s.deck}</b> cards (<span class="mono">${s.thefts.deck}</span> Seize cards)</span><span>Discard <b class="mono">${s.discard}</b> (<span class="mono">${s.thefts.discard}</span> Seize cards)</span>`;
+  $("#players").innerHTML = s.players.map((_, id) => playerCard(id, s, prev)).join("");
+  // court record up to this step, newest first
+  const lines = [];
+  for (let k = 0; k <= i; k++) G.steps[k].log.forEach(l => lines.push({ k, l, r: G.steps[k].round }));
+  $("#fulllog").innerHTML = lines.reverse().map(x => `<div class="${x.k===i?"now":""}"><span class="muted">R${x.r}</span> ${esc(x.l)}</div>`).join("");
+  document.querySelectorAll("#moments button").forEach(b => b.classList.toggle("here", +b.dataset.k === i));
+}
+
+function go(k){ i = Math.max(0, Math.min(G.steps.length - 1, k)); render(); }
+function turnStart(k, dir){
+  // steps where a new turn begins: right after an endTurn
+  const isStart = j => j === 0 || G.steps[j-1].act === "endTurn";
+  let j = k + dir;
+  while (j > 0 && j < G.steps.length - 1 && !isStart(j)) j += dir;
+  return j;
+}
+function moments(){
+  const out = [];
+  G.steps.forEach((s, k) => s.log.forEach(l => { if (KEY_RE.test(l)) out.push({ k, l, r: s.round }); }));
+  return out;
+}
+
+function loadGame(idx){
+  G = DATA.games[idx]; stop();
+  $("#slider").max = G.steps.length - 1;
+  $("#moments").innerHTML = moments().map(m => `<button data-k="${m.k}"><span class="muted mono">R${m.r}</span> ${esc(m.l)}</button>`).join("") || `<span class="muted">No namings or captures.</span>`;
+  document.querySelectorAll("#moments button").forEach(b => b.onclick = () => go(+b.dataset.k));
+  go(0);
+}
+
+function stop(){ if (timer){ clearInterval(timer); timer = null; } $("#play").textContent = "Play"; }
+function play(){
+  if (timer) return stop();
+  $("#play").textContent = "Pause";
+  timer = setInterval(() => { if (i >= G.steps.length - 1) return stop(); go(i + 1); }, +$("#speed").value);
+}
+
+function init(){
+  if (!DATA || !DATA.games.length){ document.body.innerHTML = "<p style='padding:24px'>No replay data. Run <code>npm run replay</code> to generate one.</p>"; return; }
+  const st = DATA.setup;
+  $("#setup").textContent = `${st.tokens} tokens, 1–${st.dots} dots · ${st.thefts} Seize cards · bots ${st.bots} · endgame ${st.endgame} · reveal ${st.reveal}`;
+  $("#game").innerHTML = DATA.games.map((g, k) => {
+    const res = g.stalemate ? "stalled" : `won by ${pname(g.winner)} (${g.types[g.winner]}, ${g.startRoles[g.winner]}) in round ${g.rounds}`;
+    return `<option value="${k}">#${g.index + 1} · ${g.n} players · ${res} · ${g.captures.length} captures</option>`;
+  }).join("");
+  $("#game").onchange = e => loadGame(+e.target.value);
+  $("#first").onclick = () => go(0);
+  $("#last").onclick = () => go(G.steps.length - 1);
+  $("#prev").onclick = () => go(i - 1);
+  $("#next").onclick = () => go(i + 1);
+  $("#prevTurn").onclick = () => go(turnStart(i, -1));
+  $("#nextTurn").onclick = () => go(turnStart(i, 1));
+  $("#slider").oninput = e => go(+e.target.value);
+  $("#play").onclick = play;
+  $("#speed").onchange = () => { if (timer){ stop(); play(); } };
+  $("#nextMoment").onclick = () => { const m = moments().find(m => m.k > i); if (m) go(m.k); };
+  document.addEventListener("keydown", e => {
+    if (e.target.tagName === "SELECT" || e.target.tagName === "INPUT" && e.target.type !== "range") return;
+    if (e.key === "ArrowRight"){ e.preventDefault(); go(e.shiftKey ? turnStart(i, 1) : i + 1); }
+    else if (e.key === "ArrowLeft"){ e.preventDefault(); go(e.shiftKey ? turnStart(i, -1) : i - 1); }
+    else if (e.key === " "){ e.preventDefault(); play(); }
+    else if (e.key === "n" || e.key === "N"){ $("#nextMoment").click(); }
+  });
+  loadGame(0);
+}
+init();
+</script>
+</body>
+</html>
