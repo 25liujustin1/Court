@@ -234,7 +234,7 @@ details summary{cursor:pointer; font-family:var(--font-display); font-size:1.2re
 <h3>Thralls</h3>
 <p>Thralls take turns, but each turn they produce 2 souls for their binder, and any soul a thrall gets goes straight to their binder. Thralls can't name (except by Arrogation) and can't be stolen. If a binder is devoured or bound, their thralls go to whoever did it.</p>
 <h3>Turns</h3>
-<p>At the start of each of your turns you gain 2 souls; a thrall instead produces 2 souls, which go to their binder. You may make only 1 name token purchase per turn: 2 souls for a random token, or 3 souls to draw 2 and keep 1, choosing by color only; the other goes back into the bag unseen. An event card costs 1 soul. The event deck reshuffles when empty.</p>
+<p>At the start of each of your turns you gain 2 souls; a thrall instead produces 2 souls, which go to their binder. You may make only 1 name token purchase per turn: 1 soul for a random token, or 3 souls to draw 2 and keep 1, choosing by color only; the other goes back into the bag unseen. An event card costs 1 soul. The event deck reshuffles when empty.</p>
 <h3>Trading</h3>
 <p>On your turn, you may trade souls, event cards, and name tokens with any other player. For each name token traded, both the giver and the receiver pay 3 souls to the bank. Name tokens are passed face down, so only the two traders know their dots; the table sees only their colors. Event cards are passed face down. Promises about future trades are not binding unless made with a Pact. Thralls can't trade, and nobody can trade with a thrall.</p>
 <h3>Roles</h3>
@@ -292,7 +292,7 @@ const TRADE_FEE = CFG.TRADE_FEE ?? 3;   // was 5 until 2026-11-10, 4 until 2026-
 const CARD_COST = CFG.CARD_COST ?? 1;   // souls per event card bought
 const RETURN_PAY = CFG.RETURN_PAY ?? 1;   // souls you get for putting a token back in the bag (negative: it costs that much)
 const returnWord = () => RETURN_PAY>=0 ? `+${RETURN_PAY} soul${RETURN_PAY===1?"":"s"}` : `${-RETURN_PAY} soul${RETURN_PAY===-1?"":"s"}`;
-const RANDOM_TOKEN_COST = CFG.RANDOM_TOKEN_COST ?? 2;   // random name token (2 since 2026-11-13; was 1 from 2026-11-10, 2 before that); drawing 2 and keeping 1 costs 3
+const RANDOM_TOKEN_COST = CFG.RANDOM_TOKEN_COST ?? 1;   // random name token (1; was 2 before 2026-11-10, and briefly on 2026-11-12 and 2026-11-13); drawing 2 and keeping 1 costs 3
 const INCOME = 2;
 // Capture rules (defaults = current rules; the sim can switch variants through CFG)
 const SLAVE_INCOME = CFG.SLAVE_INCOME ?? 2;             // souls a slave produces for their master each turn

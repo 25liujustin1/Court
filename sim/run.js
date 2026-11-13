@@ -25,7 +25,7 @@
 //   --set-swaps on|off   bots swap 1 token for 1 with anyone when it leaves both with tighter sets (and save souls for the fees)
 //   --card-cost N        souls per event card (rules: 1)
 //   --trade-fee N        souls each side pays per name token traded (rules: 3)
-//   --random-token 1|2        price of a random name token (rules: 2)
+//   --random-token 1|2        price of a random name token (rules: 1)
 //   --deck Welfare=6,Ward=8   override event card counts (card names as in the rules)
 //   --replay FILE.html        record every action of every game and write a step-through viewer (use with a few --games)
 //   --arch eager|patient      eager: Archduke/Duke ask as soon as possible; patient: only when the answer lets them name next
@@ -33,7 +33,7 @@ const { loadPage } = require('./page');
 const { Bots, TYPES } = require('./bots');
 
 function args() {
-  const a = { games: 1000, players: '4', bots: 'mix', seed: 1, maxRounds: 60, json: false, arch: 'eager', trade: 'on', cardTrade: 'on', tokens: 4, dots: 4, thefts: 12, reveal: 'always', cap: 'none', endgame: 'dig', replay: null, randomToken: 2, fakes: 4, fakeElig: 'public', tokenRounds: 'off', holdCap: '6', capThralls: 'on', returnPay: 1, capSpoils: 'off', devourSlots: 0, swaps: 'off', setSwaps: 'off', tradeFee: 3, cardCost: 1, arrogation: 'forced', marquis: 'rules', welfare: 'poorest', enslave: 'new', consume: 'half+4', fate: 'smart', marquisKill: 'free' };
+  const a = { games: 1000, players: '4', bots: 'mix', seed: 1, maxRounds: 60, json: false, arch: 'eager', trade: 'on', cardTrade: 'on', tokens: 4, dots: 4, thefts: 12, reveal: 'always', cap: 'none', endgame: 'dig', replay: null, randomToken: 1, fakes: 4, fakeElig: 'public', tokenRounds: 'off', holdCap: '6', capThralls: 'on', returnPay: 1, capSpoils: 'off', devourSlots: 0, swaps: 'off', setSwaps: 'off', tradeFee: 3, cardCost: 1, arrogation: 'forced', marquis: 'rules', welfare: 'poorest', enslave: 'new', consume: 'half+4', fate: 'smart', marquisKill: 'free' };
   const v = process.argv.slice(2);
   for (let i = 0; i < v.length; i++) {
     const k = v[i].replace(/^--/, '');

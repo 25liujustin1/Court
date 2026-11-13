@@ -42,7 +42,7 @@ There is no limit on how many souls you can spend per turn, or on how many souls
 
 On your turn you may make 1 name token purchase:
 
-- Pay 2 souls for a random name token from the bag.
+- Pay 1 soul for a random name token from the bag.
 - Pay 3 souls to draw 2 name tokens from the bag without looking at their dots, and keep 1 of your choice by color. Put the other back into the bag unseen.
 
 You can only buy a name token while you hold fewer tokens than your holding cap (see Name tokens).
