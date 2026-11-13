@@ -12,8 +12,8 @@ const assert = require('assert');
     S.players[0].combo = '1112'; S.players[1].combo = '2233'; S.players[2].combo = '1123'; S.players[3].combo = '1111';
     startGame();
     // give B's tokens out: A holds 2, C holds 1, 1 stays in bag
-    const bt = S.bag.filter(t => t.owner === 1);
-    S.bag = S.bag.filter(t => t.owner !== 1 || t === bt[3]);
+    const bt = S.bag.filter(t => t.owner === 1 && t.dots > 0);   // B's numbered tokens (B's blanks stay in the bag)
+    S.bag = S.bag.filter(t => !bt.slice(0, 3).includes(t));
     S.players[0].tokens.push(bt[0], bt[1]); S.players[2].tokens.push(bt[2]);
     S.players[1].status = 'slave'; S.players[1].master = 0;
     window.__before = { A: S.players[0].tokens.filter(t => t.owner === 1).length, C: S.players[2].tokens.filter(t => t.owner === 1).length, bag: S.bag.filter(t => t.owner === 1).length };
@@ -34,7 +34,7 @@ const assert = require('assert');
     return {
       before: window.__before,
       after: { A: own(S.players[0].tokens).length, C: own(S.players[2].tokens).length, bag: own(S.bag).length },
-      dots: [...own(S.players[0].tokens), ...own(S.players[2].tokens), ...own(S.bag)].map(t => t.dots).sort().join(''),
+      dots: [...own(S.players[0].tokens), ...own(S.players[2].tokens), ...own(S.bag)].filter(t => t.dots > 0).map(t => t.dots).sort().join(''),   // blanks stay blank
       Bcombo: S.players[1].combo, Bstatus: S.players[1].status, Astatus: S.players[0].status, Amaster: S.players[0].master,
     };
   });

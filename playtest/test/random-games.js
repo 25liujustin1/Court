@@ -52,7 +52,7 @@ async function playOne(browser, g) {
   const n = await page.evaluate(() => S.players.length);
   for (let i = 0; i < n; i++) { await act('revealPick'); await act('randomPick'); await act('lockPick'); }
 
-  const opts = ['buyToken', 'buyEvent', 'buyEvent', 'buyToken', 'name', 'earl', 'archQ', 'princeBuy', 'consumeSlave', 'killMarquis', 'playSoul', 'playName', 'theft2', 'theft4', 'playContract', 'trade', 'trade', 'draw2'];
+  const opts = ['buyToken', 'buyEvent', 'buyEvent', 'buyToken', 'name', 'earl', 'archQ', 'princeBuy', 'consumeSlave', 'killMarquis', 'playSoul', 'playName', 'playRestore', 'theft2', 'theft4', 'playContract', 'trade', 'trade', 'draw2'];
   let turns = 0;
   for (; turns < MAX_TURNS && !errors.length; turns++) {
     if (await phase() === 'over') break;
@@ -87,7 +87,7 @@ async function playOne(browser, g) {
     let lifted = S.capLifted && !S.log.some(l => /empty for the first time/.test(l.t)), offRound = 0; const offLines = [];
     for (const l of [...S.log].reverse()) {
       if (/empty for the first time/.test(l.t)) lifted = true;
-      if (!lifted && l.r % 2 === 0 && /bought a name token\.|paid \d+ souls, drew|played Scrying/.test(l.t)) { offRound++; offLines.push(`R${l.r}: ${l.t}`); }
+      if (TOKEN_ROUNDS && !lifted && l.r % 2 === 0 && /bought a name token\.|paid \d+ souls, drew|played Scrying/.test(l.t)) { offRound++; offLines.push(`R${l.r}: ${l.t}`); }
     }
     return {
       phase: S.phase, round: S.round, winner: S.winner, n: S.players.length,
@@ -98,6 +98,7 @@ async function playOne(browser, g) {
       byOwner, offRound, offLines, nearby: (() => { const L = [...S.log].reverse(); const i = L.findIndex(l => !/x/.test('') && l.r % 2 === 0 && /bought a name token\.|paid \d+ souls, drew|played Scrying/.test(l.t)); return i < 0 ? [] : L.slice(Math.max(0, i - 8), i + 2).map(l => `R${l.r}: ${l.t}`); })(),
       players: S.players.map(p => ({ id: p.id, status: p.status, master: p.master, masterStatus: p.master == null ? null : S.players[p.master].status })),
       free: S.players.filter(p => p.status === 'alive').map(p => p.id),
+      perColor: CFG.TOKENS + FAKES,   // numbered + blank tokens per color
     };
   });
   await page.screenshot({ path: path.resolve(__dirname, 'last-game.png') });
@@ -110,7 +111,7 @@ async function playOne(browser, g) {
   assert.strictEqual(r.offRound, 0, [`${tag}: name tokens bought in an even round before the bag emptied:`, ...r.offLines, 'context:', ...r.nearby].join('\n    '));
   for (const p of r.players) {
     const held = r.byOwner[p.id] || 0;
-    assert.strictEqual(held, p.status === 'dead' ? 0 : 4, `${tag}: player ${p.id} (${p.status}) has ${held} tokens in play`);
+    assert.strictEqual(held, p.status === 'dead' ? 0 : r.perColor, `${tag}: player ${p.id} (${p.status}) has ${held} tokens in play`);
     if (p.status === 'slave') assert.ok(p.masterStatus && p.masterStatus !== 'dead', `${tag}: slave ${p.id} has a dead or missing master`);
     else assert.strictEqual(p.master, null, `${tag}: non-slave ${p.id} has a master`);
   }

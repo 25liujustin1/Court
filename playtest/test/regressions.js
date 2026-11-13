@@ -4,7 +4,7 @@ const assert = require('assert');
 const path = require('path');
 
 const cases = {
-  async 'Unusable Insubordination is discarded and the drawer draws another card'(page) {
+  async 'Legacy Insubordination (sim variant ARROGATION_MERGE "off"): unusable, it is discarded and the drawer draws another card'(page) {
     const r = await page.evaluate(async () => {
       newGame(['A', 'B', 'C', 'D']);
       S.players.forEach((p, i) => p.combo = ['1112', '2233', '1111', '1122'][i]);
@@ -161,7 +161,29 @@ const cases = {
     assert.deepStrictEqual(r, { offered: true, inDeck: 0, discarded: 1, inHand: false });
   },
 
-  async 'Scrying card: only in token rounds, and it uses up the token purchase for the turn'(page) {
+  async 'Restoration: the holder chooses which of your tokens to give back (a blank if they like)'(page) {
+    const r = await page.evaluate(async () => {
+      newGame(['A', 'B', 'C', 'D']);
+      S.players.forEach((p, i) => p.combo = ['1112', '2233', '1111', '1122'][i]);
+      startGame();
+      const A = S.players[0], B = S.players[1];
+      const real = S.bag.find(t => t.owner === 0 && t.dots > 0), blank = S.bag.find(t => t.owner === 0 && t.dots === 0);
+      S.bag = S.bag.filter(t => t !== real && t !== blank); B.tokens.push(real, blank);
+      A.events.push('Restoration'); S.current = 0;
+      const titles = [];
+      window.ask = async o => { titles.push(o.title);
+        if (/^Restoration/.test(o.title)) return 1;
+        if (/give A 1 of their tokens/.test(o.title)) return o.options.find(x => /blank/.test(x.label)).value;
+        return true; };
+      await ACT.playRestore();
+      return { Aholds: A.tokens.map(t => t.dots), Bholds: B.tokens.filter(t => t.owner === 0).map(t => t.dots), card: A.events.includes('Restoration'), discarded: S.discard.includes('Restoration'), asked: titles.some(x => /^B: give A/.test(x)) };
+    });
+    assert.deepStrictEqual(r.Aholds, [0], 'A should get the blank B chose');
+    assert.strictEqual(r.Bholds.length, 1); assert.ok(r.Bholds[0] > 0);
+    assert.strictEqual(r.card, false); assert.strictEqual(r.discarded, true); assert.strictEqual(r.asked, true, 'B (the holder) should be the one asked');
+  },
+
+  async 'Scrying card: works in any round and uses up the token purchase for the turn'(page) {
     const r = await page.evaluate(async () => {
       newGame(['A', 'B', 'C', 'D']);
       S.players.forEach((p, i) => p.combo = ['1112', '2233', '1111', '1122'][i]);
@@ -170,15 +192,11 @@ const cases = {
       const A = S.players[0]; A.souls = 20; S.current = 0; S.tokenBought = false;
       S.round = 2; A.events.push('Scrying');
       await ACT.playName();
-      const evenRound = { held: A.events.includes('Scrying'), tokens: A.tokens.length };
-      S.round = 3;
-      await ACT.playName();
-      const oddRound = { held: A.events.includes('Scrying'), tokens: A.tokens.length, tokenBought: S.tokenBought };
+      const evenRound = { held: A.events.includes('Scrying'), tokens: A.tokens.length, tokenBought: S.tokenBought };
       await ACT.buyToken();
-      return { evenRound, oddRound, afterBuy: A.tokens.length };
+      return { evenRound, afterBuy: A.tokens.length };
     });
-    assert.deepStrictEqual(r.evenRound, { held: true, tokens: 0 }, 'Scrying card worked in a card round');
-    assert.deepStrictEqual(r.oddRound, { held: false, tokens: 1, tokenBought: true });
+    assert.deepStrictEqual(r.evenRound, { held: false, tokens: 1, tokenBought: true }, 'Scrying card should work in an even round');
     assert.strictEqual(r.afterBuy, 1, 'bought a token after using a Scrying card the same turn');
   },
 
@@ -229,7 +247,7 @@ const cases = {
     assert.deepStrictEqual(r, { payer: 6, namer: 7, namerCards: true, A: 'dead' }); // payer 10 - 4; namer gets A's 3 souls + 4 bonus
   },
 
-  async 'A deck of only unusable Insubordinations does not loop forever'(page) {
+  async 'Legacy Insubordination (sim variant ARROGATION_MERGE "off"): a deck of only unusable ones does not loop forever'(page) {
     const r = await page.evaluate(async () => {
       newGame(['A', 'B', 'C', 'D']);
       S.players.forEach((p, i) => p.combo = ['1112', '2233', '1111', '1122'][i]);

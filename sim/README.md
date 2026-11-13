@@ -10,6 +10,7 @@ Strategy bots play thousands of games on the real rules code: `page.js` loads th
 - `--card-trade on|off` (default on): bots buy Seize cards to complete a set of 4 in one turn (saving souls if needed). Sellers ask 1 + the Seize cards they hold, per card, and won't sell from a hand of 3. Card hands are hidden, so this stands in for asking the table who will sell. No other card types are traded.
 - `--arch eager|patient`: when Archduke (and Arrogation Duke) bots ask. Eager (default) asks as soon as anyone is askable; patient asks only when the answer lets it name that player next turn
 - `--tokens 4 --dots 4 --thefts 12`: name tokens per player, max dots per token, Seize cards in the deck (defaults are the current rules). The page reads these from `globalThis.MADK_CONFIG`; bigger name tables take extra Goetia names from `EXTRA_NAMES` in the page.
+- `--fakes N --fake-elig public|real`: N blank (fake) tokens per color go into the bag (rules: 4). `public`: blanks count toward naming eligibility like any token; `real`: only real tokens count. Bots ignore blanks when narrowing names but never bluff with them or sell them on purpose.
 - `--reveal always|smart` (default always): smart aggressors and hoarders only use a role ability if, once their role is public, the rival holding the most of their tokens would still face at least 2 (aggressor) or 3 (hoarder) possible names.
 - `--seed`, `--max-rounds` (default 60; a game still going is a stalemate), `--json` for raw per-game records
 

@@ -33,7 +33,7 @@ class Knowledge {
   }
   cands(viewer, X) {
     const { api } = this;
-    const dots = [...((this.seen[viewer] || {})[X.id] || new Map()).values()].map(String);
+    const dots = [...((this.seen[viewer] || {})[X.id] || new Map()).values()].filter(d => d > 0).map(String);   // blank tokens say nothing about the name
     const allow = (this.allowed[viewer] || {})[X.id];
     return api.COMBOS.filter(c => subMultiset(dots, c)
       && (!X.revealed || api.roleOfCombo(c) === api.baseRole(X))
@@ -60,7 +60,8 @@ class Bots {
   }
   get S() { return this.api.S; }
   // Endgame: the bag is empty, so the only new information comes from stealing tokens.
-  inEndgame() { return this.endgame !== 'off' && this.S.bag.length === 0; }
+  // (With blanks under a holding cap the bag never empties, so "empty" means no real tokens left in it: a stand-in for players giving up on the bag.)
+  inEndgame() { return this.endgame !== 'off' && !this.S.bag.some(t => t.dots > 0); }
   type(id) { return TYPES[this.types[id]]; }
   idOf(name) { return +name.slice(1); }
 
@@ -68,11 +69,11 @@ class Bots {
   colorScore(p, c) {
     const S = this.S, T = this.type(p.id), api = this.api;
     if (T.random) return this.rng();
-    if (c === p.id) return T.keepOwn && api.countColor(p, p.id) < 4 ? 10 : -1;
+    if (c === p.id) return T.keepOwn && api.countReal(p, p.id) < api.CFG.TOKENS ? 10 : -1;
     const X = S.players[c];
     if (X.status === 'dead') return -5;
     if (X.status === 'slave') return -2;
-    const mine = api.countColor(p, c);
+    const mine = api.countReal(p, c);   // the bot knows which of its own tokens are real
     const rival = Math.max(0, ...S.players.filter(o => o.id !== p.id && o.id !== c && o.status !== 'dead').map(o => api.countColor(o, c)));
     const lead = mine + 1 - rival;
     return 3 + (lead >= 1 ? 2 : lead === 0 ? 1 : 0) - this.know.cands(p.id, X).length / api.COMBOS.length;
@@ -152,34 +153,119 @@ class Bots {
       if (this.archPolicy === 'patient' && !T.random) qs = qs.filter(x => x.ok && x.n > T.nameAt && x.n <= 2 * T.nameAt);
       if (qs.length) add('archQ', { target: qs[0].t.id });
     }
-    if (api.countCard(p, 'Seize') >= 4) { const best = this.theftTarget(p); if (best) add('theft4', best); }
+    if (api.countCard(p, 'Seize') >= 4 && !api.atCap(p)) { const best = this.theftTarget(p); if (best) add('theft4', best); }
+    // Restoration: take a token back from whoever holds the most of mine (turtles as soon as anyone holds one, others at 2+)
+    if (api.atCap(p)) { /* at the holding cap: can't take tokens back */ }
+    else if (!T.random && api.countCard(p, 'Restoration')) {
+      const hold = S.players.filter(o => o.id !== p.id && o.status !== 'dead' && api.countColor(o, p.id)).sort((a, b) => api.countColor(b, p.id) - api.countColor(a, p.id));
+      if (hold.length && api.countColor(hold[0], p.id) >= (T.keepOwn ? 1 : 2)) add('playRestore', { target: hold[0].id });
+    } else if (T.random && api.countCard(p, 'Restoration') && this.rng() < 0.3) {
+      const hold = S.players.filter(o => o.id !== p.id && o.status !== 'dead' && api.countColor(o, p.id));
+      if (hold.length) add('playRestore', { target: pickOne(hold, this.rng).id });
+    }
     if (this.cardTrading && !T.random) { const deal = this.theftDeal(p); if (deal) add('trade', deal, `tradeCards:${deal.partner}`); }
     if (T.random && api.countCard(p, 'Seize') >= 2) {
       const vs = S.players.filter(v => v.id !== p.id && v.status !== 'dead' && v.events.length);
       if (vs.length) add('theft2', { target: pickOne(vs, this.rng).id });
     }
-    if (api.countCard(p, 'Scrying') && S.bag.length && api.tokenRound() && !S.tokenBought) add('playName');
-    else if (!T.random && api.countCard(p, 'Scrying') >= 2 && (!S.bag.length || this.inEndgame())) add('scry2');
-    if (api.tokenRound() && !S.tokenBought && S.bag.length) {
-      if (api.canSpend(p, 3)) add('draw2'); else if (api.canSpend(p, api.RANDOM_TOKEN_COST)) add('buyToken');
+    // holding cap: at the cap, put a blank back first so the turn's token buy can go ahead
+    // at the holding cap, put a token back to make room for something you want this turn:
+    // a buy (not once the bag holds nothing real), a 4-Seize steal, or a Restoration
+    if (api.HOLD_CAP !== Infinity && api.atCap(p) && p.status === 'alive') {
+      const buy = !S.tokenBought && S.bag.length && api.canSpend(p, Math.max(0, -api.RETURN_PAY) + api.RANDOM_TOKEN_COST) && !(!T.random && this.inEndgame() && api.FAKES > 0);
+      const steal = api.countCard(p, 'Seize') >= 4 && this.theftTarget(p);
+      const restore = api.countCard(p, 'Restoration') && S.players.some(o => o.id !== p.id && o.status !== 'dead' && api.countColor(o, p.id) >= (T.keepOwn ? 1 : 2));
+      if (buy || steal || restore) { const t = this.worstToken(p); if (t) add('returnToken', { tokenId: t.id }); }
     }
-    if (br === 'Prince' && canReveal && api.canSpend(p, 2)) {
+    // endgame (no real tokens left in the bag): drawing more is pointless, so spend on cards and steals instead
+    const bagDry = !T.random && this.inEndgame() && api.FAKES > 0;
+    const capOK = !api.atCap(p) && !bagDry;
+    if (capOK && api.countCard(p, 'Scrying') && S.bag.length && api.tokenRound() && !S.tokenBought) add('playName');
+    else if (!T.random && api.countCard(p, 'Scrying') >= 2 && (!S.bag.length || this.inEndgame())) add('scry2');
+    const swapHold = this.setSwaps && !T.random ? (this.swapDeal(p), this.saveSwap[p.id] || 0) : 0;
+    if (capOK && api.tokenRound() && !S.tokenBought && S.bag.length) {
+      if (api.canSpend(p, 3) && p.souls - 3 >= swapHold) add('draw2'); else if (api.canSpend(p, api.RANDOM_TOKEN_COST) && p.souls - api.RANDOM_TOKEN_COST >= swapHold) add('buyToken');
+    }
+    if (capOK && br === 'Prince' && canReveal && api.canSpend(p, 2)) {
       const sl = api.slavesOf(p).filter(s => s.tokens.length);
       if (sl.length) add('princeBuy', { target: sl[0].id });
     }
     if (br === 'Earl' && !S.earlUsed && canReveal) add('earl');
     if (this.trading && !T.random) { const deal = this.bestDeal(p); if (deal) add('trade', deal); }
+    if (this.setSwaps && !T.random) { const sw = this.swapDeal(p); if (sw) add('trade', sw, `swap:${sw.partner}:${sw.giveTok}`); }
     if (br !== 'Prince' && api.slavesOf(p).length && this.rng() < (T.random ? 0.1 : T.consumeSlaveP)) add('consumeSlave', { target: api.slavesOf(p)[0].id });
     const cardsLeft = T.random ? 3 : T.maxCards;
     const tokenSave = this.trading && this.saveFor && this.saveFor[p.id] && this.saveFor[p.id] !== Infinity ? this.saveFor[p.id] : 0;
     const cardSave = this.cardTrading && this.saveCards ? this.saveCards[p.id] || 0 : 0;
-    const saving = Math.max(tokenSave, cardSave);
+    const swapSave = this.setSwaps && this.saveSwap ? this.saveSwap[p.id] || 0 : 0;
+    const saving = Math.max(tokenSave, cardSave, swapSave);
     const dig = !T.random && this.inEndgame(); // endgame: spend everything above a small reserve on cards, digging for Seize cards
     const reserve = dig ? 2 : Math.max(T.reserve || 0, saving);
-    if (api.canSpend(p, 1) && p.souls - 1 >= reserve && (dig || (this.cardsThisTurn || 0) < cardsLeft)) out.push({ act: 'buyEvent', plan: {} });
+    if (api.canSpend(p, api.CARD_COST) && p.souls - api.CARD_COST >= reserve && (dig || (this.cardsThisTurn || 0) < cardsLeft)) out.push({ act: 'buyEvent', plan: {} });
 
     if (T.random) { if (!out.length || this.rng() < 0.2) return null; return pickOne(out, this.rng); }
     return out[0] || null;
+  }
+
+  // Holding cap: the token this bot would part with first (blanks, then the color it values least).
+  // Real tokens only if some other color is worth more to it.
+  worstToken(p, allowReal = true) {
+    const blank = p.tokens.find(t => t.dots === 0);
+    if (blank) return blank;
+    if (!allowReal || !p.tokens.length) return null;
+    const sc = c => this.colorScore(p, c);
+    const worst = p.tokens.reduce((a, t) => sc(t.owner) < sc(a.owner) ? t : a);
+    const best = Math.max(...this.S.players.filter(x => x.status === 'alive' && x.id !== worst.owner).map(x => sc(x.id)));
+    return best > sc(worst.owner) ? worst : null;
+  }
+
+  // ---------- set swaps ----------
+  // How many of color c this player counts as holding when judging a swap (own holdings: real tokens only).
+  held(x, c) { return this.api.countReal(x, c); }
+  // A color worth collecting: a free rival who isn't the player themself.
+  wantColor(x, c) { return c !== x.id && this.S.players[c].status === 'alive'; }
+  // Would player x (giving 1 of color g, getting 1 of color r) be better consolidated afterwards?
+  // Giving away blanks always helps; dead or enslaved colors are worth nothing; otherwise you need to end up
+  // with more of r than you had of g (from (1,1) to (2,0) counts).
+  swapGain(x, g, r, giveBlank) {
+    if (!this.wantColor(x, r)) return -1;
+    if (g === x.id) return -1;                                   // keep tokens of your own color out of rivals' hands
+    const hr = this.held(x, r);
+    if (giveBlank || !this.wantColor(x, g)) return hr + 1;
+    const hg = this.held(x, g);
+    return hr >= hg ? hr + 1 - (hg - 1) : -1;
+  }
+  // 1-for-1 token swap that leaves both sides with tighter sets. Both pay the fee twice (one token each way).
+  swapDeal(p) {
+    const S = this.S, api = this.api;
+    this.saveSwap = this.saveSwap || {};
+    this.saveSwap[p.id] = 0;
+    if (p.status !== 'alive') return null;
+    const fees = 2 * api.TRADE_FEE;
+    let best = null;
+    for (const t of p.tokens) {
+      const g = t.owner;
+      for (const q of S.players) {
+        if (q.id === p.id || q.status !== 'alive') continue;
+        for (const r of new Set(q.tokens.map(u => u.owner))) {
+          if (r === g || r === q.id) continue;
+          const mine = this.swapGain(p, g, r, t.dots === 0);
+          if (mine <= 0) continue;
+          // q's view: they can't see t's dots, so they count it as real; they'd give a blank of r if they have one
+          const qBlank = q.tokens.some(u => u.owner === r && u.dots === 0);
+          const theirs = this.swapGain(q, r, g, qBlank);
+          if (theirs <= 0) continue;
+          // prefer swaps that move me toward naming someone, then the ones that help me most
+          const s = mine + (this.know.cands(p.id, S.players[r]).length > this.type(p.id).nameAt ? 1 : 0);
+          const ok = q.souls >= fees;   // can the partner pay their fees right now?
+          if (!best || (ok && !best.ok) || (ok === best.ok && s > best.s)) best = { s, ok, partner: q.id, color: r, giveTok: t.id };
+        }
+      }
+    }
+    if (!best) return null;
+    if (fees > Math.min(p.souls, api.SPEND_CAP - S.spent)) { this.saveSwap[p.id] = fees; return null; }
+    if (!best.ok) { this.saveSwap[p.id] = fees; return null; }   // keep the souls until the partner can pay too
+    return { kind: 'swap', partner: best.partner, color: best.color, giveTok: best.giveTok, price: 0, swap: true };
   }
 
   // ---------- trading ----------
@@ -206,14 +292,18 @@ class Bots {
   bestDeal(p) {
     const S = this.S, api = this.api, T = this.type(p.id);
     if (p.status !== 'alive') return null;   // thralls can't trade
-    const budget = Math.min(p.souls, api.SPEND_CAP - S.spent) - api.TRADE_FEE; // what's left for the price after your fee
-    const sellers = S.players.filter(q => q.id !== p.id && q.status === 'alive' && q.souls >= api.TRADE_FEE); // slaves can't sell tokens
+    // at the holding cap you can only swap: give 1 token (a blank or one you value least) for the one you want
+    const swap = api.atCap(p) && this.swaps ? this.worstToken(p, true) : null;
+    if (api.atCap(p) && !swap) return null;
+    const fees = api.TRADE_FEE * (swap ? 2 : 1);
+    const budget = Math.min(p.souls, api.SPEND_CAP - S.spent) - fees; // what's left for the price after your fee
+    const sellers = S.players.filter(q => q.id !== p.id && q.status === 'alive' && q.souls >= fees); // slaves can't sell tokens
     const deals = [];
     if (T.keepOwn && !this.inEndgame()) for (const q of sellers) if (api.countColor(q, p.id)) deals.push({ partner: q.id, color: p.id, score: 10 });
     if (p.status === 'alive') {
       for (const X of S.players) {
         if (X.id === p.id || X.status !== 'alive') continue;
-        const m = api.countColor(p, X.id);
+        const m = api.countReal(p, X.id);
         if (this.know.cands(p.id, X).length <= T.nameAt) continue; // already sure enough
         if (m + 1 < this.tokensNeeded(T.nameAt) - 1) continue;     // too far away to be worth it yet
         for (const q of sellers) if (q.id !== X.id && api.countColor(q, X.id)) deals.push({ partner: q.id, color: X.id, score: m + 1 });
@@ -221,11 +311,12 @@ class Bots {
     }
     // token counts are public, so the buyer can work out each seller's asking price before offering
     deals.forEach(d => { d.price = this.askingPrice(S.players[d.partner], d.color); });
-    const possible = deals.filter(d => d.price + api.TRADE_FEE <= api.SPEND_CAP);
+    if (swap) deals.forEach(d => { d.swap = true; d.giveTok = swap.id; });
+    const possible = deals.filter(d => !(swap && d.color === swap.owner) && d.price + fees <= api.SPEND_CAP);
     const affordable = possible.filter(d => d.price <= budget).sort((a, b) => (b.score - a.score) || (a.price - b.price));
     // nothing affordable yet but something worth buying: save souls instead of buying cards
     this.saveFor = this.saveFor || {};
-    this.saveFor[p.id] = affordable.length ? 0 : Math.min(...possible.map(d => d.price + api.TRADE_FEE), Infinity);
+    this.saveFor[p.id] = affordable.length ? 0 : Math.min(...possible.map(d => d.price + fees), Infinity);
     return affordable[0] || null;
   }
   // Expected names a rival would face for p if p's role were public and the rival held k of p's tokens
@@ -238,7 +329,7 @@ class Bots {
     const role = api.roleOfCombo(p.combo), C = api.COMBOS.filter(c => api.roleOfCombo(c) === role), t = [...p.combo];
     let tot = 0, n = 0;
     const pick = (i, cur) => {
-      if (cur.length === k) { tot += C.filter(c => subMultiset(cur, c)).length; n++; return; }
+      if (cur.length === Math.min(k, t.length)) { tot += C.filter(c => subMultiset(cur, c)).length; n++; return; }
       for (let j = i; j < t.length; j++) pick(j + 1, cur.concat(t[j]));
     };
     pick(0, []);
@@ -254,7 +345,7 @@ class Bots {
         // focus: steal toward the player you're closest to finishing
         if (c === p.id && this.inEndgame()) continue; // endgame: steal to attack, not to hide
         const base = this.colorScore(p, c);
-        const s = base > 0 && c !== p.id ? base + 2 * this.api.countColor(p, c) : base;
+        const s = base > 0 && c !== p.id ? base + 2 * this.api.countReal(p, c) : base;
         if (s > 0 && (!best || s > best.s)) best = { s, target: v.id, color: c };
       }
     }
@@ -304,21 +395,37 @@ class Bots {
     const cur = S.players[S.current];
     let m;
 
-    if (title === 'Who are you naming?' || /^(Compel a yes\/no|Buy a token from which thrall|Devour which thrall|Devour which marked Marquis|Steal an event card|Steal a name token)/.test(title)) return plan.target;
+    if (title === 'Who are you naming?' || /^(Compel a yes\/no|Buy a token from which thrall|Devour which thrall|Devour which marked Marquis|Steal an event card|Steal a name token|Restoration: take a token back)/.test(title)) return plan.target;
     if (title === 'Which color?') return plan.color;
     // trades: the buyer's plan stands for what the two agreed out loud
     if (title === 'Trade with…') return plan.partner;
-    if (/^What you give P\d$/.test(title)) return { souls: plan.kind === 'cards' ? plan.n * plan.price : plan.price, idx: [], tidx: [] };
+    if (/^What you give P\d$/.test(title)) return { souls: plan.kind === 'cards' ? plan.n * plan.price : plan.price, idx: [], tidx: plan.swap ? [cur.tokens.findIndex(t => t.id === plan.giveTok)].filter(i => i >= 0) : [] };
+    // Restoration, giver's side: hand back a blank if you have one, otherwise any of their tokens
+    if ((m = title.match(/^(P\d): give (P\d) 1 of their tokens$/))) {
+      const giver = S.players[this.idOf(m[1])];
+      const blank = vals.find(k => giver.tokens[k] && giver.tokens[k].dots === 0);
+      return blank != null ? blank : pickOne(vals, this.rng);
+    }
+    if (title.startsWith('Return which token to the bag?')) { const i = cur.tokens.findIndex(t => t.id === plan.tokenId); return i >= 0 ? i : null; }
     if ((m = title.match(/^(P\d): (P\d) offers/)) && plan.kind === 'cards') {
       const o = S.players[this.idOf(m[1])];
       const idx = o.events.map((c, i) => c === plan.card ? i : -1).filter(i => i >= 0);
       if (idx.length < plan.n || plan.price < this.theftPrice(o)) return null;
       return { souls: 0, idx: idx.slice(0, plan.n), tidx: [] };
     }
+    if ((m = title.match(/^(P\d): (P\d) offers/)) && plan.kind === 'swap') {
+      const o = S.players[this.idOf(m[1])];
+      const toks = o.tokens.map((t, i) => ({ t, i })).filter(x => x.t.owner === plan.color);
+      const given = cur.tokens.find(t => t.id === plan.giveTok);
+      if (o.status !== 'alive' || !toks.length || !given || o.souls < 2 * api.TRADE_FEE) return null;
+      const blank = toks.find(x => x.t.dots === 0);
+      if (this.swapGain(o, plan.color, given.owner, !!blank) <= 0) return null;
+      return { souls: 0, idx: [], tidx: [(blank || pickOne(toks, this.rng)).i] };
+    }
     if ((m = title.match(/^(P\d): (P\d) offers/))) {
       const o = S.players[this.idOf(m[1])];
       const toks = o.tokens.map((t, i) => ({ t, i })).filter(x => x.t.owner === plan.color);
-      if (o.status !== 'alive' || !toks.length || o.souls < api.TRADE_FEE || plan.price < this.askingPrice(o, plan.color)) return null;
+      if (o.status !== 'alive' || !toks.length || o.souls < api.TRADE_FEE * (plan.swap ? 2 : 1) || plan.price < this.askingPrice(o, plan.color)) return null;
       return { souls: 0, idx: [], tidx: [pickOne(toks, this.rng).i] };
     }
     if (title.startsWith('Announce:')) return vals.includes(plan.act) ? plan.act : vals[0];
@@ -329,7 +436,7 @@ class Bots {
     if (/: give away any tokens you just took\?$/.test(title)) return [];   // bots keep their spoils
     if (title === 'Keep 2 of the top cards') {
       const cards = [...body.matchAll(/data-k="(\d+)"> ([A-Za-z]+)/g)].map(x => x[2]);
-      const want = { Seize: 5, Ward: 4, Collect: 3, Scrying: 2, Pact: 1 };
+      const want = { Seize: 5, Ward: 4, Restoration: 3, Collect: 3, Scrying: 2, Pact: 1 };
       return cards.map((c, i) => ({ i, s: want[c] || 0 })).sort((a, b) => b.s - a.s).slice(0, 2).map(x => x.i);
     }
     if ((m = title.match(/^(P\d): Keep (\d+) of (P\d)'s name tokens$/))) {

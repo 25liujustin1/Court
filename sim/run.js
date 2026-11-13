@@ -16,7 +16,16 @@
 //                             lead: the richest gives away half their lead over 2nd; capturesN: the top capturer pays N to each other player
 //   --marquis rules|instant|nobonus|both   instant: naming a Marquis correctly devours it at once; nobonus: a Marquis's devours earn no +4
 //   --arrogation forced|forcedN|optionalN|off  rules = forced, 4 copies (Insubordination merged in); off = the old separate Arrogation 2 + Insubordination 2
-//   --random-token 1|2        price of a random name token (rules: 1; was 2)
+//   --fakes N --fake-elig public|real  N blank tokens per color in the bag (rules: 0); public: blanks count toward naming eligibility, real: only real tokens do
+//   --token-rounds on|off      on (old rules, removed 2026-11-12): tokens only buyable in odd rounds until the bag first empties
+//   --hold-cap none|N          holding cap of N tokens (+N per thrall); return 1 blank per turn to the bag (rules: none)
+//   --devour-slots N     each devour raises the devourer's holding cap by N for good (rules: 0)
+//   --cap-spoils on|off  holding cap also limits the tokens you take when binding or devouring (rules: off)
+//   --return-pay N --swaps on|off  holding cap: souls you get for putting a token back (rules: 1; negative = it costs); bots at the cap swap 1 token for 1
+//   --set-swaps on|off   bots swap 1 token for 1 with anyone when it leaves both with tighter sets (and save souls for the fees)
+//   --card-cost N        souls per event card (rules: 1)
+//   --trade-fee N        souls each side pays per name token traded (rules: 3)
+//   --random-token 1|2        price of a random name token (rules: 2)
 //   --deck Welfare=6,Ward=8   override event card counts (card names as in the rules)
 //   --replay FILE.html        record every action of every game and write a step-through viewer (use with a few --games)
 //   --arch eager|patient      eager: Archduke/Duke ask as soon as possible; patient: only when the answer lets them name next
@@ -24,7 +33,7 @@ const { loadPage } = require('./page');
 const { Bots, TYPES } = require('./bots');
 
 function args() {
-  const a = { games: 1000, players: '4', bots: 'mix', seed: 1, maxRounds: 60, json: false, arch: 'eager', trade: 'on', cardTrade: 'on', tokens: 4, dots: 4, thefts: 12, reveal: 'always', cap: 'none', endgame: 'dig', replay: null, randomToken: 1, arrogation: 'forced', marquis: 'rules', welfare: 'poorest', enslave: 'new', consume: 'half+4', fate: 'smart', marquisKill: 'free' };
+  const a = { games: 1000, players: '4', bots: 'mix', seed: 1, maxRounds: 60, json: false, arch: 'eager', trade: 'on', cardTrade: 'on', tokens: 4, dots: 4, thefts: 12, reveal: 'always', cap: 'none', endgame: 'dig', replay: null, randomToken: 2, fakes: 4, fakeElig: 'public', tokenRounds: 'off', holdCap: '6', capThralls: 'on', returnPay: 1, capSpoils: 'off', devourSlots: 0, swaps: 'off', setSwaps: 'off', tradeFee: 3, cardCost: 1, arrogation: 'forced', marquis: 'rules', welfare: 'poorest', enslave: 'new', consume: 'half+4', fate: 'smart', marquisKill: 'free' };
   const v = process.argv.slice(2);
   for (let i = 0; i < v.length; i++) {
     const k = v[i].replace(/^--/, '');
@@ -33,9 +42,19 @@ function args() {
     else if (k === 'card-trade') a.cardTrade = v[++i];
     else if (k === 'random-token') a.randomToken = +v[++i];
     else if (k === 'marquis-kill') a.marquisKill = v[++i];
+    else if (k === 'fake-elig') a.fakeElig = v[++i];
+    else if (k === 'token-rounds') a.tokenRounds = v[++i];
+    else if (k === 'hold-cap') a.holdCap = v[++i];
+    else if (k === 'cap-thralls') a.capThralls = v[++i];
+    else if (k === 'return-pay') a.returnPay = +v[++i];
+    else if (k === 'cap-spoils') a.capSpoils = v[++i];
+    else if (k === 'devour-slots') a.devourSlots = +v[++i];
+    else if (k === 'set-swaps') a.setSwaps = v[++i];
+    else if (k === 'trade-fee') a.tradeFee = +v[++i];
+    else if (k === 'card-cost') a.cardCost = +v[++i];
     else a[k] = v[++i];
   }
-  a.games = +a.games; a.seed = +a.seed; a.tokens = +a.tokens; a.dots = +a.dots; a.thefts = +a.thefts;
+  a.games = +a.games; a.seed = +a.seed; a.tokens = +a.tokens; a.dots = +a.dots; a.thefts = +a.thefts; a.fakes = +a.fakes;
   return a;
 }
 
@@ -59,7 +78,9 @@ async function playGame(page, opts, rng) {
   bots.marquisPolicy = opts.marquisKill;
   bots.trading = opts.trade !== 'off';
   bots.cardTrading = opts.cardTrade !== 'off';
-  const rec = { n, types, theft4: 0, cardsBought: 0, trades: 0, tokenTrades: 0, tradeOffers: 0, attempts: 0, correct: 0, wrong: 0, captures: [], bagEmpty: null, shields: 0, rebOk: 0, rebFail: 0, marquisKills: 0, archQs: 0 };
+  bots.swaps = opts.swaps === 'on';
+  bots.setSwaps = opts.setSwaps === 'on';
+  const rec = { n, types, theft4: 0, cardsBought: 0, trades: 0, tokenTrades: 0, tradeOffers: 0, attempts: 0, correct: 0, wrong: 0, captures: [], bagEmpty: null, shields: 0, rebOk: 0, rebFail: 0, marquisKills: 0, archQs: 0, buyRounds: [], returns: 0, setSwaps: 0 };
   ctx.__ask = o => bots.answer(o);
   rec.ownGains = {};
   rec.marked = []; rec.namings = []; rec.rebels = []; rec.revealRound = Array(n).fill(null);
@@ -89,9 +110,10 @@ async function playGame(page, opts, rng) {
     else if (/raised a Ward against/.test(t)) rec.shields++;
     else if (/who was claiming them: the claim ends/.test(t)) rec.wardEscapes = (rec.wardEscapes || 0) + 1;
     else if (/claim on .* passes to/.test(t)) rec.claimsPassed = (rec.claimsPassed || 0) + 1;
-    else if (/ bought a name token./.test(t)) rec.buy2 = (rec.buy2 || 0) + 1;
-    else if (/ paid 3 souls, drew/.test(t)) rec.draw3 = (rec.draw3 || 0) + 1;
-    else if (/ played Scrying, drew/.test(t)) rec.scry1 = (rec.scry1 || 0) + 1;
+    else if (/ bought a name token./.test(t)) { rec.buy2 = (rec.buy2 || 0) + 1; rec.buyRounds.push(S.round); }
+    else if (/ paid 3 souls, drew/.test(t)) { rec.draw3 = (rec.draw3 || 0) + 1; rec.buyRounds.push(S.round); }
+    else if (/returned a .* token to the bag face down/.test(t)) rec.returns = (rec.returns || 0) + 1;
+    else if (/ played Scrying, drew/.test(t)) { rec.scry1 = (rec.scry1 || 0) + 1; rec.buyRounds.push(S.round); }
     else if (/discarded 2 Scrying cards and looked/.test(t)) rec.scry2 = (rec.scry2 || 0) + 1;
     else if ((m = t.match(/^(?:Insubordination|Arrogation) succeeded: (P\d)/))) { rec.rebOk++; rec.rebels.push(id(m[1])); }
     else if (/^(?:Insubordination|Arrogation) failed/.test(t)) rec.rebFail++;
@@ -109,7 +131,8 @@ async function playGame(page, opts, rng) {
     else if (/event deck ran out and was reshuffled/.test(t)) rec.reshuffles = (rec.reshuffles || 0) + 1;
     else if (/^P\d and P\d traded/.test(t)) rec.trades++;
     else if (/declined a trade/.test(t)) rec.tradeOffers++;
-    else if (/^Name tokens traded face down/.test(t)) rec.tokenTrades++;
+    else if (/ played Restoration:/.test(t)) rec.restores = (rec.restores || 0) + 1;
+    else if (/^Name tokens traded face down/.test(t)) { rec.tokenTrades++; if (/gave 1 .*gave 1 /.test(t)) rec.setSwaps++; }
     else if ((m = t.match(/^(P\d) was reborn/))) bots.know.reset(+m[1].slice(1));
   };
 
@@ -190,7 +213,7 @@ async function playGame(page, opts, rng) {
   if (S.players.some(p => p.souls < 0)) throw new Error('negative souls');
   for (const p of S.players) {
     const held = [...S.bag, ...S.players.flatMap(q => q.tokens)].filter(t => t.owner === p.id).length;
-    if (held !== (p.status === 'dead' ? 0 : api.CFG.TOKENS)) throw new Error(`player ${p.id} (${p.status}) has ${held} tokens in play`);
+    if (held !== (p.status === 'dead' ? 0 : api.CFG.TOKENS + api.FAKES)) throw new Error(`player ${p.id} (${p.status}) has ${held} tokens in play`);
   }
 
   rec.rounds = S.round;
@@ -238,7 +261,8 @@ async function playGame(page, opts, rng) {
   }
   rec.tokenSpread = S.players.filter(p => p.status === 'alive').map(p => {
     const others = S.players.filter(o => o.id !== p.id && o.status !== 'dead').map(o => api.countColor(o, p.id)).filter(Boolean).sort((a, b) => b - a);
-    return { id: p.id, type: types[p.id], self: api.countColor(p, p.id), others, bag: S.bag.filter(t => t.owner === p.id).length };
+    const othersReal = S.players.filter(o => o.id !== p.id && o.status !== "dead").map(o => api.countReal(o, p.id)).filter(Boolean).sort((a, b) => b - a);
+    return { id: p.id, type: types[p.id], self: api.countColor(p, p.id), selfReal: api.countReal(p, p.id), othersReal, others, bag: S.bag.filter(t => t.owner === p.id).length };
   });
   rec.theftWhere = { free: S.players.filter(p => p.status === 'alive').map(p => api.countCard(p, 'Seize')),
     slaves: S.players.filter(p => p.status === 'slave').reduce((a, p) => a + api.countCard(p, 'Seize'), 0),
@@ -257,7 +281,7 @@ const median = xs => { const s = xs.filter(x => x != null).sort((a, b) => a - b)
 function report(recs, opts) {
   const done = recs.filter(r => !r.error), won = done.filter(r => r.winner != null);
   const L = [];
-  L.push(`MADK sim · ${recs.length} games · players ${opts.players} · bots ${opts.bots} · arch ${opts.arch} · trade ${opts.trade} · card-trade ${opts.cardTrade} · ${opts.tokens} tokens 1-${opts.dots} dots · ${opts.thefts} Seize cards · reveal ${opts.reveal} · cap ${opts.cap} · endgame ${opts.endgame} · enslave ${opts.enslave} · consume ${opts.consume} · fate ${opts.fate} · marquis-kill ${opts.marquisKill} · seed ${opts.seed} · round limit ${opts.maxRounds}`);
+  L.push(`MADK sim · ${recs.length} games · players ${opts.players} · bots ${opts.bots} · arch ${opts.arch} · trade ${opts.trade} · card-trade ${opts.cardTrade} · ${opts.tokens} tokens 1-${opts.dots} dots · ${opts.thefts} Seize cards · reveal ${opts.reveal} · cap ${opts.cap} · endgame ${opts.endgame} · enslave ${opts.enslave} · consume ${opts.consume} · fate ${opts.fate} · marquis-kill ${opts.marquisKill} · fakes ${opts.fakes} (${opts.fakeElig}) · token rounds ${opts.tokenRounds} · hold cap ${opts.holdCap} (thrall slots ${opts.capThralls}, return pay ${opts.returnPay}, cap spoils ${opts.capSpoils}, devour slots ${opts.devourSlots}, swaps ${opts.swaps}) · set swaps ${opts.setSwaps} · trade fee ${opts.tradeFee} · card cost ${opts.cardCost} · seed ${opts.seed} · round limit ${opts.maxRounds}`);
   const errs = recs.filter(r => r.error);
   if (errs.length) L.push(`ERRORS in ${errs.length} games, first: ${errs[0].error}`);
   L.push(`Finished ${won.length} · stalemates ${done.length - won.length} (${pct(done.length - won.length, done.length)})`);
@@ -305,9 +329,14 @@ function report(recs, opts) {
   const stale = done.filter(r => r.stalemate);
   if (stale.length) L.push(`Stalemates: ${pct(stale.filter(r => r.unnameable.length).length, stale.length)} end with at least one free player nobody can name`);
 
-  const sum = k => done.reduce((a, r) => a + r[k], 0);
+  const sum = k => done.reduce((a, r) => a + (r[k] || 0), 0);
   L.push('', `Naming: ${sum('attempts')} attempts, ${pct(sum('correct'), sum('attempts'))} correct · ${(sum('attempts') / Math.max(1, done.length)).toFixed(1)} per game`);
   L.push(`Trades: ${sum('tokenTrades')} token trades, ${sum('trades') - sum('tokenTrades')} card trades, ${sum('tradeOffers')} declined · ${(sum('tokenTrades') / Math.max(1, done.length)).toFixed(1)} per game`);
+  { const all = done.flatMap(r => r.buyRounds.map(b => b / Math.max(1, r.rounds))); const late = all.filter(x => x > 0.5).length;
+    L.push(`Token buys: ${(all.length / Math.max(1, done.length)).toFixed(1)} per game, ${pct(late, all.length)} in the second half of the game`); }
+  if (sum('setSwaps')) L.push(`Set swaps (1 token for 1): ${(sum('setSwaps') / Math.max(1, done.length)).toFixed(1)} per game`);
+  if (sum('restores')) L.push(`Restoration played: ${(sum('restores') / Math.max(1, done.length)).toFixed(2)} per game`);
+  if (sum('returns')) L.push(`Tokens put back in the bag: ${(sum('returns') / Math.max(1, done.length)).toFixed(1)} per game`);
   L.push(`4-Seize token steals: ${(sum('theft4') / Math.max(1, done.length)).toFixed(2)} per game`);
   L.push(`Wards raised ${sum('shields')} · Insubordinations ${sum('rebOk')} won / ${sum('rebFail')} lost · marked Marquis killed ${sum('marquisKills')} · Archduke questions ${sum('archQs')}`);
 
@@ -319,7 +348,7 @@ function report(recs, opts) {
 (async () => {
   const opts = args();
   const page = loadPage({ TOKENS: opts.tokens, MAX_DOTS: opts.dots, DECK: Object.assign({ Seize: opts.thefts }, opts.arrogation !== 'off' ? { Arrogation: +(opts.arrogation.replace(/\D/g, '') || 4) } : { Arrogation: 2, Insubordination: 2 }, Object.fromEntries((opts.deck || '').split(',').filter(Boolean).map(kv => { const [k, v] = kv.split('='); return [k, +v]; }))), SPEND_CAP: opts.cap === 'none' ? Infinity : +opts.cap,
-    RANDOM_TOKEN_COST: opts.randomToken,
+    RANDOM_TOKEN_COST: opts.randomToken, FAKES: opts.fakes, FAKE_ELIG: opts.fakeElig, TOKEN_ROUNDS: opts.tokenRounds === 'on', HOLD_CAP: opts.holdCap === 'none' ? Infinity : +opts.holdCap, CAP_THRALL_SLOTS: opts.capThralls !== 'off', RETURN_PAY: opts.returnPay, CAP_SPOILS: opts.capSpoils === 'on', DEVOUR_SLOTS: opts.devourSlots, TRADE_FEE: opts.tradeFee, CARD_COST: opts.cardCost,
     ARROGATION_MERGE: opts.arrogation.replace(/\d+$/, ''),
     MARQUIS_INSTANT: opts.marquis === 'instant' || opts.marquis === 'both', MARQUIS_NO_BONUS: opts.marquis === 'nobonus' || opts.marquis === 'both',
     WELFARE: opts.welfare.replace(/\d+$/, ''), WELFARE_MULT: opts.welfare.startsWith('networth') ? +(opts.welfare.replace(/\D/g, '') || 2) : undefined, WELFARE_PAY: +(opts.welfare.replace(/\D/g, '') || 1),

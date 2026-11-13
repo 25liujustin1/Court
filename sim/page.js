@@ -28,8 +28,8 @@ function loadPage(config = {}, file = path.resolve(__dirname, '../playtest/index
     globalThis.__api = {
       get S(){ return S; },
       ACT, newGame, startGame, activeClaim, afterAction, capSweep, slaveSoulSweep, checkWin, nextTurn, topInt, eligibility, baseRole, roleOfCombo,
-      countColor, countCard, isArch, archLimit, tokenRound, canSpend, slavesOf, free, keyOf,
-      COMBOS, NAME_OF, NAME_LIST, ROLES, MARQUIS_KILL, TRADE_FEE, RANDOM_TOKEN_COST, SPEND_CAP, CFG, DECK_COUNTS, CONSUME_BONUS, SLAVE_INCOME,
+      countColor, countReal, countCard, atCap, capOf, isArch, archLimit, tokenRound, canSpend, slavesOf, free, keyOf,
+      COMBOS, NAME_OF, NAME_LIST, ROLES, MARQUIS_KILL, TRADE_FEE, CARD_COST, RETURN_PAY, RANDOM_TOKEN_COST, SPEND_CAP, CFG, DECK_COUNTS, CONSUME_BONUS, SLAVE_INCOME, FAKES, HOLD_CAP,
     };
   `, ctx);
   return { ctx, api: ctx.__api };
