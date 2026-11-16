@@ -7,12 +7,21 @@
     "sim": "node sim/run.js",
     "replay": "node sim/run.js --replay sim/replays/replay.html --players mix --bots mix:aggressor,turtle,hoarder --games 8",
     "server": "node server/server.js",
-    "test:online": "node server/test-online.js"
+    "test:online": "node server/test-online.js",
+    "sim:rework": "node sim-rework/run.js",
+    "test:rework-play": "node rework-play/smoke.js",
+    "build:lpc": "node rework-play/art/lpc/build-lpc.cjs",
+    "rework-server": "node rework-play/server.js",
+    "test:rework-online": "node rework-play/test-online.js"
   },
   "devDependencies": {
-    "playwright": "^1.47.0"
+    "playwright": "^1.47.0",
+    "pngjs": "^7.0.0"
   },
   "dependencies": {
     "ws": "^8.22.2"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

@@ -1,0 +1,1082 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Court Rework</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Fira+Sans:wght@500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Same look as the playtest page (playtest/index.html): parchment, maroon small-caps headings, gold rules, green callouts. */
+:root{
+  --bg:#ede4cc; --surface:#f6f0e0; --sunk:#e4d9bc; --ink:#2b2118; --muted:#6c5e4b; --line:#d3c4a2;
+  --accent:#6e1c12; --on-accent:#f8f1e2; --gold:#b8954f; --rule:#c8a96a; --danger:#9e2b1c; --ok:#3d6b2e;
+  --callout:#dfe3c4; --callout-edge:#2b2118; --example:#f6f0e0;
+  --c0:#b0281f; --c1:#2350a8; --c2:#1f7646; --c3:#a5600a; --c4:#6c3fa3; --c5:#11777a;
+  --font-display:"Palatino Linotype","Book Antiqua",Palatino,"EB Garamond",Georgia,serif;
+  --font-body:"Palatino Linotype","Book Antiqua",Palatino,"EB Garamond",Georgia,serif;
+  --font-head:"Fira Sans","Segoe UI",system-ui,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1d1712; --surface:#28201a; --sunk:#15100c; --ink:#efe6d3; --muted:#b0a28b; --line:#45382b;
+    --accent:#de8f7c; --on-accent:#1d0f0b; --gold:#d2ad66; --rule:#8f7442; --danger:#ec7a66; --ok:#8cc27a;
+    --callout:#2d3220; --callout-edge:#cbbd9f; --example:#241c16;
+    --c0:#f0635a; --c1:#76a2ff; --c2:#4fcf8c; --c3:#f2a640; --c4:#bb92f2; --c5:#43c9c9;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1d1712; --surface:#28201a; --sunk:#15100c; --ink:#efe6d3; --muted:#b0a28b; --line:#45382b;
+  --accent:#de8f7c; --on-accent:#1d0f0b; --gold:#d2ad66; --rule:#8f7442; --danger:#ec7a66; --ok:#8cc27a;
+  --callout:#2d3220; --callout-edge:#cbbd9f; --example:#241c16;
+  --c0:#f0635a; --c1:#76a2ff; --c2:#4fcf8c; --c3:#f2a640; --c4:#bb92f2; --c5:#43c9c9;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-body); font-size:16px; line-height:1.5; padding:0 16px 48px}
+.wrap{max-width:880px; margin:0 auto; display:flex; flex-direction:column; gap:28px}
+h1,h2,h3{font-family:var(--font-display); font-weight:400; font-variant:small-caps; color:var(--accent); margin:0; line-height:1.15}
+h1{font-size:2.8rem; letter-spacing:.01em}
+h2{font-size:1.45rem}
+h3{font-size:1.15rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.label{font-family:var(--font-head); font-size:.74rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600}
+.masthead{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:18px 0 14px; border-bottom:2px solid var(--rule)}
+.masthead .brand{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
+.masthead .brand span{color:var(--muted); font-style:italic}
+.toolbar{display:flex; gap:8px; flex-wrap:wrap}
+.btn{font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:9px 14px; cursor:pointer; min-height:42px; text-align:left}
+.btn:hover:not(:disabled){border-color:var(--muted)}
+.btn:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn.primary{background:var(--accent); color:var(--on-accent); border-color:var(--accent)}
+.btn.small{min-height:34px; padding:5px 10px; font-size:.9rem}
+.btn .cost{font-family:var(--font-data); font-size:.82rem; color:var(--gold); margin-left:6px}
+.btn.primary .cost{color:inherit; opacity:.85}
+.btn .sub{display:block; font-size:.8rem; color:var(--muted)}
+.btn.primary .sub{color:inherit; opacity:.85}
+section{display:flex; flex-direction:column; gap:12px}
+.section-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; border-bottom:2px solid var(--rule); padding-bottom:6px}
+select{font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:6px 10px; min-height:38px}
+.who{display:inline-flex; align-items:center; gap:6px; font-weight:700; white-space:nowrap}
+.who i{width:11px; height:11px; border-radius:50%; background:var(--pc); flex:none; box-shadow:0 0 0 2px var(--surface), 0 0 0 3px var(--pc)}
+.tok{width:32px; height:32px; display:inline-block; flex:none; vertical-align:middle}
+.toks{display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+.held{display:inline-flex; flex-wrap:wrap; gap:10px; align-items:center}
+.held .grp{display:inline-flex; gap:3px; align-items:center}
+.held .dot{width:12px; height:12px; border-radius:50%; background:var(--pc); display:inline-block}
+.held .n{font-family:var(--font-data); font-size:.8rem; color:var(--muted); margin-left:2px}
+/* identity callout */
+.identity{display:grid; grid-template-columns:auto 1fr; gap:18px; align-items:center; padding:18px; background:var(--callout); border-top:2px solid var(--callout-edge); border-bottom:2px solid var(--callout-edge)}
+.seal{width:104px; height:104px; border-radius:50%; border:3px double var(--pc); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; font-family:var(--font-display); font-size:1.15rem; line-height:1.05; padding:6px}
+.seal small{font-family:var(--font-data); font-size:.7rem; color:var(--muted); margin-top:4px}
+.identity .facts{display:flex; flex-direction:column; gap:6px; min-width:0}
+.identity .facts .nm{font-family:var(--font-display); font-variant:small-caps; color:var(--accent); font-size:1.5rem}
+.tag{display:inline-block; font-family:var(--font-head); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; font-weight:600; border:1px solid currentColor; border-radius:999px; padding:1px 8px; vertical-align:middle}
+.tag.warn{color:var(--danger)} .tag.ok{color:var(--ok)} .tag.gold{color:var(--accent)}
+.power{border-left:4px solid var(--accent); background:var(--example); padding:8px 12px; font-size:.95rem}
+.banner{border-left:4px solid var(--accent); background:var(--example); font-style:italic; padding:10px 12px}
+.stats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px}
+.stat{border-top:2px solid var(--rule); padding-top:6px}
+.stat .v{font-size:1.6rem; font-variant-numeric:tabular-nums lining-nums}
+.stat .v.gold{color:var(--gold)}
+@media (max-width:560px){ .stats{grid-template-columns:repeat(2,minmax(0,1fr))} .identity{grid-template-columns:1fr} }
+.grid-actions{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px}
+/* event cards */
+.hand{display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:18px 16px; padding:8px 8px 4px 0}
+.ecard{position:relative; display:flex; flex-direction:column; gap:8px; min-height:170px; padding:14px 12px 12px; background:var(--surface); border:1.5px solid var(--accent); border-radius:10px;
+  box-shadow:inset 0 0 0 4px var(--surface), inset 0 0 0 5px var(--rule), 0 2px 6px rgb(60 40 20 / .14)}
+.ecard-name{font-family:var(--font-display); font-variant:small-caps; color:var(--accent); font-size:1.25rem; text-align:center; line-height:1.1}
+.ecard-rule{border-top:1.5px solid var(--rule); margin:0 10px}
+.ecard-text{font-size:.84rem; line-height:1.4; flex:1}
+.ecard-count{position:absolute; top:-10px; right:-10px; min-width:28px; height:28px; padding:0 6px; border-radius:14px; background:var(--accent); color:var(--on-accent); font-family:var(--font-head); font-weight:600; font-size:.85rem; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px var(--bg)}
+/* ledger */
+.ledger{overflow-x:auto}
+.ledger table{border-collapse:collapse; width:100%; min-width:620px; font-size:.95rem; border-bottom:1.5px solid var(--accent)}
+.ledger th{font-family:var(--font-head); font-size:.85rem; color:var(--ink); font-weight:600; text-align:left; padding:6px 8px; border-bottom:1.5px solid var(--accent)}
+.ledger td{padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:middle}
+.ledger td.n, .ledger th.n{text-align:right; font-variant-numeric:tabular-nums lining-nums}
+.ledger tr.current td{background:var(--sunk)}
+.ledger tr.out td{opacity:.55}
+.ledger .sub{display:block; font-size:.8rem; color:var(--muted); font-weight:400}
+.log{font-family:var(--font-data); font-size:.82rem; display:flex; flex-direction:column; gap:4px; max-height:320px; overflow:auto; border:1px solid var(--line); padding:10px; background:var(--surface)}
+.log div{display:grid; grid-template-columns:2.6em minmax(0,1fr); gap:6px}
+.log span{color:var(--muted)}
+.log .mine b{color:var(--accent)}
+.log .big b{color:var(--danger); font-weight:600}
+.log .chat{grid-template-columns:auto minmax(0,1fr)}
+.log .chat b{color:var(--ink); font-family:var(--font-body); font-size:.9rem}
+.chatform{display:flex; gap:6px; margin-top:6px}
+.chatform input{flex:1; min-width:0; font:inherit; padding:5px 8px; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:4px}
+.toasts{position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:8px; z-index:50; max-width:min(360px, calc(100vw - 32px))}
+.toast{background:var(--surface); border:2px solid var(--accent); border-radius:8px; padding:10px 12px; box-shadow:0 6px 24px rgb(0 0 0 / .25)}
+.toast .row{margin-top:8px}
+.roomcode{font-family:var(--font-data); font-size:1.6rem; letter-spacing:.2em; color:var(--accent)}
+.seatlist{display:flex; flex-direction:column; gap:4px; margin:8px 0}
+.online-box{border-top:1px solid var(--line); margin-top:12px; padding-top:10px}
+.online-box input[type=text]{font:inherit; padding:5px 8px; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:4px; width:150px}
+/* modal sheet */
+dialog{border:1px solid var(--rule); border-radius:4px; background:var(--bg); color:var(--ink); width:calc(100% - 32px); max-width:580px; max-height:calc(100% - 32px); padding:20px}
+dialog::backdrop{background:rgb(10 6 14 / .55)}
+#dlgBody{display:flex; flex-direction:column; gap:14px}
+.opts{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px}
+.opts.wide{grid-template-columns:1fr}
+.row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.names{display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px}
+button.namecell{font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:8px 10px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:4px}
+button.namecell:hover{border-color:var(--accent)}
+button.namecell .tok{width:24px; height:24px}
+.rules{font-size:.95rem; display:flex; flex-direction:column; gap:10px}
+.ability{margin:2px 0}
+details summary{cursor:pointer; font-family:var(--font-display); font-size:1.1rem; color:var(--accent)}
+@media (prefers-reduced-motion:no-preference){ .identity{animation:rise .25s ease-out} @keyframes rise{from{transform:translateY(6px); opacity:.6} to{transform:none; opacity:1}} }
+
+/* ---------- the court table ---------- */
+:root{ --skin:#ead8b8; --skin-edge:#b89c74; --r0:#b8862b; --r1:#a3312a; --r2:#6b3d8f; --r3:#4d84b0; --r4:#3b7a45; --felt:#d9cba6; --felt-edge:#a8874a; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --skin:#c9b08c; --skin-edge:#8f7458; --r0:#e0b354; --r1:#e06a5f; --r2:#b58ad8; --r3:#8fb3d1; --r4:#79c486; --felt:#2f261d; --felt-edge:#8f7442; } }
+:root[data-theme="dark"]{ --skin:#c9b08c; --skin-edge:#8f7458; --r0:#e0b354; --r1:#e06a5f; --r2:#b58ad8; --r3:#8fb3d1; --r4:#79c486; --felt:#2f261d; --felt-edge:#8f7442; }
+.court{position:relative; width:100%; height:600px; margin-top:4px}
+.court .felt{position:absolute; left:16%; right:16%; top:20%; bottom:20%; border-radius:50%; background:radial-gradient(ellipse at 50% 40%, var(--surface), var(--felt) 70%);
+  border:3px solid var(--felt-edge); box-shadow:inset 0 0 0 8px var(--felt), inset 0 0 0 9px var(--rule), 0 6px 18px rgb(60 40 20 / .18)}
+.court svg.links{position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none}
+.court .center{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) scale(var(--cs,1)); display:flex; gap:26px; align-items:flex-end}
+.court .pile{display:flex; flex-direction:column; align-items:center; gap:4px; font-family:var(--font-head); font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.court .pile b{font-family:var(--font-body); font-size:1.1rem; color:var(--ink); letter-spacing:0; text-transform:none}
+.court .round-mark{position:absolute; left:50%; top:calc(20% + 26px); transform:translateX(-50%); font-family:var(--font-display); font-variant:small-caps; color:var(--accent); font-size:1.1rem; white-space:nowrap}
+.court .noblesse{position:absolute; left:50%; bottom:calc(20% + 22px); transform:translateX(-50%); font-size:.8rem; color:var(--danger); font-style:italic; white-space:nowrap}
+.seat{position:absolute; width:var(--sw,178px); transform:translate(-50%,-50%); background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--pc); border-radius:8px; padding:8px 10px 9px;
+  box-shadow:0 2px 8px rgb(60 40 20 / .16); display:flex; flex-direction:column; gap:4px; font-size:.85rem; line-height:1.25}
+.seat.turn{box-shadow:0 0 0 3px var(--gold), 0 0 22px 4px rgb(184 149 79 / .55)}
+.seat.me{background:var(--callout)}
+.seat.out{opacity:.5; border-style:dashed}
+.seat .top{display:flex; align-items:center; gap:8px}
+.seat .nm{font-weight:700; font-size:.98rem}
+.seat .mask{width:34px; height:34px; flex:none}
+.seat .avatar{width:56px; height:56px; flex:none; margin:-4px 0 -4px -2px}
+.avatar.lpc{position:relative; display:inline-block; border-radius:6px; background:var(--sunk); overflow:hidden; box-shadow:inset 0 0 0 2px var(--pc)}
+.avatar.lpc img{position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; pointer-events:none}
+.avatar.lpc.revealed{box-shadow:inset 0 0 0 2px var(--pc), 0 0 0 2px var(--gold), 0 0 10px 2px rgb(184 149 79 / .6)}
+.avatar.lpc.gone img{filter:grayscale(1) opacity(.35)}
+.fx-lpcmask img{width:100%; image-rendering:pixelated; display:block}
+.court.compact .seat .avatar{width:44px; height:44px}
+.seat .avatar.gone{opacity:.7}
+.fx-mask{height:auto}
+.seat .souls{display:inline-flex; align-items:center; gap:4px; font-variant-numeric:tabular-nums lining-nums}
+.seat .souls svg{width:15px; height:15px}
+.seat .line{display:flex; align-items:center; justify-content:space-between; gap:6px; min-height:18px}
+.seat .st{font-size:.78rem; color:var(--muted); font-style:italic}
+.seat .cardbacks{display:inline-flex}
+.seat .cardbacks i{width:11px; height:15px; border-radius:2px; background:var(--accent); border:1px solid var(--surface); margin-left:-4px; box-shadow:0 0 0 .5px var(--accent)}
+.seat .cardbacks i:first-child{margin-left:0}
+.seat .held .dot{width:10px; height:10px}
+.seat .soul-ic, .souls-big .soul-ic{width:15px; height:15px}
+.seat .irons{width:15px; height:15px; vertical-align:-3px; margin-right:4px}
+.seat .crown-ic{width:22px; height:22px; vertical-align:-5px; margin-right:3px}
+.bagwrap{position:relative; display:inline-block; width:74px; height:74px}
+.bagwrap .bag-ic{width:74px; height:74px}
+.bagwrap b{position:absolute; left:0; right:0; top:44%; text-align:center; color:#f6f0e0; font-size:1.05rem; font-weight:400}
+.seal.has-img{padding:0; overflow:hidden; background:var(--surface)}
+.seal-img{width:100%; height:100%; object-fit:cover; object-position:50% 20%; display:block}
+.seal-img.sigil, img.mini.sigil{object-fit:contain; padding:6px; background:#f6f0e0}
+img.mini{width:38px; height:38px; border-radius:50%; object-fit:cover; object-position:50% 20%; border:1.5px solid var(--rule); flex:none; background:var(--surface)}
+.demon{font-family:var(--font-display); font-variant:small-caps; color:var(--accent); font-weight:400}
+.identity .facts .nm .demon{font-size:.95rem; color:var(--muted); margin-left:4px}
+.seat .crown{font-family:var(--font-display); font-variant:small-caps; color:var(--gold); font-size:.95rem}
+.court.compact .seat{font-size:.74rem; padding:6px 7px; gap:3px} .court.compact .seat .nm{font-size:.86rem} .court.compact .seat .mask{width:26px; height:26px}
+#courtBase{position:absolute; inset:0}
+#fx{position:absolute; inset:0; pointer-events:none; z-index:5; overflow:visible}
+.fx{position:absolute; transform:translate(-50%,-50%); pointer-events:none; white-space:nowrap}
+.fx-tok .tok{width:30px; height:30px; filter:drop-shadow(0 2px 3px rgb(0 0 0 / .3))}
+.fx-gain{font-family:var(--font-display); font-size:1.5rem; color:var(--gold); text-shadow:0 1px 0 var(--surface), 0 0 8px var(--surface)}
+.fx-dud{font-family:var(--font-display); font-style:italic; color:var(--muted); font-size:1.1rem; text-shadow:0 0 6px var(--surface)}
+.fx-price{font-family:var(--font-display); color:var(--gold); margin-left:2px; font-size:1.1rem}
+.fx-soul{width:18px; height:21px; vertical-align:-4px}
+.fx-card{display:block; width:22px; height:30px; border-radius:3px; background:var(--accent); border:2px solid var(--surface); box-shadow:0 2px 4px rgb(0 0 0 / .3)}
+.fx-cardface{display:block; font-family:var(--font-display); font-variant:small-caps; color:var(--accent); background:var(--surface); border:1.5px solid var(--accent); border-radius:5px; padding:4px 8px; box-shadow:0 2px 6px rgb(0 0 0 / .25)}
+.fx-mask{width:46px; height:46px}
+.fx-crown{width:56px; height:56px; filter:drop-shadow(0 0 8px rgb(184 149 79 / .8))}
+.fx-swords{width:64px; height:64px; filter:drop-shadow(0 0 6px var(--surface))}
+.fx-die{display:flex; flex-direction:column; align-items:center}
+.fx-d20{width:86px; height:86px; filter:drop-shadow(0 3px 6px rgb(0 0 0 / .35))}
+.fx-face{position:absolute; top:28px; left:0; right:0; text-align:center; font-family:var(--font-display); font-size:1.7rem; color:var(--on-accent); background:var(--accent); width:44px; margin:0 auto; border-radius:50%; line-height:44px; box-shadow:0 0 0 3px var(--surface)}
+.fx-range{display:block; margin-top:4px; font-family:var(--font-head); font-size:.72rem; letter-spacing:.04em; color:var(--ink); background:var(--surface); padding:2px 8px; border-radius:10px; border:1px solid var(--rule)}
+.fx-scroll{width:48px; height:48px}
+.fx-guess{display:flex; align-items:center; gap:3px; background:var(--surface); border:1.5px solid var(--accent); border-radius:8px; padding:5px 8px; box-shadow:0 3px 10px rgb(0 0 0 / .25)}
+.fx-guess .tok{width:22px; height:22px}
+.fx-guess b{font-family:var(--font-display); font-variant:small-caps; color:var(--accent); margin-left:6px; font-weight:400}
+.fx-guess em{font-style:normal; font-family:var(--font-head); font-weight:600; text-transform:uppercase; font-size:.75rem; letter-spacing:.08em; margin-left:8px; padding:2px 7px; border-radius:10px; color:#fff}
+.fx-guess em.ok{background:var(--ok)} .fx-guess em.bad{background:var(--danger)}
+.fx-chain{transform:none}
+.fx-irons, .fx-devil{width:52px; height:52px; filter:drop-shadow(0 0 6px var(--surface))}
+.caption span{display:inline-block; font-family:var(--font-display); font-variant:small-caps; font-size:1.35rem; color:var(--accent); background:var(--surface); border:1.5px solid var(--rule); border-radius:999px; padding:4px 18px; box-shadow:0 3px 12px rgb(60 40 20 / .2)}
+.court-legend{display:flex; gap:16px; flex-wrap:wrap; font-size:.8rem; color:var(--muted)}
+.court-legend span{display:inline-flex; align-items:center; gap:5px}
+/* ---------- one-screen layout: record | table | your panel ---------- */
+body{padding-bottom:16px}
+.wrap{max-width:1600px; gap:14px}
+.masthead{padding:10px 0 8px}
+h1{font-size:2.1rem}
+.board{display:grid; grid-template-columns:minmax(230px,280px) minmax(0,1fr) minmax(320px,380px); gap:18px; align-items:stretch}
+.col{min-width:0; display:flex; flex-direction:column; gap:14px}
+@media (min-width:1100px){
+  .board{height:calc(100vh - 92px)}
+  .col.left, .col.right{overflow-y:auto; padding-right:4px}
+  .col.mid .court{flex:1; height:auto; min-height:520px}
+  .col.left .fill{flex:1; min-height:0}
+  .col.left .log{flex:1; max-height:none}
+}
+@media (max-width:1099px){
+  .board{grid-template-columns:1fr}
+  .col.mid{order:1} .col.right{order:2} .col.left{order:3}
+}
+.col.right h3{font-size:1.15rem}
+.col.right section{gap:8px}
+.col.right .section-head{padding-bottom:3px}
+.col.right .identity{grid-template-columns:auto 1fr; gap:12px; padding:10px 12px}
+.col.right .seal{width:70px; height:70px; font-size:.92rem}
+.col.right .identity .facts .nm{font-size:1.2rem}
+.col.right .identity .tok{width:24px; height:24px}
+.col.right .power{font-size:.85rem; padding:5px 9px}
+.col.right .banner{padding:6px 10px; font-size:.9rem}
+.col.right .stats{grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; margin-top:8px!important}
+.col.right .stat .v{font-size:1.15rem}
+.col.right .stat .v[style]{font-size:.85rem!important; padding-top:3px!important}
+.col.right .grid-actions{grid-template-columns:1fr 1fr; gap:6px}
+.col.right .grid-actions .btn{min-height:0; padding:6px 9px; font-size:.88rem; line-height:1.25}
+.col.right .grid-actions .btn .sub{font-size:.72rem}
+.col.right .grid-actions .btn .cost{font-size:.72rem; margin-left:4px}
+.col.right #actions > p{font-size:.78rem!important; margin-top:6px!important}
+.col.right .tok{width:22px; height:22px}
+.col.right .hand{grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:10px; padding:6px 6px 2px 0}
+.col.right .ecard{min-height:0; padding:8px 8px 9px; gap:4px}
+.col.right .ecard-name{font-size:1rem}
+.col.right .ecard-text{font-size:.7rem; line-height:1.3}
+.col.right .ecard-count{top:-8px; right:-8px; min-width:22px; height:22px; font-size:.75rem}
+.souls-big{display:inline-flex; align-items:center; gap:4px; font-size:1.35rem; color:var(--gold); font-variant-numeric:tabular-nums lining-nums}
+.souls-big svg{width:17px; height:17px}
+.holding{gap:6px!important}
+.hold-row{display:grid; grid-template-columns:52px 1fr; gap:8px; align-items:center}
+.cardchips{display:flex; flex-wrap:wrap; gap:5px}
+.cardchip{font-family:var(--font-display); font-variant:small-caps; color:var(--accent); border:1.5px solid var(--accent); border-radius:5px; padding:0 7px; background:var(--surface); font-size:.9rem; cursor:help}
+.endrow{position:sticky; bottom:0; background:var(--bg); padding:8px 0 4px}
+.endrow .btn{width:100%; text-align:center}
+.col.left .log{font-size:.76rem}
+.col.mid .court-legend{justify-content:center}
+@media (max-width:700px){
+  .court{height:640px}
+  .court .felt{left:8%; right:8%; top:24%; bottom:24%}
+  .seat{font-size:.75rem; padding:6px 7px}
+  .seat .nm{font-size:.85rem} .seat .mask{width:34px; height:18px}
+  .court .center{gap:14px; transform:translate(-50%,-50%) scale(.85)}
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header class="masthead">
+    <div class="brand"><h1>Court</h1><span id="sub">rework playtest</span></div>
+    <div class="toolbar">
+      <button class="btn small" id="rulesBtn">Rules</button>
+      <button class="btn small" id="abilBtn">Roles</button>
+      <button class="btn small" id="ledgerBtn">Ledger</button>
+      <button class="btn small" id="newBtn">New game</button>
+    </div>
+  </header>
+  <div class="board">
+    <aside class="col left">
+      <section class="fill"><div class="section-head"><h2>Court record</h2><span class="label">newest first</span></div><div class="log" id="log"></div><form class="chatform" id="chatForm" hidden><input id="chatIn" maxlength="200" autocomplete="off" placeholder="Say something to the court"><button class="btn small">Send</button></form></section>
+    </aside>
+    <div class="col mid">
+      <div class="court" id="court"><div id="courtBase"></div><div id="fx"></div></div>
+      <div class="court-legend"><span><svg width="22" height="8"><line x1="0" y1="4" x2="22" y2="4" stroke="var(--muted)" stroke-width="3" stroke-dasharray="5 3"/></svg> slave → master</span><span><svg width="22" height="8"><line x1="0" y1="4" x2="22" y2="4" stroke="var(--gold)" stroke-width="2"/></svg> vassal → Prince</span><span>mask colour = the role it shows</span><span id="bagLine"></span></div>
+    </div>
+    <aside class="col right">
+      <div id="you"></div>
+      <section id="actSec"><div class="section-head"><h3>Actions</h3><span class="label" id="actNote"></span></div><div id="actions"></div></section>
+      <section class="holding"><div class="hold-row"><span class="label">Tokens</span><div id="myToks"></div></div><div class="hold-row"><span class="label">Cards</span><div id="myCards"></div></div></section>
+      <div id="endRow" class="endrow"></div>
+    </aside>
+  </div>
+  <div id="players" hidden></div>
+</div>
+<dialog id="dlg"><div id="dlgBody"></div></dialog>
+<div class="toasts" id="toasts"></div>
+
+<script src="../sim-rework/engine.js"></script>
+<script src="../sim-rework/bots.js"></script>
+<script src="net.js"></script>
+<script>
+'use strict';
+const { Game, ROLES, NAMES, ARCH, DUKE, PRINCE, MARQ, EARL, masksFor, coverBits, roleOf, winChance, key } = ReworkEngine;
+const { Bot, TYPES } = ReworkBots;
+const { HumanBot, runCommand, hydrate, snapView } = ReworkNet;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// Icons from game-icons.net (CC BY 3.0): carnival-mask, devil-mask, dice-twenty-faces-twenty by Delapouite; crown, manacles, swap-bag, crossed-swords, tied-scroll by Lorc.
+const GI = {"carnival-mask":"M411.37 124.355c3.16 13.036 3.345 25.696 1.355 37.852-19.596 15.54-40.52 28.885-59.733 38.029l-1.36-.457c24.217-19.204 45.7-42.1 59.737-75.424zm-310.74 0c14.039 33.324 35.521 56.22 59.737 75.424-.455.154-.908.305-1.36.457-19.212-9.144-40.136-22.488-59.732-38.03-1.99-12.155-1.805-24.815 1.356-37.85zm367.022 11.137c-2.128 12.273-5.158 25.783-8.697 38.996C435.647 198.164 409.74 207.91 384 207.91c-1.774 0-3.725-.191-5.824-.53 31.882-17.768 64.556-43.5 89.476-71.888zm-423.304 0c24.92 28.389 57.594 54.12 89.476 71.889-2.099.338-4.05.529-5.824.529-25.74 0-51.647-9.745-74.955-33.422-3.539-13.213-6.57-26.723-8.697-38.996zm453.25 17.885c-7.066 35.468-21.193 73.969-43.196 106.25C421.706 307.597 372.623 373.844 304 368c-16 0-32-64-48-64s-32 64-48 64c-68.623 5.844-117.706-60.404-150.402-108.373-22.003-32.281-36.13-70.782-43.196-106.25C45.948 203.484 86.801 225.91 128 225.91c21.913 0 39.477-12.627 61.64-18.28 11.082-2.825 21.409-3.978 30.04-2.163 8.01 1.683 20.862 5.71 36.32 14.517 15.458-8.806 28.31-12.834 36.32-14.517 8.631-1.815 18.958-.662 30.04 2.164 22.163 5.652 39.727 18.279 61.64 18.279 41.2 0 82.052-22.426 113.598-72.533zm-147.244 95.535c-28.264-.086-62.951 5.168-62.346 12.435 5.812 69.834 97.853 16 97.976-3.693.039-6.125-16.292-8.683-35.63-8.742zm-188.708 0c-19.338.059-35.669 2.617-35.63 8.742.123 19.694 92.164 73.527 97.976 3.693.605-7.267-34.082-12.521-62.346-12.435zm251.292 107.597a256.804 256.804 0 0 0 14.63 6.62c16.182 6.737 35.272 12.676 56.069 16.693-5.14 1.657-10.72 3.207-17.07 4.342-19.914 3.559-44.712 4.621-69.042 2.095-12.442-1.291-24.758-3.542-36.261-6.787 18.97-4.771 36.193-12.712 51.673-22.963zm-313.875 0c15.48 10.251 32.702 18.192 51.673 22.963-11.503 3.245-23.82 5.496-36.261 6.787-24.33 2.526-49.128 1.464-69.041-2.095-6.352-1.135-11.93-2.685-17.07-4.342 20.796-4.017 39.886-9.956 56.068-16.693a256.8 256.8 0 0 0 14.63-6.62z","crossed-swords":"M19.75 14.438c59.538 112.29 142.51 202.35 232.28 292.718l3.626 3.75.063-.062c21.827 21.93 44.04 43.923 66.405 66.25-18.856 14.813-38.974 28.2-59.938 40.312l28.532 28.53 68.717-68.717c42.337 27.636 76.286 63.646 104.094 105.81l28.064-28.06c-42.47-27.493-79.74-60.206-106.03-103.876l68.936-68.938-28.53-28.53c-11.115 21.853-24.413 42.015-39.47 60.593-43.852-43.8-86.462-85.842-130.125-125.47-.224-.203-.432-.422-.656-.625C183.624 122.75 108.515 63.91 19.75 14.437zm471.875 0c-83.038 46.28-154.122 100.78-221.97 161.156l22.814 21.562 56.81-56.812 13.22 13.187-56.438 56.44 24.594 23.186c61.802-66.92 117.6-136.92 160.97-218.72zm-329.53 125.906l200.56 200.53c-4.36 4.443-8.84 8.793-13.405 13.032L148.875 153.53l13.22-13.186zm-76.69 113.28l-28.5 28.532 68.907 68.906c-26.29 43.673-63.53 76.414-106 103.907l28.063 28.06c27.807-42.164 61.758-78.174 104.094-105.81l68.718 68.717 28.53-28.53c-20.962-12.113-41.08-25.5-59.937-40.313 17.865-17.83 35.61-35.433 53.157-52.97l-24.843-25.655-55.47 55.467c-4.565-4.238-9.014-8.62-13.374-13.062l55.844-55.844-24.53-25.374c-18.28 17.856-36.602 36.06-55.158 54.594-15.068-18.587-28.38-38.758-39.5-60.625z","crown":"M408.256 119.46l-37.7 52.165 19.57 44.426 34.8-37.214-16.67-59.375zm86.074 12.513L384.44 249.498 334.01 135.02l-75.162 132.947-86.948-131.78-33.334 114.122L17.922 132.83l39.3 127.6c1.945-.348 3.94-.54 5.98-.54 18.812 0 34.26 15.452 34.26 34.262 0 13.823-8.346 25.822-20.235 31.22l5.337 17.33c12.425 25.466 71.863 45.152 176.582 47.206 110.805 2.174 178.12-17.54 189.854-47.207h-.002l4.357-20.26c-16.836-2.114-30.02-16.612-30.02-33.986 0-18.81 15.45-34.262 34.263-34.262 3.513 0 6.91.54 10.11 1.54l26.622-123.762zm-391.77 2.04l1.22 56.337 25.56 24.89 9.592-32.842-36.37-48.386zm150.585 2.91l-24.483 51.36 28.955 43.885 24.922-44.08-29.395-51.166zm204.453 135.962c-8.712 0-15.575 6.862-15.575 15.572 0 8.71 6.863 15.574 15.575 15.574s15.572-6.863 15.572-15.573-6.86-15.572-15.572-15.572zM63.2 278.58c-8.71 0-15.573 6.864-15.573 15.574s6.862 15.573 15.574 15.573c8.713 0 15.573-6.862 15.573-15.573 0-8.71-6.86-15.574-15.572-15.574zm130.33 17.842c18.812 0 34.26 15.45 34.26 34.262 0 18.81-15.448 34.26-34.26 34.26-18.813 0-34.262-15.45-34.262-34.26s15.45-34.262 34.26-34.262zm131.234 0c18.812 0 34.26 15.45 34.26 34.262 0 18.81-15.448 34.26-34.26 34.26-18.813 0-34.262-15.45-34.262-34.26s15.45-34.262 34.262-34.262zm-131.235 18.69c-8.713 0-15.573 6.86-15.573 15.572 0 8.71 6.86 15.574 15.572 15.574 8.71 0 15.572-6.864 15.572-15.574s-6.86-15.573-15.573-15.573zm131.234 0c-8.712 0-15.573 6.86-15.573 15.572 0 8.71 6.862 15.574 15.574 15.574s15.574-6.864 15.574-15.574-6.862-15.573-15.574-15.573z","devil-mask":"M86.55 31.4C58.98 60.64 45.4 99.1 47 136c1.88 43.1 23.9 83.8 69 106.3l5 2.5v5.6c0 45 23.1 100.1 52.5 145.2 14.6 22.5 30.8 42.6 46 57.8 13.9 13.8 27.1 23.2 36.5 27.2 9.4-4 22.5-13.4 36.4-27.3 15.2-15.2 31.4-35.3 46.1-57.8 29.3-45.1 52.5-100.1 52.5-145.1v-5.6l5-2.5c45.1-22.5 67.1-63.2 69-106.3 1.6-36.9-12-75.36-39.5-104.6.9 28.55 2.9 50.9-.6 70.6-4.5 24.4-19.5 43.8-52.9 60.5l-4.9 2.4-4.5-3.3c-2.1-1.6-4.2-3-6.3-4.5-3.3 7-7.9 13.6-13.9 19.7-11.2 11.1-27.4 10.9-39.7 6-12.3-5-23.7-14.4-23.7-28.4v-3.7l2.6-2.7c6-6 10.7-11.2 14.6-16.2-26.3-5.7-54-5.7-80.4 0 3.9 5 8.6 10.2 14.6 16.2l2.6 2.7v3.7c0 14-11.4 23.4-23.7 28.4-12.3 4.9-28.5 5.1-39.7-6-6-6.1-10.6-12.7-13.9-19.7-2.1 1.4-4.2 2.9-6.3 4.5l-4.5 3.3-4.9-2.4c-33.4-16.7-48.42-36.1-52.85-60.5-3.58-19.7-1.54-42.05-.6-70.6zm88.15 52.71C171 94.26 168 104.9 167 115.3c-1.9 18.2 1.5 34.9 15.4 48.7 4.8 4.9 12.6 5.1 20.3 2 5.6-2.2 9.6-6.3 11.3-9.2-14.1-14.7-22.4-27.1-28.3-40.9-4-9.3-7.3-19.9-11-31.79zm162.6 0c-3.7 11.86-7 22.49-11 31.79-5.9 13.8-14.2 26.2-28.3 40.9 1.7 2.9 5.7 7 11.3 9.2 7.7 3.1 15.5 2.9 20.3-2 13.9-13.8 17.3-30.5 15.4-48.7-1-10.4-4-21.04-7.7-31.19zM157.2 192.6l10.9 21.8c11.1 22.2 31.3 45.3 53.3 61.7l-21.8-54.4 16.8-6.6 30.7 76.8 1.9.9v.9h14v-.9l1.9-.9 30.7-76.8 16.8 6.6-21.8 54.4c22-16.4 42.2-39.5 53.3-61.7l10.9-21.8 22.2 88.7v1.1c0 6.2-2.6 12.1-6.3 16.4-3.8 4.4-8.6 7.5-13.9 10-10.5 5-23.3 7.5-36.1 8.6-2.1.2-4.1.3-6.1.4l-17 33.9c9.7-3.6 21.1-8.1 35.1-13.7l12.3-4.9v13.3c0 20.5-13.6 41.3-30.6 58.4-17.1 17-37.9 30.6-58.4 30.6s-41.3-13.6-58.4-30.6c-17-17.1-30.6-37.9-30.6-58.4v-13.3l12.3 4.9c14 5.6 25.4 10.1 35.1 13.7l-17-33.9c-2-.1-4-.2-6.1-.4-12.8-1.1-25.6-3.6-36.1-8.6-5.3-2.5-10.1-5.6-13.9-10-3.7-4.3-6.3-10.2-6.3-16.4v-1.1zm6.3 49l-10.4 41.5c.1 1.3.5 2.5 1.8 3.9 1.5 1.8 4.2 3.8 7.9 5.5 7.5 3.5 18.7 6 29.9 6.9 10.8.9 21.5.5 29.3-.9-22.5-14.2-43.4-34.6-58.5-56.9zm185 0c-15.1 22.3-36 42.7-58.5 56.9 7.8 1.4 18.5 1.8 29.3.9 11.2-.9 22.4-3.4 29.9-6.9 3.7-1.7 6.4-3.7 7.9-5.5 1.3-1.4 1.7-2.6 1.8-3.9zm-106.4 70.1l-22 11 35.9 71.9 35.9-71.9-22-11zm-53.3 49.4c4.3 10 12 21.3 21.6 30.9 11.3 11.3 25 20.1 36 23.6l-20.6-41.1c-10.6-3.1-22.5-7.6-37-13.4zm134.4 0c-14.5 5.8-26.4 10.3-37 13.4l-20.6 41.1c11-3.5 24.7-12.3 36-23.6 9.6-9.6 17.3-20.9 21.6-30.9z","dice-twenty-faces-twenty":"M248 20.3L72.33 132.6 248 128.8zm16 0v108.5l175.7 3.8zm51.4 58.9c6.1 3.5 8.2 7.2 15.1 4.2 10.7.8 22.3 5.8 27.6 15.7 4.7 4.5 1.5 12.6-5.2 12.6-9.7.1-19.7-6.1-14.6-8.3 4.7-2 14.7.9 10-5.5-3.6-4.5-11-7.8-16.3-5.9-1.6 6.8-9.4 4-12-.7-2.3-5.8-9.1-8.2-15-7.9-6.1 2.7 1.6 8.8 5.3 9.9 7.9 2.2.2 7.5-4.1 5.1-4.2-2.4-15-9.6-13.5-18.3 5.8-7.39 15.8-4.62 22.7-.9zm-108.5-3.5c5.5.5 12.3 3 10.2 9.9-4.3 7-9.8 13.1-18.1 14.8-6.5 3.4-14.9 4.4-21.6 1.9-3.7-2.3-13.5-9.3-14.9-3.4-2.1 14.8.7 13.1-11.1 17.8V92.3c9.9-3.9 21.1-4.5 30.3 1.3 8 4.2 19.4 1.5 24.2-5.7 1.4-6.5-8.1-4.6-12.2-3.4-2.7-8.2 7.9-7.5 13.2-8.8zm35 69.2L55.39 149l71.21 192.9zm28.2 0l115.3 197L456.6 149zm-14.1 7.5L138.9 352.6h234.2zm133.3 21.1c13.9 8.3 21.5 26.2 22.1 43-1.3 13.6-.7 19.8-15.2 21.4-14.5 1.6-23.9-19.2-29.7-32.6-3.4-9.9-5.8-24 1.7-31.3 6.1-4.8 15-4.1 21.1-.5zm-223.7 16.1c2.1 4-.5 11.4-4.8 12.1-4.9.7-3.8-9.3-9.4-11.6-6.9-2.3-13.6 5.6-15 11.6 10.4-4 20.3 7.1 20.3 17-.4 11.7-7.9 24.8-19.7 28.1h-5.6c-12.7-.7-18.3-15.8-14.2-26.6 4.4-15.8 10.8-33.9 27.2-40.6 8.5-3.9 19 3.2 21.2 10zm213.9-8.4c-7.1-.1-4.4 10-3.3 14.5 3.5 11.5 7.3 26.6 18.9 30 6.8-1.2 4.4-12.8 3.7-16.5-4.7-10.9-7.1-23.3-19.3-28zM52 186v173.2l61.9-5.7zm408 0l-61.9 167.5 61.9 5.7zm-117.9.7l28.5 63.5-10 4.4-20-43.3c-6.1 3-13 8.9-14.6-1.4-1.3-3.9 8.5-5.1 8.1-11.9-.3-6.9 2.2-12.2 8-11.3zm-212 27.4c-2.4 5.1-4.1 10.3-2.7 15.9 1.7 8.8 13.5 6.4 15.6-.8 2.7-5 3.9-11.7-.5-15.7-4.1-3.4-8.9-2.8-12.4.6zm328.4 41.6c-.1 18.6 1.1 39.2-9.7 55.3-.9 1.2-2.2 1.9-3.7 2.5-5.8-4.1-3-11.3 1.2-15.5 1 7.3 5.5-2.9 6.6-5.6 1.3-3.2 3.6-17.7-1-10.2.7 4-6.8 13.1-9.3 8.1-5-14.4 0-30.5 7-43.5 5.7-6.2 9.9 4.4 8.9 8.9zM59.93 245.5c.59.1 1.34 1 2.48 3.6v61.1c-7.3-7-4.47-18-4.45-26.4 0-8.4 1.65-16.3-1.28-23.2-4.62-1.7-5.79-17-3.17-12.7 4.41 4.8 4.66-2.7 6.42-2.4zm178.77 7.6c8.1 4.5 13.8 14.4 10.8 23.6-2.1 15.2-27 21.1-30.4 29.7-1.2 3 25.4 1.6 30.2 1.6.5 4 1.5 10.7-3.8 11.7-14.5-1.2-29.9-.6-45.1-.6.4-11.2 7.4-21.3 17-26.8 6.9-4.9 15.4-9.3 18.1-17.9 1.8-4.5-.6-9.3-4.6-11.5-4.2-2.9-11-2.3-13.2 2.7-2 3.8-4.4 9.1-8.7 9.6-2.9.4-9 .5-7.2-4.9 1.4-5.6 3.4-11.5 8.2-15.2 8.8-6.3 19.9-6.7 28.7-2zm53.3-1.4c6.8 2.2 12 7.9 14.3 14.6 6.1 14.7 5.5 33.1-4.4 45.9-4.5 4.8-10.2 9.1-17 9.1-12.5-.1-22.4-11.1-24.8-22.8-3.1-13.4-1.8-28.7 6.9-39.8 6.8-7.6 16-10.3 25-7zm156.1 8.1c-1.6 5.9-3.3 13.4-.7 19.3 5.1-2 5.4-9.6 6.6-14.5.9-6.1-3.5-12.6-5.9-4.8zm-176.2 21.1c.6 10.5 1.7 22.8 9.7 28.2 4.9 1.8 9.7-2.2 11.1-6.7 1.9-6.3 2.3-12.9 2.4-19.4-.2-7.1-1.5-15-6.7-20.1-12.2-4.4-15.3 10.9-16.5 18zM434 266.8V328l-4.4 6.7v-42.3c-4.6 7.5-9.1 9.1-6.1-.9 6.1-7.1 4.8-17.4 10.5-24.7zM83.85 279c.8 3.6 5.12 17.8 2.04 14.8-1.97-1.3-3.62-4.9-3.41-6.1-1.55-3-2.96-6.1-4.21-9.2-2.95 4-3.96 8.3-3.14 13.4.2-1.6 1.18-2.3 3.39-.7 7.84 12.6 12.17 29.1 7.29 43.5l-2.22 1.1c-10.36-5.8-11.4-19.4-13.43-30-1.55-12.3-.79-24.7 2.3-36.7 5.2-3.8 9.16 5.4 11.39 9.9zm-7.05 20.2c-4.06 4.7-2.26 12.8-.38 18.4 1.11 5.5 6.92 10.2 6.06 1.6.69-11.1-2.33-12.7-5.68-20zm66.4 69.4L256 491.7l112.8-123.1zm-21.4.3l-53.84 4.9 64.24 41.1c-2.6-2.7-4.9-5.7-7.1-8.8-5.2-6.9-10.5-13.6-18.9-16.6-8.75-6.5-4.2-5.3 2.9-2.6-1-1.8-.7-2.6.1-2.6 2.2-.2 8.4 4.2 9.8 6.3l24.7 31.6 65.1 41.7zm268.4 0l-42.4 46.3c6.4-3.1 11.3-8.5 17-12.4 2.4-1.4 3.7-1.9 4.3-1.9 2.1 0-5.4 7.1-7.7 10.3-9.4 9.8-16 23-28.6 29.1l18.9-24.5c-2.3 1.3-6 3.2-8.2 4.1l-40.3 44 74.5-47.6c5.4-6.7 1.9-5.6-5.7-.9l-11.4 6c11.4-13.7 30.8-28.3 40-35.6 9.2-7.3 15.9-9.8 8.2-1.5l-12.6 16c10-7.6.9 3.9-4.5 5.5-.7 1-1.4 2-2.2 2.9l54.5-34.9zM236 385.8v43.4h-13.4v-30c-5-1.4-10.4 1.7-15.3-.3-3.8-2.9 1-6.8 4.5-5.9 3.3-.1 7.6.2 9.3-3.2 4.4-4.5 9.6-4.4 14.9-4zm29 .5c12.1 1.2 24.2.6 36.6.6 1.5 3 .8 7.8-3.3 7.9-7.7.3-21-1.6-25.9.6-8.2 10.5 5.7 3.8 11.4 5.2 7 1.1 15 2.9 19.1 9.2 2.1 3.1 2.7 7.3.7 10.7-5.8 6.8-17 11.5-25.3 10.9-7.3-.6-15.6-1.1-20.6-7.1-6.4-10.6 10.5-6.7 12.2-3.2 6 5.3 20.3 1.9 20.7-4.7.6-4.2-2.1-6.3-6.9-7.8-4.8-1.5-12.6 1-17.3 1.8-4.7.8-9.6.5-9-4.4.8-4.2 2.7-8.1 2.7-12.5.1-3 1.7-7 4.9-7.2zm133.5 5c-.2-.2-7 5.8-9.9 8.1l-15.8 13.1c10.6-6.5 19.3-12 25.7-21.2zm-247 14.2c2.4 0 7.5 4.6 9.4 7l26.1 31.1c-7.7-2.1-13.3-7.1-17.6-13.7-6.5-7.3-11.3-16.6-21.2-19.6-9-5-5.2-6.4 2.1-2.2-.3-1.9.2-2.6 1.2-2.6z","manacles":"M158.06 18.422c-36.695 0-69.95 6.1-94.865 16.498-12.458 5.2-22.882 11.456-30.625 19.096-7.742 7.64-12.924 17.156-12.924 27.62 0 .78.04 1.552.096 2.32h-.1v70.25c0 10.46 5.187 19.974 12.932 27.612 7.745 7.638 18.172 13.894 30.63 19.094 24.92 10.4 58.173 16.502 94.85 16.502 36.678 0 69.93-6.102 94.85-16.502 12.46-5.2 22.886-11.456 30.63-19.094 7.746-7.638 12.93-17.15 12.93-27.613v-20.703c9.27.424 17.71 1.55 25.307 3.23-.798 3.753-.985 7.68-.637 11.55.94 10.456 5.445 21.254 13.047 30.91 7.602 9.655 17.04 16.57 26.984 19.935 2.417.818 4.914 1.416 7.43 1.762-3.297 5.552-8.22 11.055-15.012 16.196-4.39-5.606-10.9-9.44-17.896-11.457-4.414-1.273-9.136-1.933-14.036-1.972-.7-.005-1.402.002-2.11.022-5.653.16-11.514 1.132-17.39 2.93-11.75 3.593-21.61 9.89-28.347 17.945-4.25 5.08-7.327 11.186-8.227 17.595-3.977.162-8.04.264-12.25.264-7.765 0-15.21.498-22.326 1.438-4.75-4.465-11.02-7.302-17.568-8.58-2.576-.503-5.235-.798-7.952-.885-1.018-.033-2.046-.036-3.08-.01-7.237.18-14.813 1.786-22.29 4.812-11.39 4.61-20.66 11.75-26.663 20.363-5.74 8.233-8.578 18.567-5.275 28.215-10.067 12.647-16.583 26.92-19.236 41.44-.624.295-1.245.608-1.854.96-9.362 5.405-13.828 15.76-14.393 26.244-.566 10.484 2.35 21.814 8.496 32.457 6.144 10.642 14.497 18.834 23.86 23.587 9.36 4.753 20.563 6.063 29.925.658.207-.12.397-.253.598-.377 11.812 4.73 25.68 7.51 41.473 7.867v12.76c0 10.462 5.187 19.975 12.933 27.614 7.745 7.637 18.17 13.892 30.63 19.092 24.92 10.4 58.173 16.504 94.85 16.504 36.677 0 69.93-6.104 94.848-16.504 12.46-5.2 22.888-11.455 30.634-19.093 7.745-7.64 12.93-17.153 12.93-27.615V361.11c0-.106.01-.21.01-.315 0-.105-.01-.21-.01-.315v-.396h-.012c-.23-10.182-5.338-19.442-12.905-26.908-7.743-7.64-18.167-13.897-30.625-19.096-24.916-10.4-58.168-16.498-94.863-16.498-36.696 0-69.95 6.1-94.866 16.498-12.458 5.2-22.882 11.456-30.625 19.096-7.744 7.64-12.927 17.156-12.927 27.62 0 .78.04 1.553.096 2.323h-.1v38.778c-11.41-.283-21.247-1.943-29.628-4.662 1.115-3.32 1.76-6.834 1.95-10.367.566-10.485-2.35-21.815-8.495-32.458-6.144-10.643-14.5-18.833-23.86-23.586-2.735-1.388-5.627-2.47-8.583-3.19 2.238-8.604 6.232-17.206 11.986-25.24 3.724 2.22 7.92 3.75 12.24 4.592 10.305 2.012 21.93.692 33.32-3.92 11.392-4.61 20.66-11.75 26.665-20.363 4.323-6.203 6.995-13.597 6.646-20.992 4.518-.398 9.198-.61 14.046-.61 5.697 0 11.203-.15 16.543-.425 4.364 6.35 11.35 10.637 18.898 12.812 10.088 2.908 21.785 2.614 33.537-.98 11.752-3.594 21.61-9.892 28.347-17.946 4.44-5.307 7.587-11.732 8.323-18.455 17.06-11.132 28.024-25.383 31.982-40.676 8.43-6.693 11.35-17.54 10.414-27.963-.938-10.456-5.444-21.254-13.046-30.91-7.602-9.655-17.04-16.57-26.984-19.935-3.73-1.262-7.645-2.008-11.53-2.096-1.297-.03-2.59.013-3.87.136-4.963.475-9.75 2.143-13.905 5.285-10.607-2.854-22.495-4.62-35.57-5.145V81.95c0-.106.01-.21.01-.315 0-.106-.01-.21-.01-.315v-.396h-.012c-.23-10.182-5.336-19.442-12.902-26.908-7.742-7.64-18.166-13.897-30.624-19.096-24.916-10.4-58.17-16.498-94.865-16.498zm0 18.69c34.588 0 65.87 5.96 87.667 15.056 10.898 4.55 19.377 9.9 24.697 15.15s7.36 9.904 7.36 14.317c0 4.412-2.04 9.065-7.36 14.314-2.635 2.6-6.05 5.224-10.145 7.765-25.566-12.5-61.797-19.834-102.223-19.834-40.424 0-76.645 7.32-102.217 19.833-4.094-2.54-7.508-5.164-10.143-7.764-5.32-5.25-7.36-9.903-7.36-14.315 0-4.413 2.04-9.067 7.36-14.317s13.797-10.6 24.696-15.15C92.19 43.07 123.473 37.11 158.06 37.11zm-.003 65.458c30.217 0 57.918 4.62 78.966 11.82-21.05 7.217-48.743 11.766-78.962 11.766-30.228 0-57.93-4.55-78.984-11.77 21.048-7.197 48.77-11.816 78.98-11.816zm191.517 30.582c1.67.07 3.59.435 5.774 1.174 5.826 1.972 12.726 6.725 18.293 13.795 5.568 7.072 8.568 14.894 9.118 21.02.55 6.127-1.038 9.786-3.442 11.678-2.403 1.893-6.333 2.578-12.16.606-5.826-1.972-12.726-6.723-18.293-13.793-5.567-7.07-8.567-14.894-9.117-21.02-.55-6.127 1.038-9.786 3.442-11.678 1.2-.947 2.785-1.59 4.796-1.752.503-.04 1.033-.05 1.59-.028zm-28.05 89.24c3.342.022 6.4.45 8.986 1.194 5.91 1.704 8.748 4.508 9.642 7.434.895 2.925.11 6.836-3.836 11.554-3.946 4.72-10.87 9.433-19.476 12.065-8.606 2.63-16.984 2.597-22.895.893-5.91-1.703-8.748-4.508-9.642-7.433-.895-2.926-.113-6.837 3.834-11.555 3.946-4.718 10.873-9.433 19.478-12.065 4.303-1.315 8.55-1.966 12.46-2.074.488-.013.97-.02 1.448-.015zm-116.596 30.702c1.762.047 3.414.225 4.924.52 6.037 1.178 9.11 3.722 10.257 6.558 1.147 2.836.71 6.8-2.807 11.848-3.518 5.046-10.003 10.35-18.344 13.726-8.343 3.377-16.692 4.077-22.73 2.9-6.037-1.18-9.107-3.724-10.255-6.56-1.148-2.836-.713-6.8 2.804-11.846s10.004-10.35 18.345-13.726c6.256-2.533 12.517-3.562 17.803-3.42zm150.53 63.177c34.59 0 65.87 5.96 87.667 15.058 10.9 4.55 19.376 9.9 24.695 15.15 5.32 5.25 7.364 9.905 7.364 14.317 0 4.412-2.044 9.065-7.364 14.314-2.636 2.6-6.052 5.226-10.148 7.767-25.56-12.48-61.792-19.834-102.217-19.834-40.052 0-76.002 7.23-101.517 19.488l.51 1.062c-4.625-2.763-8.467-5.636-11.352-8.483-5.32-5.25-7.364-9.903-7.364-14.315 0-4.412 2.044-9.067 7.364-14.316 5.32-5.25 13.796-10.603 24.695-15.152 21.8-9.097 53.08-15.057 87.67-15.057zm-214.036 29.033c2.013.127 4.382.795 7.125 2.187 5.485 2.785 11.635 8.472 16.135 16.266 4.5 7.793 6.35 15.965 6.02 22.107-.332 6.143-2.426 9.537-5.075 11.067-2.65 1.53-6.636 1.645-12.12-1.14-5.486-2.783-11.638-8.47-16.138-16.265-4.5-7.793-6.35-15.965-6.02-22.107.33-6.142 2.426-9.537 5.076-11.066 1.324-.765 2.982-1.177 4.996-1.05zm214.033 36.427c30.225 0 57.92 4.61 78.973 11.82-21.053 7.217-48.747 11.766-78.97 11.766-30.23 0-57.934-4.552-78.99-11.773 21.056-7.213 48.762-11.813 78.987-11.813z","soul":"M256 25.932c-18.969 0-36.639 20.557-36.639 48.636 0 28.08 17.67 48.639 36.639 48.639s36.639-20.56 36.639-48.639c0-28.079-17.67-48.636-36.639-48.636zM112 96s-96.965 62.813-86.373 112c4.048 18.799 41.31 39.417 46.246 58.002C84.117 312.107 16 352.297 16 400c0 11.926 32 96 32 96h96s-56.606-68.165-64-96c-10.71-40.318 45.454-95.328 38.748-136.502-3.637-22.333-60.928-38.58-65.207-60.799C45.86 162.815 112 96 112 96zm288 0s66.14 66.815 58.459 106.7c-4.279 22.218-61.57 38.465-65.207 60.798C386.546 304.672 442.71 359.682 432 400c-7.394 27.835-64 96-64 96h96s32-84.074 32-96c0-47.703-68.117-87.893-55.873-133.998 4.936-18.585 42.198-39.203 46.246-58.002C496.965 158.813 400 96 400 96zm-176.305 34.914c-7.531.938-14.474 2.207-20.377 3.781-6.898 1.84-12.352 4.169-15.353 6.227-3.001 2.058-2.887 2.84-2.965 3.078l-21.922 67.225 71.442-62.866c3.617-3.872 7.91-5.767 12.35-6.154-8.625-1.654-16.465-5.619-23.175-11.29zm64.61 0c-6.71 5.673-14.55 9.637-23.174 11.291 4.438.387 8.732 2.282 12.35 6.154l71.44 62.866L327 144c-.077-.238.036-1.02-2.965-3.078s-8.455-4.387-15.353-6.227c-5.903-1.574-12.846-2.843-20.377-3.78zM248.9 160.168c-.775.02-1.214.472-1.693 1.002l-96.047 84.516c.035.363.12 1.072.676 2.29 1.273 2.793 4.4 6.867 8.143 10.182 3.743 3.315 8.164 5.924 11.09 6.85 1.36.43 2.201.438 2.51.42l84.482-95.395c2.32-2.62-5.414-10.054-9.16-9.865zm27.532 11.242c-.438 3.648-1.972 7.254-4.897 10.557l-3.514 3.967 70.4 79.494c.309.018 1.15.01 2.51-.42 2.926-.926 7.347-3.535 11.09-6.85 3.744-3.315 6.87-7.39 8.143-10.181.556-1.219.64-1.928.676-2.291zM256 199.508l-69.328 78.283C185.42 279.205 185 285.147 185 288c0 29.279 12.608 45.893 26.4 59.764 6.897 6.935 14.093 12.911 20.112 19.302 6.018 6.392 11.51 13.895 11.49 23.58-.028 14.149-8.246 24.081-14.522 33.522-6.275 9.44-11.48 18.393-11.48 31.959 0 4.379 2.635 8.86 9.313 13.918 6.677 5.058 16.85 9.835 28.226 13.648 11.237 3.767 23.68 6.63 35.23 8.612-4.423-3.207-8.762-6.284-13.123-9.66-7.37-5.707-14.087-11.304-18.853-17.329-2.383-3.012-4.468-6.146-5.307-10.48-.838-4.334.892-10.302 4.518-13.545 11.397-10.194 26.32-13.929 37.21-19.365 5.446-2.718 9.754-5.65 12.481-8.934C309.422 409.71 311 406.17 311 400c0-15.156-6.774-23.149-12.645-32.934-2.935-4.892-6.078-10.847-5.195-18.252.883-7.404 5.71-13.8 13.268-19.843 6.642-5.311 11.513-8.68 14.781-13.67C324.477 310.31 327 302.933 327 288c-.446-2.88-.42-8.795-1.672-10.209z","swap-bag":"M363.783 23.545c-9.782.057-16.583 3.047-20.744 10.22-17.51 30.18-38.432 61.645-48.552 97.245 2.836.83 5.635 1.787 8.373 2.853 7.353 2.863 14.38 6.482 20.542 10.858 27.534-25.542 58.165-45.21 87.45-65.462 11.356-7.854 12.273-13.584 10.183-20.83-2.09-7.246-9.868-16.365-20.525-23.176-10.658-6.81-23.87-11.33-34.73-11.68-.68-.022-1.345-.03-1.997-.027zm-68.998.746c-10.02-.182-17.792 6.393-23.924 20.24-8.94 20.194-10.212 53.436-1.446 83.185.156-.008.31-.023.467-.03 1.99-.087 3.99-.072 6 .03 9.436-34.822 27.966-64.72 44.013-91.528-10.31-8.496-18.874-11.782-25.108-11.896zM197.5 82.5L187 97.97c14.82 10.04 29.056 19.725 39.813 31.374 3.916 4.24 7.37 8.722 10.31 13.607 3.77-4.73 8.51-8.378 13.69-10.792.407-.188.82-.355 1.228-.53-3.423-5.44-7.304-10.418-11.51-14.972C227.765 102.83 212.29 92.52 197.5 82.5zm223.77 12.27c-29.255 20.228-58.575 39.152-84.348 62.78.438.576.848 1.168 1.258 1.76 20.68-6.75 49.486-15.333 73.916-19.41 11.484-1.916 15.66-6.552 17.574-13.228 1.914-6.676.447-16.71-5.316-26.983-.924-1.647-1.96-3.29-3.083-4.92zm-223.938 47.87c-14.95.2-29.732 4.3-43.957 12.766l9.563 16.03c21.657-12.89 42.626-14.133 65.232-4.563.52-5.592 1.765-10.66 3.728-15.21.35-.806.73-1.586 1.123-2.354-11.87-4.52-23.83-6.827-35.688-6.67zm75.8 3.934c-5.578-.083-10.597.742-14.427 2.526-4.377 2.038-7.466 4.914-9.648 9.97-.884 2.047-1.572 4.54-1.985 7.494.456-.007.91-.03 1.365-.033 16.053-.084 32.587 2.77 49.313 9.19 7.714 2.96 15.062 7.453 22.047 13.184 3.217-2.445 4.99-4.72 5.773-6.535 1.21-2.798 1.095-5.184-.634-8.82-3.46-7.275-15.207-16.955-28.856-22.27-6.824-2.658-13.98-4.224-20.523-4.614-.818-.05-1.627-.08-2.424-.092zm-24.757 38.457c-22.982.075-44.722 7.386-65 19.782-32.445 19.835-60.565 53.124-80.344 90.032-19.777 36.908-31.133 77.41-31.186 110.53-.053 33.06 10.26 57.27 32.812 67.782.043.02.082.043.125.063h.032c24.872 11.51 65.616 19.337 108.407 20.092 42.79.756 87.79-5.457 121.874-20.187 21.96-9.49 34.545-28.452 40.5-54.156 5.954-25.705 4.518-57.657-2.375-89.314-6.894-31.657-19.2-63.06-34.095-87.875-14.894-24.814-32.614-42.664-48.063-48.593-14.664-5.627-28.898-8.2-42.687-8.156z","tied-scroll":"M373.563 18.406c-15.616-.167-27.91 4.622-32.563 14.75-22.778 49.605-48.743 87.14-79.094 117.28 3.047 1.015 6.046 2.29 8.938 3.783 12.987 6.708 25.268 17.78 35.312 30.843 10.044 13.062 17.85 28.114 20.78 43.5.746 3.908 1.16 7.885 1.158 11.843 38.97-24.36 85.058-41.223 140.875-51.312 14.91-2.697 23.652-28.632 21.405-58.656l-35.156-1 30.56-24.813c-4.148-14.507-11.013-28.754-21.155-40.72-15.528-18.314-36.43-31.376-56.72-38.686L381.94 40.812l2.812-21.5c-3.875-.55-7.61-.87-11.188-.907zM246.938 166.562c-1.063.052-2.06.226-3 .47-11.976 10.254-24.61 19.597-37.938 28.28.842.33 1.67.667 2.5 1.032 14.123 6.192 27.438 17.145 38.47 30.625 13.356 16.322 23.62 36.94 25.624 57.75 10.334-10.367 21.24-19.943 32.844-28.72 4.096-6.555 4.93-14.468 3.125-23.938-2.184-11.46-8.642-24.43-17.25-35.625-8.61-11.194-19.38-20.622-29.063-25.625-6.052-3.126-11.154-4.45-15.313-4.25zm-61.907 43.282c-1.385.053-2.69.27-3.968.562-37 20.762-79.088 37.985-127.312 56 .574.042 1.14.093 1.72.156 10.627 1.156 21.076 5.008 31.155 10.875L124.313 261 108.5 293.72c5.995 5.432 11.803 11.477 17.344 18 20.76 24.434 37.964 55.865 47.094 88.092.002.01-.003.022 0 .032 2.98 10.508 5.11 20.916 6.312 31 20.99-48.438 44.38-89.26 72.344-123 7.3-21.48-2.186-48.408-19.063-69.03-9.44-11.538-20.976-20.718-31.53-25.345-5.936-2.604-11.27-3.808-15.97-3.626zm141.626 54.844c-7.31 5.05-14.462 10.51-21.437 16.312 39.16 9.26 60.953 35.722 80.655 62.156 10.464 14.04 20.598 28.11 33.125 40.688 24.19 9.147 43.17 6.38 63.906-14.938-92.165-27.78-96.11-92.61-156.25-104.22zM48.594 284.906c-10.873.225-18.26 5.755-23.344 16.594-5.81 12.387-7.114 32.47.438 57.063 5.75 18.73 16.52 37.718 28.75 51.625 12.23 13.906 25.9 22.076 35.374 22.406h.032c3.717.13 6.553-.682 8.812-2.75l-.187-.188 2.093-2.094c.793-1.168 1.52-2.548 2.187-4.187 2.81-6.9 3.28-18.552-1.844-33-6.885-19.417-19.12-31.932-33.375-34.78l-22.968-4.564 19.813-12.5 38.47-24.186c-16.65-16.822-34.55-27.607-49.376-29.22-1.7-.184-3.323-.25-4.876-.218zm236.25 5.406l-24.53 25.375c100.442 17.878 55.45 141.005 159.31 176.188l-24.78-57.28c32.766 16.15 67.39 22.623 97.72 12.03-135.77-41.948-96.32-126.983-207.72-156.313zm-169.47 38.22l-25.968 16.343c13.18 8.5 23.21 22.565 29.125 39.25 2.57 7.244 4.133 14.205 4.75 20.78l23.44-23.374c-8.08-19.19-19.035-37.566-31.345-53zm38.376 72.374l-42.063 42-.156-.156c-4.255 3.942-9.456 6.765-15.186 7.938 23.268 14.873 44.644 19.346 56.812 9.562 4.26-3.426 7.043-8.36 8.47-14.406-.41-12.684-2.602-26.615-6.657-40.906-.382-1.346-.806-2.686-1.22-4.032z"};
+// The official name table (same as playtest/index.html NAME_LIST): dots -> Ars Goetia demon
+const DEMON = Object.fromEntries([["Bael","1112"],["Paimon","1144"],["Beleth","1234"],["Purson","1333"],["Asmoday","2224"],["Balam","2233"],["Belial","3444"],
+  ["Agares","1113"],["Valefor","1122"],["Barbatos","1244"],["Gusion","1334"],["Eligos","2234"],["Astaroth","2333"],["Gremory","4444"],
+  ["Vassago","1114"],["Sitri","1123"],["Ipos","1222"],["Gaap","1344"],["Stolas","2244"],["Orobas","2334"],["Seere","3333"],
+  ["Samigina","1124"],["Amon","1133"],["Leraje","1223"],["Naberius","2222"],["Forneus","1444"],["Shax","2344"],["Andras","3334"],
+  ["Botis","1111"],["Marax","1134"],["Furfur","1224"],["Halphas","1233"],["Raum","2223"],["Bifrons","2444"],["Andromalius","3344"]].map(([n, c]) => [c, n]));
+const demonOf = name => DEMON[[...name].sort().join('')] || '';
+// portraits: Louis Le Breton's engravings for the Dictionnaire Infernal (1863), or the demon's seal from the Lesser Key of Solomon; both public domain
+let PORTRAIT = {"Agares":"Agares.jpg","Amon":"Amon.png","Andras":"Andras.png","Andromalius":"Andromalius.png","Asmoday":"Asmoday.jpg","Astaroth":"Astaroth.jpg","Bael":"Bael.jpg","Balam":"Balam.png","Barbatos":"Barbatos.jpg","Beleth":"Beleth.png","Belial":"Belial.png","Bifrons":"Bifrons.jpg","Botis":"Botis.png","Eligos":"Eligos.jpg","Forneus":"Forneus.png","Furfur":"Furfur.jpg","Gaap":"Gaap.jpg","Gremory":"Gremory.jpg","Gusion":"Gusion.png","Halphas":"Halphas.jpg","Ipos":"Ipos.gif","Leraje":"Leraje.png","Marax":"Marax.png","Naberius":"Naberius.jpg","Orobas":"Orobas.jpg","Paimon":"Paimon.jpg","Purson":"Purson.jpg","Raum":"Raum.png","Samigina":"Samigina.png","Seere":"Seere.png","Shax":"Shax.jpg","Sitri":"Sitri.png","Stolas":"Stolas.jpg","Valefor":"Valefor.png","Vassago":"Vassago.png"};   // demon name -> file in art/demons/ (see art/CREDITS.md)
+// Le Breton didn't draw these 13; they use their seal instead
+const SIGILS = new Set(['Belial', 'Valefor', 'Gusion', 'Vassago', 'Sitri', 'Seere', 'Samigina', 'Leraje', 'Forneus', 'Botis', 'Marax', 'Raum', 'Andromalius']);
+const portrait = (name, cls = 'portrait') => {
+  const d = demonOf(name), f = PORTRAIT[d];
+  return f ? `<img class="${cls}${SIGILS.has(d) ? ' sigil' : ''}" src="art/demons/${f}" alt="${d}" loading="lazy">` : '';
+};
+const COLOR_NAMES = ['Crimson', 'Cobalt', 'Emerald', 'Amber', 'Violet', 'Teal'];
+const ABIL = {
+  [ARCH]: ['Take 1 free name token per turn.', 'Draw 3 tokens, keep 1 (2 souls).', 'Ask anyone 1 yes/no question each round (role or name).'],
+  [DUKE]: ['+25% strength in duel rolls.', 'You may duel anyone once per round.', 'Duel anyone; each win they give you a token of their choice.'],
+  [PRINCE]: ['Backing you give is refunded if your side loses.', 'Duel anyone you hold 3+ tokens of; if they lose they become your vassal.', 'You may not consume. Your slaves pay you 3 souls a round (the bank covers any shortfall).'],
+  [MARQ]: ['Lose this mask in a duel: your next remask costs 3.', '+50% strength when challenged.', 'Can\'t be enslaved. When named: +6 souls and a Ward, then a last-stand duel (max 50%).'],
+  [EARL]: ['Event cards cost 2; +2 souls per trade (once a turn).', 'Buying a card: draw 2, keep 1.', 'Take 1 free event card each turn.'],
+};
+const CARD_TEXT = {
+  Seize: 'Needs 2 copies to use. Take 1 token of a chosen colour from anyone.',
+  Collect: 'Trade in for 3 souls.',
+  Restoration: 'Choose a player: they put one of your tokens back into the bag.',
+  Ward: 'Delay your enslavement or consumption until after your next turn.',
+  Pact: 'Make a contract with another player. (Not playable here yet.)',
+  Arrogation: 'A slave may duel their master: win = new name and you swap places; lose = they take half your souls. A true Earl may discard 2 for 7 souls.',
+};
+
+// ---------- game state ----------
+// Solo: G.g is the real game, run here. Online (G.online): G.g is rebuilt from the server's view of the game after every
+// update (other players' secrets removed); actions go to the server as commands (net.js runCommand) through doCmd().
+let G = null;   // { g, me, idx, over, myTurn, opts, log: [], online, seats }
+const ME = () => G.g.P[G.me];
+const pc = c => `var(--c${c})`;
+const pn = i => i === G.me ? `${COLOR_NAMES[i]} (you)` : COLOR_NAMES[i];
+const who = (i, txt) => `<span class="who" style="--pc:${pc(i)}"><i></i>${esc(txt ?? pn(i))}</span>`;
+// a name token: a disc in the player's colour with its pips (0 pips = colour only)
+function tokSvg(c, d = 0, blank = false) {
+  const col = blank ? 'var(--muted)' : pc(c), pos = { 1: [[16, 16]], 2: [[11, 11], [21, 21]], 3: [[10, 10], [16, 16], [22, 22]], 4: [[11, 11], [21, 11], [11, 21], [21, 21]] }[d] || [];
+  return `<svg class="tok" viewBox="0 0 32 32" aria-label="${blank ? 'blank' : COLOR_NAMES[c] + (d ? ' ' + d : '')}"><circle cx="16" cy="16" r="14" fill="var(--surface)" stroke="${col}" stroke-width="3"/>${blank ? `<path d="M10 22 22 10" stroke="${col}" stroke-width="2"/>` : ''}${pos.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" fill="${col}"/>`).join('')}</svg>`;
+}
+function heldDots(q) {
+  const by = {}; for (const t of q.tokens) by[t.c] = (by[t.c] || 0) + 1;
+  const show = G.opts.xray || G.over;
+  const e = Object.entries(by);
+  if (!e.length) return '<span class="muted">none</span>';
+  return `<span class="held">${e.map(([c, n]) => `<span class="grp" title="${n} ${COLOR_NAMES[c]}">${Array.from({ length: n }, () => `<span class="dot" style="--pc:${pc(c)}"></span>`).join('')}${show ? `<span class="n">${q.tokens.filter(t => t.c === +c).map(t => t.d).join('')}</span>` : ''}</span>`).join('')}</span>`;
+}
+
+function log(s, cls = '', r = G.g.round) { G.log.push({ r, s, cls }); if (G.log.length > 400) G.log.shift(); renderLog(); }
+function renderLog() {
+  $('#log').innerHTML = G.log.slice().reverse().map(e => e.chat !== undefined
+    ? `<div class="chat"><span>${who(e.chat, COLOR_NAMES[e.chat])}</span><b>${esc(e.s)}</b></div>`
+    : `<div class="${e.cls}"><span>R${e.r}</span><b>${esc(e.s)}</b></div>`).join('');
+  document.querySelectorAll('#log div:not(.mine):not(.big):not(.chat) b').forEach(b => b.style.fontWeight = '400');
+}
+function flushEngineLog(max = Infinity) {
+  const g = G.g;
+  while (g.log.length && max-- > 0) {
+    let s = g.log.shift(); const rm = s.match(/^R(\d+) /), r = rm ? +rm[1] : g.round; s = s.replace(/^R\d+ /, '');
+    const me = `P${G.me}`;
+    s = s.replace(`(${me})`, '(yours)').replace(new RegExp(`\\ba ${me} token`, 'g'), 'one of your tokens').replace(new RegExp(`\\bfrom ${me} for`, 'g'), 'from you for')
+      .replace(new RegExp(`(duels|names|against|from|on|enslaves|consumes|vassalizes) ${me}\\b`, 'g'), '$1 you').replace(new RegExp(`\\b${me}\\b`, 'g'), 'You');
+    s = s.replace(/\bYou (buys|draws|duels|tries|plays|remasks|reveals|enslaves|consumes|vassalizes|reincarnates|trades|waits|discards|wins|loses their|lowers their|is)\b/g, (m, v) =>
+      'You ' + ({ tries: 'try', 'loses their': 'lose your', 'lowers their': 'lower your', is: 'are', wins: 'win' }[v] || v.replace(/s$/, '')));
+    s = s.replace(/: You win$/, ': you win');
+    s = s.replace(/\bP(\d)\b/g, (m, i) => COLOR_NAMES[+i]);
+    const big = /enslaves|consumes|name|Arrogation|reincarnates|swap|wins the game|Ward|last stand/.test(s);
+    log(s, s.startsWith('You') || /\byou\b/.test(s) ? 'mine' : big ? 'big' : '', r);
+  }
+}
+
+// ---------- commands: every action goes through here (solo: run on the local game; online: sent to the server) ----------
+// Resolves with the command's result after its animations have played.
+function doCmd(cmd, a = {}) {
+  if (G.online) return Net.send(cmd, a);
+  flushEngineLog(); G.cur = snap(G.g);
+  const res = runCommand(G.g, ME(), cmd, a, G.ctx);
+  return after().then(() => res);
+}
+const failed = r => { if (!r.ok) log(r.msg || 'That did not work.', 'mine'); return !r.ok; };
+
+// ---------- new game ----------
+function newGameDialog() {
+  const types = ['mix', 'aggressor', 'balanced', 'turtle'];
+  dialog(`<h2>New game</h2>
+    <p class="muted">You play ${COLOR_NAMES[0]}, against bots that use the balance sim's strategies.</p>
+    <div class="row"><span class="label" style="width:110px">Players</span><select id="ng-n">${[3, 4, 5, 6].map(n => `<option ${n === 4 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="row"><span class="label" style="width:110px">Bots</span><select id="ng-b">${types.map(t => `<option>${t}</option>`).join('')}</select></div>
+    <div class="row"><span class="label" style="width:110px">Bot speed</span><select id="ng-s"><option value="600">normal</option><option value="1200">slow</option><option value="150">fast</option><option value="0">instant</option></select></div>
+    <label class="row"><input type="checkbox" id="ng-t"> Show bot styles</label>
+    <label class="row"><input type="checkbox" id="ng-x"> Show everything (names, roles, dots) — for testing</label>
+    <div class="row"><button class="btn primary" id="ng-go">Deal the names</button></div>
+    <div class="online-box"><h3>Online with friends</h3>${Net.available() ? `
+      <p class="muted">Each player on their own device. Empty seats are filled with bots.</p>
+      <div class="row"><span class="label" style="width:110px">Your name</span><input type="text" id="on-nick" maxlength="16" value="${esc(Net.nick())}"></div>
+      <div class="row"><button class="btn" id="on-create">Create a room</button><span class="muted">or</span><input type="text" id="on-code" maxlength="4" placeholder="CODE" style="width:80px;text-transform:uppercase" value="${esc(Net.linkCode())}"><button class="btn" id="on-join">Join</button></div>
+      <p class="muted" id="on-err"></p>` : '<p class="muted">Start the server to play online: <code>npm run rework-server</code>, then open the address it prints.</p>'}</div>`);
+  if (Net.available()) {
+    const nick = () => { const v = $('#on-nick').value.trim().slice(0, 16) || 'Player'; Net.nick(v); return v; };
+    const err = e => { $('#on-err').textContent = e.message || String(e); };
+    $('#on-create').onclick = () => Net.create(nick()).catch(err);
+    $('#on-join').onclick = () => { const c = $('#on-code').value.trim().toUpperCase(); if (c.length !== 4) return err('Enter the 4-letter room code.'); Net.join(c, nick()).catch(err); };
+  }
+  $('#ng-go').onclick = () => {
+    const n = +$('#ng-n').value, bt = $('#ng-b').value, kinds = Object.keys(TYPES);
+    const bots = Array.from({ length: n }, (_, i) => i === 0 ? new HumanBot() : new Bot(bt === 'mix' ? kinds[Math.floor(Math.random() * kinds.length)] : bt));
+    const g = new Game(n, bots, Math.floor(Math.random() * 1e9), {});
+    g.trace = true; g.log = [];
+    g.on = (type, data) => { G.q.push({ type, data, before: G.cur, logN: g.log.length }); G.cur = snap(g); };
+    if (G && G.online) Net.leave();
+    G = { q: [], cur: null, busy: false, ctx: {}, looks: rollLooks(n), g, me: 0, idx: -1, over: false, myTurn: false, log: [], opts: { speed: +$('#ng-s').value, showTypes: $('#ng-t').checked, xray: $('#ng-x').checked } };
+    closeDialog();
+    log(`New game: ${n} players. Your secret name is ${ME().name.join('-')}: ${ROLES[ME().role]}.`, 'mine');
+    ME().needMask = true;
+    chooseMask('Choose your starting mask', m => doCmd('chooseMask', { m }).then(() => { render(); advance(); }));
+  };
+}
+function chooseMask(title, done) {
+  const p = ME(), opts = masksFor(p.role);
+  dialog(`<h2>${title}</h2><p class="muted">Your role is ${ROLES[p.role]}. A mask shows publicly and narrows your role to its 3 neighbours.</p>
+    <div class="opts wide">${opts.map(m => `<button class="btn" data-m="${m}">${ROLES[m]} mask<span class="sub">covers ${masksFor(m).map(r => ROLES[r]).join(', ')} · Lv. 1: ${ABIL[m][0]}</span></button>`).join('')}</div>`);
+  document.querySelectorAll('#dlgBody [data-m]').forEach(b => b.onclick = () => { closeDialog(); done(+b.dataset.m); });
+}
+
+// ---------- turn loop ----------
+async function advance() {
+  if (G.over) return;
+  const g = G.g, game = G;
+  G.idx++;
+  if (G.idx >= g.P.length) { G.idx = 0; g.round++; log(`Round ${g.round} begins.`); }
+  const p = g.P[G.idx]; g.turnNo++;
+  flushEngineLog(); G.cur = snap(g);
+  if (p.id === G.me) {
+    const wasWaiting = p.status === 'waiting';
+    const go = g.beginTurn(p);
+    await playQueue(); if (G !== game) return;
+    if (!go) { render(); return setTimeout(advance, G.opts.speed); }
+    G.myTurn = true;
+    if (wasWaiting) { log(`You reincarnate with a new name: ${p.name.join('-')}: ${ROLES[p.role]}.`, 'mine'); p.needMask = true; render(); return chooseMask('You reincarnate: choose your mask', m => doCmd('chooseMask', { m }).then(render)); }
+    log(`Your turn: +2 souls${p.status !== 'free' && p.master !== null ? `, tribute paid to ${COLOR_NAMES[p.master]}` : ''}.`, 'mine');
+    render(); return;
+  }
+  G.myTurn = false; render();
+  try { g.turn(p); } catch (err) { log('Engine error: ' + err.message, 'big'); console.error(err); }
+  await playQueue(); if (G !== game) return;
+  render();
+  if (checkWin()) return;
+  setTimeout(advance, Math.min(G.opts.speed, 400));
+}
+async function endMyTurn() {
+  if (G.online) { G.myTurn = false; render(); Net.raw({ t: 'end' }); return; }
+  const g = G.g, p = ME(), game = G;
+  flushEngineLog(); G.cur = snap(g); G.myTurn = false;
+  try { g.endTurn(p); } catch (err) { log('Engine error: ' + err.message, 'big'); console.error(err); }
+  await playQueue(); if (G !== game) return;
+  render();
+  if (checkWin()) return;
+  setTimeout(advance, Math.min(G.opts.speed, 400));
+}
+function checkWin() {
+  if (G.over && G.online) return true;
+  const w = G.g.winner();
+  if (!w) return false;
+  G.over = true; G.myTurn = false; render();
+  log(w.id === G.me ? 'You win! Everyone else serves you.' : `${COLOR_NAMES[w.id]} wins the game.`, 'big');
+  winDialog(w);
+  return true;
+}
+function winDialog(w) {
+  const names = G.g.P.map(q => `<tr><td>${who(q.id)}</td><td><span class="row" style="gap:8px;flex-wrap:nowrap">${q.name ? portrait(q.name, 'mini') + demonOf(q.name) + ` (${q.name.join('-')})` : ''}</span></td><td>${q.role !== null ? ROLES[q.role] : ''}</td><td class="muted">${q.id === G.me ? '' : seatLabel(q)}</td></tr>`).join('');
+  const again = G.online ? (Net.isHost() ? '<button class="btn primary" onclick="closeDialog();Net.restart()">Back to the lobby</button>' : '<span class="muted">The host can start another game.</span>') : '<button class="btn primary" onclick="closeDialog();newGameDialog()">New game</button>';
+  dialog(`<h2>${w ? (w.id === G.me ? 'You win' : COLOR_NAMES[w.id] + ' wins') : 'Game over'}</h2><p class="muted">Round ${G.g.round}.</p><div class="ledger"><table style="min-width:0">${names}</table></div>
+    <div class="row">${again}<button class="btn" onclick="closeDialog()">Look at the board</button></div>`);
+}
+// what a seat is labelled with under its colour: online, the player's nickname (or "bot"); solo, the bot style if shown
+function seatLabel(q) {
+  if (G.online) { const s = G.seats && G.seats[q.id]; return s ? (s.bot ? 'bot' : esc(s.nick) + (s.connected ? '' : ' · away')) : ''; }
+  return q.id === G.me ? '' : G.opts.showTypes ? q.bot.type : '';
+}
+async function after() { const game = G; await playQueue(); if (G !== game) return; render(); checkWin(); }
+
+// ---------- rendering ----------
+function statusText(g, q) {
+  if (q.status === 'waiting') return `consumed<span class="sub">back in ${q.waitTurns ?? 0 ? 'after a turn' : 'next turn'}</span>`;
+  if (q.status === 'slave') return `slave<span class="sub">of ${esc(COLOR_NAMES[q.master])}</span>`;
+  if (q.status === 'vassal') return `vassal<span class="sub">of ${esc(COLOR_NAMES[q.master])}</span>`;
+  const subs = g.subjects(q); return subs.length ? `free<span class="sub">rules ${subs.map(s => esc(COLOR_NAMES[s.id])).join(', ')}</span>` : 'free';
+}
+function maskText(g, q) {
+  if (q.status === 'waiting') return '—';
+  if (q.status === 'slave') return `${ROLES[q.mask]} mask<span class="sub">permanent</span>`;
+  if (q.lv3) return `<b>${ROLES[q.role]}</b><span class="sub">role revealed</span>`;
+  if (q.mask !== null) return `${ROLES[q.mask]} mask`;
+  return `<span style="color:var(--danger)">unmasked</span><span class="sub">last: ${ROLES[q.lastMask]}</span>`;
+}
+function level(g, p) {
+  if (p.status !== 'free') return null;
+  if (p.lv3) return [p.role, 3];
+  if (p.mask !== null) return [p.mask, 1];
+  return [p.lastMask, 2];
+}
+function render() {
+  const g = G.g, p = ME(), free = g.P.filter(q => g.free(q)).length;
+  $('#sub').textContent = G.over ? `Round ${g.round} · game over` : `Round ${g.round}${g.noblesseOver() ? ' · Noblesse Oblige has ended' : ''}`;
+  const lv = level(g, p);
+  const tagMask = p.status === 'waiting' ? '<span class="tag">consumed</span>' : g.masked(p) ? `<span class="tag ok">${p.status === 'slave' ? 'slave · ' : ''}${ROLES[p.mask]} mask</span>` : p.lv3 ? '<span class="tag gold">role revealed</span>' : '<span class="tag warn">unmasked</span>';
+  // compact "you" card: seal, name dots, souls, mask, current power, then what you hold
+  const by = {}; for (const t of p.tokens) by[t.c] = (by[t.c] || 0) + 1;
+  const cby = {}; for (const c of p.cards) cby[c] = (cby[c] || 0) + 1;
+  $('#you').innerHTML = `
+    <div class="identity" style="--pc:${pc(G.me)}">
+      <div class="seal${p.status !== 'waiting' && portrait(p.name) ? ' has-img' : ''}" style="--pc:${pc(G.me)}" title="${p.status === 'waiting' ? '' : demonOf(p.name)}">${p.status === 'waiting' ? '—' : (portrait(p.name, 'seal-img') || ROLES[p.role] + '<small>' + p.name.join('') + '</small>')}</div>
+      <div class="facts">
+        <div class="row" style="justify-content:space-between; gap:6px"><span class="nm">${who(G.me, COLOR_NAMES[G.me])} <span class="demon">${p.status === 'waiting' ? '' : demonOf(p.name) + ' · ' + ROLES[p.role]}</span></span><span class="souls-big">${soulSvg}${p.souls}</span></div>
+        <div class="toks">${p.status === 'waiting' ? '<span class="muted">waiting to reincarnate</span>' : p.name.map(d => tokSvg(G.me, d)).join('')} ${tagMask}</div>
+        ${lv ? `<div class="power"><b>${ROLES[lv[0]]} Lv. ${lv[1]}</b> · ${ABIL[lv[0]][lv[1] - 1]}</div>` : `<div class="power muted">${p.status === 'slave' ? `You serve ${COLOR_NAMES[p.master]}: no mask power.` : p.status === 'vassal' ? `You are ${COLOR_NAMES[p.master]}'s vassal.` : 'Consumed: back after a turn with a new name.'}</div>`}
+      </div>
+    </div>`;
+  $('#myToks').innerHTML = Object.keys(by).length ? `<div class="toks">${Object.entries(by).map(([c, n]) => `<span class="row" style="gap:3px">${Array.from({ length: n }, () => tokSvg(+c)).join('')}<span class="muted" style="font-size:.8rem;margin-right:8px">${COLOR_NAMES[c]}${+c === G.me ? ' (yours)' : ''}</span></span>`).join('')}</div>` : '<span class="muted" style="font-size:.85rem">none</span>';
+  $('#myCards').innerHTML = Object.keys(cby).length ? `<div class="cardchips">${Object.entries(cby).map(([c, n]) => `<span class="cardchip" title="${esc(CARD_TEXT[c] || '')}">${c}${n > 1 ? ` ×${n}` : ''}</span>`).join('')}</div>` : '<span class="muted" style="font-size:.85rem">none</span>';
+  // ledger
+  $('#players').innerHTML = `<table><tr><th>Player</th><th>Status</th><th>Mask</th><th class="n">Souls</th><th class="n">Cards</th><th>Tokens held</th></tr>${g.P.map(q => `
+    <tr class="${G.idx === q.id && !G.over ? 'current' : ''} ${q.status === 'waiting' ? 'out' : ''}">
+      <td>${who(q.id)}${seatLabel(q) ? `<span class="sub">${seatLabel(q)}</span>` : ''}${(G.opts.xray || G.over) && q.id !== G.me && q.status !== 'waiting' && q.name ? `<span class="sub">${q.name.join('-')} · ${ROLES[q.role]}</span>` : ''}</td>
+      <td>${statusText(g, q)}</td><td>${maskText(g, q)}</td><td class="n">${q.souls}</td><td class="n">${q.cards.length}</td><td>${heldDots(q)}</td></tr>`).join('')}</table>`;
+  $('#bagLine').textContent = `${free} free player${free === 1 ? '' : 's'} · win with 30 souls once everyone else serves you`;
+  renderActions(); renderLog(); renderTable();
+}
+
+// ---------- the court table ----------
+const gi = (name, fill, cls = '', extra = '') => `<svg class="${cls}" viewBox="0 0 512 512" aria-hidden="true"><path d="${GI[name]}" fill="${fill}" ${extra}/></svg>`;
+const maskSvg = (role, cls = 'mask') => gi('carnival-mask', `var(--r${role})`, cls);
+const bareSvg = () => gi('carnival-mask', 'var(--danger)', 'mask', 'opacity=".28"');
+const soulSvg = '<svg class="soul-ic" viewBox="0 0 13 15" aria-hidden="true"><path d="M6.5 0C9 3 12.5 6 12.5 9.5A6 6 0 0 1 .5 9.5C.5 6 4 3 6.5 0Z" fill="var(--gold)"/></svg>';
+const bagSvg = n => `<span class="bagwrap">${gi('swap-bag', '#7a5a36', 'bag-ic')}<b>${n}</b></span>`;
+const stackSvg = (n, face) => `<svg width="48" height="62" viewBox="0 0 48 62" aria-label="${face ? 'discard' : 'deck'}">${[4, 2, 0].map(o => `<rect x="${4 + o}" y="${4 + o}" width="36" height="50" rx="4" fill="${face ? 'var(--surface)' : 'var(--accent)'}" stroke="${face ? 'var(--accent)' : 'var(--surface)'}" stroke-width="1.5" opacity="${n ? 1 : .25}"/>`).join('')}<text x="22" y="34" text-anchor="middle" fill="${face ? 'var(--accent)' : 'var(--on-accent)'}" font-family="Palatino Linotype,Georgia,serif" font-size="15">${n}</text></svg>`;
+
+// ---------- avatars: a bust with a face; masked = the mask over the eyes, unmasked = the feature of the mask's role ----------
+// ---------- avatars: LPC pixel characters (art/lpc, built by art/lpc/build-lpc.cjs; credits in art/lpc/CREDITS.md) ----------
+// masked = a plain mask in the colour of the role it shows; unmasked = the feature of that mask's role; revealed = the true role's feature with a glow
+const LPC = { sexes: ['male', 'female'], skins: ['light', 'amber', 'bronze', 'lavender', 'blue', 'pale_green', 'zombie', 'taupe'], shirts: ['red', 'blue', 'green', 'orange', 'purple', 'teal'],
+  hairs: ['bob', 'afro', 'lob', 'idol', 'curly_short', 'long_straight', 'natural', 'cowlick', 'dreadlocks_short'], hairColors: ['black', 'raven', 'dark_brown', 'chestnut', 'white', 'ash', 'red', 'purple', 'blue', 'platinum'],
+  masks: ['gold', 'red', 'purple', 'blue', 'green'] };
+const part = n => `<img src="art/lpc/parts/${n}.png" alt="" draggable="false">`;
+function rollLooks(n) {
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  return Array.from({ length: n }, () => ({ sex: pick(LPC.sexes), skin: pick(LPC.skins), hair: pick(LPC.hairs), hairColor: pick(LPC.hairColors) }));
+}
+function avatar(q, cls = 'avatar') {
+  const L = (G.looks && G.looks[q.id]) || { sex: 'male', skin: 'light', hair: 'bob', hairColor: 'black' };
+  if (q.status === 'waiting') return `<span class="${cls} lpc gone" aria-label="consumed">${part(`base_${L.sex}_${L.skin}`)}</span>`;
+  const masked = q.status === 'slave' || q.mask !== null, role = q.lv3 ? q.role : q.lastMask;
+  const under = [`base_${L.sex}_${L.skin}`, `shirt_${L.sex}_${LPC.shirts[q.id]}`];
+  if (q.status === 'slave') under.push(`chain_${L.sex}_iron`);
+  if (!masked && role === EARL) under.push(`chain_${L.sex}_gold`, `earrings_${L.sex}`);
+  if (masked) under.push(`mask_${LPC.masks[q.mask]}`);
+  const top = masked ? [] : [{ [ARCH]: 'thirdeye', [DUKE]: 'horns', [PRINCE]: 'circlet', [MARQ]: 'helm' }[role]].filter(Boolean);
+  const layers = [...under, `hair_${L.hair}_${L.hairColor}`, ...top];
+  return `<span class="${cls} lpc${q.lv3 ? ' revealed' : ''}" aria-label="${masked ? ROLES[q.mask] + ' mask' : 'unmasked'}">${layers.map(part).join('')}</span>`;
+}
+
+// seat width follows the table's width
+function seatW() { const W = $('#court').clientWidth || 880; return Math.round(Math.max(118, Math.min(178, W * 0.23))); }
+function seatPos(i, n) {
+  // you at the bottom; the others clockwise round the table
+  const k = (i - G.me + n) % n, a = Math.PI / 2 + (2 * Math.PI * k) / n;
+  const narrow = matchMedia('(max-width:700px)').matches;
+  let x = 50 + (narrow ? 34 : 40) * Math.cos(a); const y = 50 + (narrow ? 38 : 39) * Math.sin(a);
+  // keep the whole seat inside the table area on narrow screens
+  const W = $('#court').clientWidth || 880, half = seatW() / 2 + 4;
+  x = Math.min(Math.max(x, 100 * half / W), 100 - 100 * half / W);
+  return { x, y };
+}
+// a public snapshot of the table, so animations can show the court as it was at each step of a turn
+function snap(g) { return snapView(g, G.idx, G.me, !G.online && (G.opts.xray || G.over)); }
+function renderTable(v) {
+  if (!v) v = G.view || snap(G.g);
+  G.view = v;
+  const n = v.P.length, el = $('#court'), base = $('#courtBase');
+  const pos = v.P.map(q => seatPos(q.id, n));
+  const subjectsOf = q => v.P.filter(s => s.master === q.id && (s.status === 'slave' || s.status === 'vassal'));
+  // chains: slave -> master (dashed links), vassal -> Prince (gold cord)
+  const links = v.P.filter(q => (q.status === 'slave' || q.status === 'vassal') && q.master !== null).map(q => {
+    const a = pos[q.id], b = pos[q.master], slave = q.status === 'slave';
+    return `<line x1="${a.x}%" y1="${a.y}%" x2="${b.x}%" y2="${b.y}%" stroke="${slave ? 'var(--muted)' : 'var(--gold)'}" stroke-width="${slave ? 4 : 2.5}" ${slave ? 'stroke-dasharray="9 5" stroke-linecap="round"' : ''} opacity=".85"/>`;
+  }).join('');
+  const seats = v.P.map(q => {
+    const p = pos[q.id], me = q.id === G.me;
+    let face, st;
+    face = avatar(q);
+    if (q.status === 'waiting') st = `consumed · back ${q.waitTurns ? 'after a turn' : 'next turn'}`;
+    else if (q.status === 'slave') st = `slave of ${COLOR_NAMES[q.master]}`;
+    else if (q.lv3) st = `${ROLES[q.role]} revealed`;
+    else if (q.mask !== null) st = `${ROLES[q.mask]} mask`;
+    else st = `unmasked · ${ROLES[q.lastMask]}`;
+    if (q.status === 'vassal' && !q.lv3) st = `vassal of ${COLOR_NAMES[q.master]}`;
+    const subs = subjectsOf(q).length;
+    return `<div class="seat ${me ? 'me' : ''} ${v.idx === q.id && !G.over ? 'turn' : ''} ${q.status === 'waiting' ? 'out' : ''}" data-id="${q.id}" style="left:${p.x}%; top:${p.y}%; --pc:${pc(q.id)}">
+      <div class="top">${face}<div><div class="nm">${esc(me ? COLOR_NAMES[q.id] + ' (you)' : COLOR_NAMES[q.id])}</div>${seatLabel(q) ? `<div class="st" style="font-style:normal">${seatLabel(q)}</div>` : ''}</div></div>
+      <div class="st">${q.status === 'slave' ? gi('manacles', 'var(--muted)', 'irons') : ''}${esc(st)}${subs ? ` · rules ${subs}` : ''}</div>
+      <div class="line"><span class="souls">${soulSvg}<b>${q.souls}</b></span><span class="cardbacks" title="${q.cards} event cards">${Array.from({ length: Math.min(q.cards, 8) }, () => '<i></i>').join('')}${q.cards > 8 ? `<small>+${q.cards - 8}</small>` : ''}</span></div>
+      <div class="line">${q.tokens.length ? heldDots(q) : '<span class="st">no tokens</span>'}</div>
+    </div>`;
+  }).join('');
+  const sw = seatW(); el.style.setProperty('--sw', sw + 'px'); el.classList.toggle('compact', sw < 160);
+  el.style.setProperty('--cs', Math.min(1, el.clientWidth / 760).toFixed(3));
+  base.innerHTML = `<div class="felt"></div><svg class="links">${links}</svg>
+    <div class="round-mark">Round ${v.round}</div>
+    <div class="center">
+      <div class="pile" data-pile="bag">${bagSvg(v.bag)}<span>bag · ${v.blanks} blank</span></div>
+      <div class="pile" data-pile="deck">${stackSvg(v.deck, false)}<span>deck</span></div>
+      <div class="pile" data-pile="discard">${stackSvg(v.discard, true)}<span>discard</span></div>
+    </div>
+    ${v.noblesse ? '<div class="noblesse">Noblesse Oblige has ended: no masks</div>' : ''}
+    ${seats}`;
+}
+new ResizeObserver(() => { if (G) renderTable(G.view); }).observe($('#court'));
+
+// ---------- animations: the engine reports public events (g.on); each is replayed over the table as it was ----------
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+function animOn() { return G && G.opts.speed > 0 && !reduceMotion.matches && !document.hidden; }
+function T(ms) { return ms * (G.opts.speed / 600); }   // durations scale with the speed setting (normal = 1)
+// centre of a seat or a pile, in px within the court
+function spot(what) {
+  const court = $('#court').getBoundingClientRect();
+  const el = typeof what === 'number' ? $(`#courtBase .seat[data-id="${what}"]`) : $(`#courtBase [data-pile="${what}"] ${what === 'bag' ? '.bagwrap' : 'svg'}`);
+  if (!el) return { x: court.width / 2, y: court.height / 2 };
+  const r = el.getBoundingClientRect();
+  return { x: r.left - court.left + r.width / 2, y: r.top - court.top + r.height / 2 };
+}
+// the eyes of a seat's avatar (where masks go on and come off)
+function faceSpot(id) {
+  const court = $('#court').getBoundingClientRect(), el = $(`#courtBase .seat[data-id="${id}"] .avatar`);
+  if (!el) { const s = spot(id); return { ...s, w: 46 }; }
+  const r = el.getBoundingClientRect();
+  return { x: r.left - court.left + r.width / 2, y: r.top - court.top + r.height / 2, w: r.width };
+}
+function fxEl(html, at, cls = '') {
+  const d = document.createElement('div'); d.className = 'fx ' + cls; d.innerHTML = html;
+  d.style.left = at.x + 'px'; d.style.top = at.y + 'px'; $('#fx').appendChild(d); return d;
+}
+function fly(html, from, to, ms, cls = '', arc = 40) {
+  const a = from.x !== undefined ? from : spot(from), b = to.x !== undefined ? to : spot(to);
+  const d = fxEl(html, a, cls), dx = b.x - a.x, dy = b.y - a.y;
+  const anim = d.animate([
+    { transform: 'translate(-50%,-50%) scale(.6)', opacity: 0 },
+    { transform: `translate(calc(-50% + ${dx / 2}px), calc(-50% + ${dy / 2 - arc}px)) scale(1.15)`, opacity: 1, offset: .5 },
+    { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(.8)`, opacity: .9 },
+  ], { duration: T(ms), easing: 'ease-in-out' });
+  return anim.finished.then(() => d.remove());
+}
+function pop(html, at, ms, cls = '', rise = 34) {
+  const p = at.x !== undefined ? at : spot(at), d = fxEl(html, p, cls);
+  const anim = d.animate([
+    { transform: 'translate(-50%,-50%) scale(.5)', opacity: 0 },
+    { transform: 'translate(-50%,-50%) scale(1.1)', opacity: 1, offset: .25 },
+    { transform: `translate(-50%, calc(-50% - ${rise}px)) scale(1)`, opacity: 0 },
+  ], { duration: T(ms), easing: 'ease-out' });
+  return anim.finished.then(() => d.remove());
+}
+function shake(id, ms = 420) { const el = $(`#courtBase .seat[data-id="${id}"]`); if (!el) return Promise.resolve(); return el.animate([{ marginLeft: '0' }, { marginLeft: '-7px' }, { marginLeft: '7px' }, { marginLeft: '-4px' }, { marginLeft: '0' }], { duration: T(ms) }).finished; }
+function flash(id, color, ms = 700) { const el = $(`#courtBase .seat[data-id="${id}"]`); if (!el) return Promise.resolve(); return el.animate([{ boxShadow: `0 0 0 0 ${color}` }, { boxShadow: `0 0 0 6px ${color}, 0 0 28px 8px ${color}` }, { boxShadow: `0 0 0 0 ${color}` }], { duration: T(ms) }).finished; }
+function caption(text, ms) {
+  const d = fxEl(`<span>${text}</span>`, { x: $('#court').clientWidth / 2, y: $('#court').clientHeight * .3 }, 'caption');
+  return d.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.9)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .15 }, { opacity: 1, offset: .8 }, { opacity: 0 }], { duration: T(ms) }).finished.then(() => d.remove());
+}
+const disc = (c, d = 0, blank = false) => `<span class="fx-tok">${tokSvg(c, d, blank)}</span>`;
+const nm = id => id === G.me ? 'You' : COLOR_NAMES[id];
+// a d20 face consistent with the outcome: the stronger side wins on the top faces of the table
+function d20Face(sa, sd, pa, aw) {
+  const strongA = sa >= sd, pStrong = strongA ? pa : 1 - pa, winFaces = Math.round(pStrong * 20), strongWon = strongA ? aw : !aw;
+  const lo = 21 - winFaces, r = n => 1 + Math.floor(Math.random() * n);
+  return { face: strongWon ? lo + r(winFaces) - 1 : r(Math.max(1, lo - 1)), lo, strong: strongA ? 'a' : 'd' };
+}
+async function play(e) {
+  const d = e.data, ms = T(1);
+  switch (e.type) {
+    case 'souls': return pop(`<b class="fx-gain">+${d.n}</b>`, d.p, 700);
+    case 'tribute': return fly(soulSvg.replace('soul-ic', 'fx-soul'), d.from, d.to, 600, '', 25);
+    case 'draw':
+      if (d.dud) { await fly(disc(d.c ?? 0, 0, d.dud === 'blank'), 'bag', d.p, 380); return pop('<b class="fx-dud">dud</b>', d.p, 500, '', 20); }
+      return fly(disc(d.c), 'bag', d.p, 520);
+    case 'card': return fly('<i class="fx-card"></i>', 'deck', d.p, 500);
+    case 'play': return fly(`<span class="fx-cardface">${d.card}${d.n > 1 ? ' ×' + d.n : ''}</span>`, d.p, 'discard', 650, '', 30);
+    case 'trade': return Promise.all([fly(disc(d.c), d.seller, d.buyer, 600), fly(soulSvg.replace('soul-ic', 'fx-soul') + `<b class="fx-price">${d.price}</b>`, d.buyer, d.seller, 600, '', -30)]);
+    case 'move': return fly(disc(d.c), d.from, d.to, 600);
+    case 'tobag': return fly(disc(d.c), d.from, 'bag', 600);
+    case 'maskoff': {
+      const at = faceSpot(d.p), m = fxEl(maskSvg(d.mask, 'fx-mask'), at);
+      m.style.width = at.w + 'px';
+      const a = m.animate([{ transform: 'translate(-50%,-50%) rotate(0)', opacity: 1 }, { transform: 'translate(-30%, 40px) rotate(-40deg)', opacity: 0 }], { duration: T(800), easing: 'ease-in' });
+      if (d.why === 'lower') pop(`<b class="fx-gain">+${d.gain}</b>`, d.p, 800);
+      if (d.why === 'noblesse') caption('Noblesse Oblige ends — masks off', 1100);
+      return a.finished.then(() => m.remove());
+    }
+    case 'maskon': {
+      const at = faceSpot(d.p), m = fxEl(maskSvg(d.mask, 'fx-mask'), { x: at.x, y: at.y - 40 });
+      m.style.width = at.w + 'px';
+      return m.animate([{ transform: 'translate(-50%,-50%)', opacity: 0 }, { transform: 'translate(-50%, calc(-50% + 40px))', opacity: 1 }], { duration: T(600), easing: 'ease-out' }).finished.then(() => m.remove());
+    }
+    case 'reveal': await caption(`${nm(d.p)} ${d.p === G.me ? 'reveal' : 'reveals'}: ${ROLES[d.role]}`, 900); return Promise.all([pop(gi('crown', 'var(--gold)', 'fx-crown'), d.p, 800, '', 0), flash(d.p, 'rgb(184 149 79 / .7)')]);
+    case 'duel': {
+      const a = spot(d.a), b = spot(d.d), mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      const { face, lo, strong } = d20Face(d.sa, d.sd, d.pa, d.aw);
+      const strongId = strong === 'a' ? d.a : d.d;
+      const label = d.kind === 'rebellion' ? 'Arrogation' : d.kind === 'last stand' ? 'Last stand' : 'Duel';
+      caption(`${label}: ${nm(d.a)} ${Math.round(d.sa)} vs ${nm(d.d)} ${Math.round(d.sd)}`, 1700);
+      pop(gi('crossed-swords', 'var(--danger)', 'fx-swords'), mid, 900, '', 0);
+      const center = { x: $('#court').clientWidth / 2, y: $('#court').clientHeight * .66 };
+      const die = fxEl(`${gi('dice-twenty-faces-twenty', 'var(--accent)', 'fx-d20')}<b class="fx-face">?</b>`, center, 'fx-die');
+      const roll = die.animate([{ transform: 'translate(-50%,-50%) rotate(0) scale(.6)' }, { transform: 'translate(-50%,-50%) rotate(540deg) scale(1.1)' }, { transform: 'translate(-50%,-50%) rotate(720deg) scale(1)' }], { duration: T(800), easing: 'cubic-bezier(.2,.7,.3,1)' });
+      await roll.finished;
+      die.querySelector('.fx-face').textContent = face;
+      const winner = d.aw ? d.a : d.d, loser = d.aw ? d.d : d.a;
+      die.insertAdjacentHTML('beforeend', `<small class="fx-range">${nm(strongId)} wins on ${lo}–20</small>`);
+      await Promise.all([flash(winner, 'rgb(61 107 46 / .6)', 650), shake(loser), sleep(T(650))]);
+      die.remove(); return;
+    }
+    case 'name': {
+      caption(`${nm(d.p)} ${d.p === G.me ? 'try' : 'tries'} to name ${nm(d.t)}…`, 1500);
+      await fly(gi('tied-scroll', 'var(--accent)', 'fx-scroll'), d.p, d.t, 650, '', 50);
+      const at = spot(d.t);
+      const Wc = $('#court').clientWidth, gx = Math.min(Math.max(at.x, 130), Wc - 130);
+      const g4 = fxEl(`<span class="fx-guess">${d.guess.split('').map(x => tokSvg(d.t, +x)).join('')}<b>${demonOf(d.guess.split(''))}</b></span>`, { x: gx, y: at.y - 58 });
+      await sleep(T(650));
+      g4.insertAdjacentHTML('beforeend', `<em class="${d.ok ? 'ok' : 'bad'}">${d.ok ? 'correct' : 'wrong'}</em>`);
+      await (d.ok ? flash(d.t, 'rgb(158 43 28 / .6)') : shake(d.p));
+      await sleep(T(250)); g4.remove(); return;
+    }
+    case 'enslave': {
+      caption(`${nm(d.m)} ${d.status === 'vassal' ? 'vassalizes' : d.m === G.me ? 'enslave' : 'enslaves'} ${d.v === G.me ? 'you' : nm(d.v)}`, 1200);
+      const a = spot(d.v), b = spot(d.m), W = $('#court').clientWidth, H = $('#court').clientHeight;
+      const s = fxEl(`<svg width="${W}" height="${H}"><line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="var(--danger)" stroke-width="5" stroke-dasharray="9 5" stroke-linecap="round"/></svg>`, { x: 0, y: 0 }, 'fx-chain');
+      const len = Math.hypot(b.x - a.x, b.y - a.y);
+      s.querySelector('line').animate([{ strokeDashoffset: len, opacity: .2 }, { strokeDashoffset: 0, opacity: 1 }], { duration: T(700), easing: 'ease-out' });
+      await Promise.all([pop(gi('manacles', 'var(--danger)', 'fx-irons'), d.v, 1000, '', 0), sleep(T(900))]);
+      s.remove(); return;
+    }
+    case 'consume':
+      caption(`${nm(d.m)} ${d.m === G.me ? 'consume' : 'consumes'} ${d.v === G.me ? 'you' : nm(d.v)}`, 1300);
+      await Promise.all([pop(gi('devil-mask', 'var(--danger)', 'fx-devil'), d.v, 1000, '', 10), shake(d.v, 600)]);
+      if (d.souls) return fly(soulSvg.replace('soul-ic', 'fx-soul') + `<b class="fx-price">${d.souls}</b>`, d.v, d.m, 600);
+      return;
+    case 'reincarnate': caption(`${nm(d.p)} ${d.p === G.me ? 'return' : 'returns'} with a new name`, 1000); return flash(d.p, 'rgb(184 149 79 / .6)', 800);
+    case 'rebel': return caption(`${nm(d.s)} ${d.s === G.me ? 'play' : 'plays'} Arrogation against ${d.m === G.me ? 'you' : nm(d.m)}!`, 1000);
+    case 'swap': await caption(`${nm(d.a)} and ${nm(d.b)} swap places`, 1100); return Promise.all([flash(d.a, 'rgb(184 149 79 / .6)'), flash(d.b, 'rgb(158 43 28 / .6)')]);
+    default: return;
+  }
+}
+// play queued events one by one, showing the table as it was before each; then the final state
+async function playQueue() {
+  const q = G.q; G.q = [];
+  if (!q.length || !animOn()) { G.view = null; flushEngineLog(); return; }
+  G.busy = true;
+  let flushed = 0;
+  for (const e of q) {
+    renderTable(e.before);
+    const lines = e.logN - flushed; if (lines > 0) { flushEngineLog(lines); flushed += lines; }
+    try { await play(e); } catch (err) { console.error(err); }
+    if (G.over && G.aborted) break;
+  }
+  $('#fx').innerHTML = '';
+  G.view = null; flushEngineLog(); G.busy = false;
+}
+
+// ---------- actions ----------
+function act(label, cost, sub, ok, why, fn, primary) { return { label, cost, sub, ok, why, fn, primary }; }
+function renderActions() {
+  const g = G.g, p = ME(), el = $('#actions');
+  $('#actSec').hidden = false; $('#actNote').textContent = '';
+  if (G.over) { el.innerHTML = G.online ? (Net.isHost() ? '<button class="btn primary" onclick="Net.restart()">Back to the lobby</button>' : '<p class="muted">Game over.</p>') : '<button class="btn primary" onclick="newGameDialog()">New game</button>'; $('#endRow').innerHTML = ''; return; }
+  if (!G.myTurn) { el.innerHTML = `<p class="muted">${G.idx >= 0 ? COLOR_NAMES[G.idx] + (G.online && G.seats && G.seats[G.idx] && !G.seats[G.idx].bot ? ` (${esc(G.seats[G.idx].nick)})` : '') : 'The court'} is playing…</p>`; $('#endRow').innerHTML = ''; return; }
+  $('#actNote').textContent = `buys left ${g.C.BUY_LIMIT - p.buys} · duels left ${p.duels}`;
+  const A = [], freeP = g.free(p), others = g.P.filter(q => q !== p && g.alive(q));
+  const bc = g.C.BUY_COST, left = p.buys < g.C.BUY_LIMIT;
+  const simple = (cmd, a = {}, then) => async () => { const r = await doCmd(cmd, a); if (!failed(r) && then) then(r); };
+  if (p.cards.includes('Collect')) A.push(act('Trade in Collect', '+3 souls', 'Discard a Collect card', true, '', simple('collect')));
+  if (freeP || p.status === 'slave') {
+    A.push(act('Buy a name token', `${bc} souls`, `Random draw (${g.bag.length} in the bag)`, left && p.souls >= bc && g.bag.length > 0, !left ? 'no buys left this round' : p.souls < bc ? 'not enough souls' : 'bag empty',
+      simple('buyToken', {}, r => { if (!r.got) log('A dud: blank, dead, or a token you can\'t keep. Refunded, but the draw is used.', 'mine'); })));
+    A.push(act('Draw 3, keep 1', `${g.C.BUY3_COST} souls`, 'Choose by colour · 1 token buy', left && p.souls >= g.C.BUY3_COST && g.bag.length > 0, !left ? 'no buys left this round' : 'not enough souls', () => draw3('buy')));
+  }
+  if (freeP && g.subjects(p).some(s => s.status === 'slave' && s.tokens.length)) A.push(act('Buy from your slave', '2 souls', 'They must sell · 1 token buy', left && p.souls >= 2, 'no buys left or not enough souls', masterBuy));
+  A.push(act('Buy an event card', `${g.cardCost(p)} souls`, g.has(p, EARL, 2) ? 'Draw 2, keep 1' : 'Top of the deck', p.souls >= g.cardCost(p) && (g.deck.length + g.discard.length) > 0, 'not enough souls',
+    simple('buyCard', {}, r => log(`You draw ${r.card}.`, 'mine'))));
+  A.push(act('Buy a token from a player', '', 'They name their price', others.some(q => q.tokens.length), 'nobody holds tokens', tradeBuy));
+  if (p.tokens.length) A.push(act('Sell a token', '', G.online ? 'To a bot at its offer, or offer to a player' : 'Players offer what it is worth to them', true, '', tradeSell));
+  if (p.status !== 'waiting') A.push(act('Duel', '', 'Souls against souls on the d20 table', p.duels > 0 && others.some(t => g.canDuel(p, t)), p.duels <= 0 ? 'already dueled this turn' : 'nobody you may duel (Noblesse Oblige)', duel, true));
+  if (freeP) {
+    A.push(act('Name a player', '', 'Commit, look at your tokens, then guess', g.P.some(t => g.eligible(p, t)), g.masked(p) ? 'you must be unmasked to name' : 'you are not eligible to name anyone', naming, true));
+    if (g.hasCard(p, 'Seize', 2)) A.push(act('Play Seize', '2 cards', 'Take a token of a chosen colour', true, '', seize));
+    if (g.hasCard(p, 'Restoration')) A.push(act('Play Restoration', '1 card', 'Someone returns one of your tokens to the bag', g.P.some(q => q !== p && g.count(q, p.id)), 'nobody holds your tokens', restoration));
+    if (p.mask !== null) A.push(act('Lower your mask', `+${g.C.UNMASK_GAIN} souls`, `Your own tokens go back to the bag, +${g.C.RETURN_GAIN} each`, true, '', simple('unmask')));
+    else A.push(act('Remask', `${g.remaskCost(p)} souls`, 'Choose any mask your role allows', p.souls >= g.remaskCost(p) && !(g.C.END_UNMASK && g.noblesseOver()), g.noblesseOver() ? 'Noblesse Oblige has ended: no masks' : 'not enough souls',
+      () => chooseMask('Remask: choose a mask', m => simple('remask', { m })())));
+    if (!g.masked(p) && !p.lv3) A.push(act('Reveal your role', '', `Unlock ${ROLES[p.role]} Lv. 3 (see Roles)`, true, '', simple('reveal')));
+    if (g.has(p, ARCH, 1) && !p.archFree) A.push(act('Archduke: free token', 'free', 'One random draw', g.bagHasFor(p), 'nothing usable in the bag', simple('archFree', {}, r => log(r.got ? 'You take a free token.' : 'Your free draw was a dud.', 'mine'))));
+    if (g.has(p, ARCH, 2) && !p.arch2) A.push(act('Archduke: draw 3, keep 1', '2 souls', 'Doesn\'t use a buy', p.souls >= 2, 'not enough souls', () => draw3('arch')));
+    if (g.has(p, ARCH, 3) && !p.asked) A.push(act('Archduke: ask a question', '', 'One truthful yes/no answer', true, '', askQuestion));
+    if (g.has(p, EARL, 3) && !p.earlFree) A.push(act('Earl: free event card', 'free', 'Top of the deck', true, '', simple('earlFree', {}, r => log(`You take ${r.card || 'nothing'}.`, 'mine'))));
+    if (p.role === EARL && g.hasCard(p, 'Arrogation', 2) && !g.masked(p)) A.push(act('Earl: discard 2 Arrogation', '+7 souls', 'Reveals you are an Earl', true, '', simple('earlArrogation')));
+    for (const s of g.subjects(p).filter(s => s.status === 'slave')) A.push(act(`Consume ${COLOR_NAMES[s.id]}`, `+${Math.floor(s.souls / 2)} souls`, 'Takes half their souls and their cards', !g.has(p, PRINCE, 3), 'a revealed Prince may not consume',
+      () => { if (confirm(`Consume ${COLOR_NAMES[s.id]}? You take half their souls and their cards; they come back later with a new name.`)) simple('consume', { s: s.id })(); }));
+  } else if (p.status === 'slave' || p.status === 'vassal') {
+    if (g.hasCard(p, 'Arrogation')) A.push(act(`Play Arrogation`, `${Math.round(100 * winChance(g.strength(p, 'att'), g.strength(g.P[p.master], 'def')))}%`, `Duel ${COLOR_NAMES[p.master]}: win to swap places, lose half your souls`, true, '',
+      simple('rebel', {}, r => log(r.won ? 'Your rebellion succeeds!' : 'Your rebellion fails: your master takes half your souls.', 'mine')), true));
+    if (p.status === 'vassal') A.push(act('Buy your freedom', `${g.C.FREEDOM_COST} souls`, '', p.souls >= g.C.FREEDOM_COST, 'not enough souls', simple('buyFreedom')));
+  }
+  el.innerHTML = '<div class="grid-actions">' + A.map((a, i) => `<button data-i="${i}" class="btn ${a.primary ? 'primary' : ''}" ${a.ok ? '' : 'disabled'} title="${a.ok ? '' : esc(a.why || '')}">${esc(a.label)}${a.cost ? `<span class="cost">${esc(a.cost)}</span>` : ''}<span class="sub">${esc(a.ok ? a.sub : a.why || a.sub)}</span></button>`).join('') + '</div>';
+  el.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { if (!G.myTurn || G.over || G.busy) return; try { A[+b.dataset.i].fn(); } catch (err) { log('Error: ' + err.message, 'big'); console.error(err); } });
+  $('#endRow').innerHTML = `<button class="btn primary" id="endBtn">End turn</button>`;
+  $('#endBtn').onclick = () => { if (G.myTurn && !G.over && !G.busy) endMyTurn(); };
+}
+
+// ---------- dialogs ----------
+function dialog(html) { $('#dlgBody').innerHTML = html; const d = $('#dlg'); if (!d.open) d.showModal(); }
+function closeDialog() { const d = $('#dlg'); if (d.open) d.close(); }
+function pickOne(title, desc, options, onPick, cancel = true, wide = false) {   // options: [{label, value, disabled, note}]
+  dialog(`<h2>${title}</h2>${desc ? `<p class="muted">${desc}</p>` : ''}<div class="opts ${wide ? 'wide' : ''}">${options.map((o, i) => `<button class="btn" data-o="${i}" ${o.disabled ? 'disabled' : ''}>${o.label}${o.note ? `<span class="sub">${o.note}</span>` : ''}</button>`).join('')}</div>${cancel ? '<div class="row"><button class="btn small" id="dlg-cancel">Cancel</button></div>' : ''}`);
+  document.querySelectorAll('#dlgBody [data-o]').forEach(b => b.onclick = () => { closeDialog(); onPick(options[+b.dataset.o].value); });
+  if (cancel) $('#dlg-cancel').onclick = closeDialog;
+}
+async function draw3(kind) {
+  const r = await doCmd('draw3Look', { kind }); if (failed(r)) return;
+  const finish = async i => { await doCmd('draw3Keep', { i }); };
+  const look = r.look;
+  if (!look.some(t => t.keep)) { log(`You draw ${look.map(t => t.blank ? 'a blank' : COLOR_NAMES[t.c]).join(', ')}: nothing you can keep${kind === 'buy' ? ' (6 souls refunded)' : ''}.`, 'mine'); return finish(null); }
+  pickOne('Keep one token', 'You see the colours on the backs. The others go back into the bag (dead tokens are discarded).',
+    look.map((t, i) => ({ label: `${tokSvg(t.c ?? 0, 0, t.blank)} ${t.blank ? 'Blank' : COLOR_NAMES[t.c]}`, value: i, disabled: !t.keep, note: t.blank ? 'blank' : !t.live ? 'dead: discarded' : !t.keep ? "you can't keep this" : '' })), finish, false);
+}
+function choosePlayerColour(title, players, colourFilter, onPick) {
+  const g = G.g, opts = [];
+  for (const q of players) for (const c of [...new Set(q.tokens.map(t => t.c))].filter(c => colourFilter(q, c))) opts.push({ label: `${who(q.id)} · ${tokSvg(c)} ${COLOR_NAMES[c]}`, value: [q, c], note: `they hold ${g.count(q, c)}${G.online && q.bot.human ? ' · a player: you make an offer' : ''}` });
+  if (!opts.length) return log('Nothing available.', 'mine');
+  pickOne(title, '', opts, onPick, true, true);
+}
+function masterBuy() {
+  const g = G.g, p = ME();
+  choosePlayerColour('Buy from your slave', g.subjects(p).filter(s => s.status === 'slave'), () => true, ([s, c]) => doCmd('masterBuy', { s: s.id, c }).then(failed));
+}
+function tradeBuy() {
+  const g = G.g, p = ME();
+  choosePlayerColour('Buy a token from a player', g.P.filter(q => q !== p && g.alive(q) && q.tokens.length), (q, c) => !g.against(q, g.P[c]) && !(c === p.id && !g.masked(p)) && !(p.status === 'slave' && c === p.master), async ([q, c]) => {
+    if (G.online && q.bot.human) return offerDialog('buy', q, c);
+    const r = await doCmd('quote', { q: q.id, c }); if (failed(r)) return;
+    if (r.ask === null) return log(`${COLOR_NAMES[q.id]} won't sell a ${COLOR_NAMES[c]} token.`, 'mine');
+    dialog(`<h2>Buy a ${COLOR_NAMES[c]} token</h2><p>${who(q.id)} asks <b>${r.ask} souls</b>. You have ${ME().souls}.</p><div class="row"><button class="btn primary" id="t-ok" ${ME().souls >= r.ask ? '' : 'disabled'}>Pay ${r.ask}</button><button class="btn" onclick="closeDialog()">Cancel</button></div>`);
+    $('#t-ok').onclick = () => { closeDialog(); doCmd('buyFrom', { q: q.id, c }).then(failed); };
+  });
+}
+async function tradeSell() {
+  const g = G.g, p = ME();
+  const r = await doCmd('bids'); if (failed(r)) return;
+  const opts = r.bids.map(b => ({ label: `${tokSvg(b.c)} ${COLOR_NAMES[b.c]} → ${who(b.q)}`, value: ['bot', b.q, b.c], note: `offers ${b.bid} souls` }));
+  if (G.online) for (const q of G.g.P.filter(q => q !== p && g.alive(q) && q.bot.human)) for (const c of new Set(p.tokens.map(t => t.c))) {
+    if (g.against(p, g.P[c]) || (c === q.id && !g.masked(q))) continue;
+    opts.push({ label: `${tokSvg(c)} ${COLOR_NAMES[c]} → ${who(q.id)}`, value: ['human', q.id, c], note: 'a player: name your price' });
+  }
+  if (!opts.length) return log('No player wants to buy any of your tokens right now.', 'mine');
+  pickOne('Sell a token', G.online ? 'Bots offer what the token is worth to them; players get your offer.' : 'Players offer what the token is worth to them.', opts, ([kind, q, c]) => {
+    if (kind === 'human') return offerDialog('sell', G.g.P[q], c);
+    doCmd('sellTo', { q, c }).then(failed);
+  }, true, true);
+}
+// online: offer a trade to another player, who accepts or declines on their screen (offers lapse when your turn ends)
+function offerDialog(dir, q, c) {
+  dialog(`<h2>${dir === 'buy' ? `Offer to buy a ${COLOR_NAMES[c]} token` : `Offer a ${COLOR_NAMES[c]} token`}</h2>
+    <p class="muted">${dir === 'buy' ? `${who(q.id)} holds ${G.g.count(q, c)}. You have ${ME().souls} souls.` : `${who(q.id)} has ${q.souls} souls.`} The token passes face down.</p>
+    <div class="row"><span class="label">Price</span><input id="of-p" type="number" min="0" max="999" value="${dir === 'buy' ? Math.min(3, ME().souls) : 3}" style="width:80px"><span class="muted">souls</span></div>
+    <div class="row"><button class="btn primary" id="of-go">Send offer</button><button class="btn" onclick="closeDialog()">Cancel</button></div>`);
+  $('#of-go').onclick = () => { const price = Math.max(0, Math.floor(+$('#of-p').value || 0)); closeDialog(); Net.offer(dir, q.id, c, price); };
+}
+function duel() {
+  const g = G.g, p = ME();
+  const opts = g.P.filter(t => g.canDuel(p, t)).map(t => {
+    const ch = winChance(g.strength(p, 'att'), g.strength(t, 'def'));
+    return { label: `${who(t.id)} · ${t.souls} souls`, value: t, note: `${Math.round(ch * 100)}% before backing · ${g.masked(t) ? 'masked: a win strips the mask' : 'unmasked: a win sends one of their tokens to the bag'}` };
+  });
+  pickOne('Duel whom?', 'Strength is your souls plus role bonuses and backing. Others may back either side.', opts, t => {
+    const go = pick => doCmd('duel', { t: t.id, pick }).then(r => { if (!failed(r)) log(r.won ? 'You win the duel.' : 'You lose the duel.', 'mine'); });
+    if (!g.masked(t) && t.tokens.length) {
+      pickOne('If you win: which token goes back to the bag?', 'Pick a colour they hold.', [...new Set(t.tokens.map(x => x.c))].map(c => ({ label: `${tokSvg(c)} ${COLOR_NAMES[c]}`, value: c, note: `they hold ${g.count(t, c)}` })), go);
+    } else go(null);
+  }, true, true);
+}
+function naming() {
+  const g = G.g, p = ME();
+  const opts = g.P.filter(t => g.eligible(p, t)).map(t => ({ label: who(t.id), value: t, note: `you hold ${g.count(p, t.id)} of theirs · ${maskText(g, t).replace(/<[^>]+>/g, ' ')}` }));
+  pickOne('Name whom?', 'Once you look at your tokens you must go through with it. A wrong guess lets them enslave or consume you.', opts, t => {
+    const dots = p.tokens.filter(x => x.c === t.id).map(x => x.d).sort();
+    const cands = g.candidates(p, t).map(key), all = NAMES.map(key);
+    const fateLocked = t.lv3 && t.role === MARQ ? 'consume' : g.has(p, PRINCE, 3) ? 'enslave' : null;
+    const cell = k => `<button class="namecell" data-k="${k}"><span class="row" style="gap:6px;flex-wrap:nowrap">${portrait(k.split(''), 'mini')}<b class="demon">${demonOf(k.split(''))}</b></span><span class="toks">${k.split('').map(d => tokSvg(t.id, +d)).join('')}</span><span class="muted" style="font-size:.85rem">${ROLES[roleOf(k.split('').map(Number))]}</span></button>`;
+    dialog(`<h2>Name ${esc(COLOR_NAMES[t.id])}</h2>
+      <div><span class="label">Your ${esc(COLOR_NAMES[t.id])} tokens</span><div class="toks" style="margin-top:6px">${dots.length ? dots.map(d => tokSvg(t.id, d)).join('') : '<span class="muted">none</span>'}</div></div>
+      <div class="row"><span class="label">If you're right</span><select id="nm-f" ${fateLocked ? 'disabled' : ''}><option value="enslave">enslave them</option><option value="consume">consume them</option></select>${fateLocked ? `<span class="muted">(forced: ${fateLocked})</span>` : ''}</div>
+      <div><span class="label">Names that still fit (${cands.length})</span><div class="names" style="margin-top:6px">${cands.map(cell).join('') || '<span class="muted">none — pick from the other names</span>'}</div></div>
+      <details><summary>Other names</summary><div class="names" style="margin-top:6px">${all.filter(k => !cands.includes(k)).map(cell).join('')}</div></details>`);
+    if (fateLocked) $('#nm-f').value = fateLocked;
+    document.querySelectorAll('#dlgBody [data-k]').forEach(b => b.onclick = async () => {
+      const fate = $('#nm-f').value, guess = b.dataset.k; closeDialog();
+      const r = await doCmd('name', { t: t.id, guess, fate }); if (failed(r)) return;
+      log(r.correct ? `Correct! ${COLOR_NAMES[t.id]}'s name was ${guess.split('').join('-')}.` : 'Wrong guess.', 'mine');
+    });
+  }, true, true);
+}
+function seize() {
+  const g = G.g, p = ME();
+  choosePlayerColour('Seize: take 1 token', g.P.filter(q => q !== p && g.alive(q) && !g.against(p, q)), () => true, ([q, c]) => doCmd('seize', { q: q.id, c }).then(failed));
+}
+function restoration() {
+  const g = G.g, p = ME();
+  pickOne('Restoration', 'Who puts one of your tokens back into the bag?', g.P.filter(q => q !== p && g.count(q, p.id)).map(q => ({ label: who(q.id), value: q, note: `holds ${g.count(q, p.id)} of yours` })), q => doCmd('restore', { q: q.id }).then(failed), true, true);
+}
+function askQuestion() {
+  const g = G.g, p = ME();
+  pickOne('Ask whom?', 'One truthful yes/no answer: "is your role X?" or "is your name X?"', g.P.filter(t => t !== p && g.alive(t)).map(t => ({ label: who(t.id), value: t })), t => {
+    const roles = g.rolesKnown(p, t);
+    dialog(`<h2>A question for ${esc(COLOR_NAMES[t.id])}</h2><div class="opts">${[0, 1, 2, 3, 4].filter(r => (roles >> r) & 1).map(r => `<button class="btn" data-r="${r}">Is your role ${ROLES[r]}?</button>`).join('')}</div>
+      <div class="row"><span class="label">Or a name</span><select id="q-n">${g.candidates(p, t).map(key).map(k => `<option value="${k}">${k.split('').join('-')}</option>`).join('')}</select><button class="btn small" id="q-go">Ask</button></div>`);
+    document.querySelectorAll('#dlgBody [data-r]').forEach(b => b.onclick = async () => {
+      const r = +b.dataset.r; closeDialog();
+      const res = await doCmd('ask', { t: t.id, role: r }); if (!failed(res)) log(`You ask ${COLOR_NAMES[t.id]} "is your role ${ROLES[r]}?": ${res.yes ? 'YES' : 'no'}.`, 'mine');
+    });
+    $('#q-go').onclick = async () => {
+      const k = $('#q-n').value; closeDialog();
+      const res = await doCmd('ask', { t: t.id, name: k }); if (!failed(res)) log(`You ask ${COLOR_NAMES[t.id]} "is your name ${k.split('').join('-')}?": ${res.yes ? 'YES' : 'no'}.`, 'mine');
+    };
+  }, true, true);
+}
+function rulesDialog() {
+  dialog(`<h2>Quick rules</h2><div class="rules">
+    <p><b>Goal.</b> Every other player is your slave (or vassal) and you have 30 souls. Players waiting to reincarnate don't count.</p>
+    <p><b>Turns.</b> +2 souls each turn; slaves pay their master 1 (3 to a revealed Prince). Up to 2 token buys a round: 2 souls for a random draw, or 6 to draw 3 and keep 1. Blanks, dead tokens and your own token while unmasked are refunded but use the draw. Masters may buy a token from their own slave for 2 (counts as a buy). Event cards cost 3.</p>
+    <p><b>Masks.</b> Nobody can name you while your mask is up, and you must be unmasked to name. Lower it on your turn for +4 souls (your own tokens go back to the bag, +3 each). Remask costs 6. Masked = Lv. 1 of your mask; unmasked = Lv. 2; revealing your true role = Lv. 3.</p>
+    <p><b>Duels.</b> One per turn. Noblesse Oblige: you may duel someone richer, within 2 souls, whose 3+ tokens you hold, or who gained your token by trade or Seize since your last turn. Stronger side rolls a d20 on the ratio table. Losing masked = lose the mask; unmasked = the victor sends one of your tokens to the bag. With only 2 free players, Noblesse Oblige ends: anyone may duel, both are unmasked and nobody remasks.</p>
+    <p><b>Naming.</b> You need the most of their tokens (at least 1), or nobody else holds any. Wrong: they enslave or consume you. Right: you choose.</p>
+    <p><b>Slaves.</b> Permanently masked, can't name, never hold their master's tokens; their old name dies. Arrogation: duel your master; win = new name and you swap places, lose = they take half your souls.</p>
+    <p><b>Consumed.</b> The consumer takes half your souls and your cards. You skip your next turn, then return free with a new name and 2 souls.</p>
+    <p class="muted">Full draft: rules-rework.md.</p><p class="muted" style="font-size:.85rem">Icons by Lorc and Delapouite from <a href="https://game-icons.net" target="_blank" rel="noopener">game-icons.net</a>, CC BY 3.0. Character art from the Liberated Pixel Cup (Universal LPC Spritesheet Character Generator), by bluecarrot16, JaidynReiman, Eliza Wyatt, Johannes Sjölund, Stephen Challener, Nila122 and others, under OGA-BY 3.0, CC-BY and CC0; full list in art/lpc/CREDITS.md.</p></div><div class="row"><button class="btn" onclick="closeDialog()">Close</button></div>`);
+}
+function rolesDialog() {
+  dialog(`<h2>Roles and masks</h2><div class="rules">${ROLES.map((r, i) => `<div class="ability"><h3>${r}</h3><p>Mask covers ${masksFor(i).map(x => ROLES[x]).join(', ')}.</p><p><b>Lv. 1</b> (masked): ${ABIL[i][0]}<br><b>Lv. 2</b> (unmasked): ${ABIL[i][1]}<br><b>Lv. 3</b> (revealed true role): ${ABIL[i][2]}</p></div>`).join('')}</div><div class="row"><button class="btn" onclick="closeDialog()">Close</button></div>`);
+}
+
+// ---------- online play: the server (rework-play/server.js) runs the game; this page shows your view and sends your actions ----------
+const store = { get(k) { try { return JSON.parse(localStorage.getItem('court-rework-' + k)); } catch { return null; } }, set(k, v) { try { localStorage.setItem('court-rework-' + k, JSON.stringify(v)); } catch {} } };
+const Net = {
+  ws: null, code: null, seat: null, token: null, rid: 0, pending: new Map(), chain: Promise.resolve(), lobby: null, retry: null, wanted: false,
+  available() { return location.protocol === 'http:' || location.protocol === 'https:'; },
+  nick(v) { if (v !== undefined) store.set('nick', v); return store.get('nick') || ''; },
+  linkCode() { return (new URLSearchParams(location.search).get('room') || '').toUpperCase().slice(0, 4); },
+  isHost() { return !!(this.lobby && this.lobby.host === this.seat); },
+  connect() {
+    if (this.ws && this.ws.readyState <= 1) return this.ws.readyState === 1 ? Promise.resolve() : new Promise((res, rej) => { this.ws.addEventListener('open', () => res(), { once: true }); this.ws.addEventListener('error', () => rej(new Error('Could not reach the server.')), { once: true }); });
+    return new Promise((res, rej) => {
+      const ws = new WebSocket(location.origin.replace(/^http/, 'ws') + '/ws'); this.ws = ws;
+      ws.onopen = () => res();
+      ws.onerror = () => rej(new Error('Could not reach the server.'));
+      ws.onmessage = e => { try { this.onMsg(JSON.parse(e.data)); } catch (err) { console.error(err); } };
+      ws.onclose = () => this.onClose(ws);
+    });
+  },
+  raw(m) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(m)); },
+  async create(nick) { this.wanted = true; await this.connect(); this.raw({ t: 'create', nick }); },
+  async join(code, nick, token = null) { this.wanted = true; await this.connect(); const s = store.get('session') || {}; this.raw({ t: 'join', code, nick, token: token || (s.code === code ? s.token : null) }); },
+  send(cmd, a) { return new Promise(res => { const rid = ++this.rid; this.pending.set(rid, res); this.raw({ t: 'cmd', rid, cmd, a }); }); },
+  resolve(rid, res) { const f = this.pending.get(rid); if (f) { this.pending.delete(rid); f(res || { ok: false }); } },
+  offer(dir, to, c, price) { this.raw({ t: 'offer', dir, to, c, price }); log(`Offer sent to ${COLOR_NAMES[to]}.`, 'mine'); },
+  restart() { this.raw({ t: 'restart' }); },
+  leave() { this.wanted = false; this.raw({ t: 'leave' }); store.set('session', null); if (this.ws) this.ws.close(); this.ws = null; this.code = null; this.lobby = null; },
+  onClose(ws) {
+    if (ws !== this.ws || !this.wanted) return;
+    this.ws = null;
+    if (G && G.online) log('Connection lost — reconnecting…', 'big');
+    clearTimeout(this.retry);
+    this.retry = setTimeout(() => { const s = store.get('session'); if (s && this.wanted) this.join(s.code, this.nick(), s.token).catch(() => this.onClose(null)); }, 2000);
+  },
+  onMsg(m) {
+    switch (m.t) {
+      case 'welcome': this.code = m.code; this.seat = m.seat; this.token = m.token; store.set('session', { code: m.code, token: m.token }); history.replaceState(null, '', '?room=' + m.code); break;
+      case 'lobby': this.lobby = m; if (m.phase === 'lobby') lobbyDialog(); else if (G && G.online) { G.seats = m.seats; if (!G.busy) renderTable(); } break;
+      case 'update': this.chain = this.chain.then(() => applyUpdate(m)).catch(err => console.error(err)); break;
+      case 'offer': offerToast(m); break;
+      case 'offerGone': { const el = document.querySelector(`.toast[data-offer="${m.id}"]`); if (el) el.remove(); break; }
+      case 'note': if (G) log(m.text, 'mine'); break;
+      case 'chat': if (G) { G.log.push({ chat: m.from, s: m.text, r: 0 }); renderLog(); } break;
+      case 'error':
+        if ($('#on-err')) $('#on-err').textContent = m.text; else if (G) log(m.text, 'big');
+        if (m.fatal) { store.set('session', null); this.wanted = false; if (!(G && G.online) && !$('#on-err')) { newGameDialog(); if ($('#on-err')) $('#on-err').textContent = m.text; } }
+        break;
+    }
+  },
+};
+function lobbyDialog() {
+  const L = Net.lobby, host = Net.isHost(), link = `${location.origin}${location.pathname}?room=${L.code}`;
+  const seats = Array.from({ length: L.n }, (_, i) => { const s = L.seats[i]; return `<div class="row" style="gap:8px">${who(i, COLOR_NAMES[i])}<span>${s && !s.bot ? esc(s.nick) + (i === Net.seat ? ' (you)' : '') + (s.connected ? '' : ' · away') + (i === L.host ? ' · host' : '') : '<span class="muted">bot</span>'}</span></div>`; }).join('');
+  dialog(`<h2>Room <span class="roomcode">${L.code}</span></h2>
+    <p class="muted">Share the code, or this link: <a href="${link}">${esc(link)}</a></p>
+    <div class="seatlist">${seats}</div>
+    ${host ? `<div class="row"><span class="label" style="width:110px">Seats</span><select id="lb-n">${[3, 4, 5, 6].map(n => `<option ${n === L.n ? 'selected' : ''} ${n < L.humans ? 'disabled' : ''}>${n}</option>`).join('')}</select></div>
+      <div class="row"><span class="label" style="width:110px">Bots</span><select id="lb-b">${['mix', 'aggressor', 'balanced', 'turtle'].map(t => `<option ${t === L.bots ? 'selected' : ''}>${t}</option>`).join('')}</select></div>` : `<p class="muted">Waiting for the host to start.</p>`}
+    <div class="row"><span class="label" style="width:110px">Animation</span><select id="lb-s">${[['600', 'normal'], ['1200', 'slow'], ['150', 'fast'], ['0', 'instant']].map(([v, t]) => `<option value="${v}" ${String(store.get('speed') ?? 600) === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+    <div class="row">${host ? '<button class="btn primary" id="lb-go">Start</button>' : ''}<button class="btn" id="lb-leave">Leave</button></div>`);
+  $('#lb-s').onchange = () => store.set('speed', +$('#lb-s').value);
+  if (host) {
+    $('#lb-n').onchange = $('#lb-b').onchange = () => Net.raw({ t: 'config', n: +$('#lb-n').value, bots: $('#lb-b').value });
+    $('#lb-go').onclick = () => Net.raw({ t: 'start' });
+  }
+  $('#lb-leave').onclick = () => { Net.leave(); history.replaceState(null, '', location.pathname); if (G && G.online) G = null; newGameDialog(); };
+}
+// a trade offer from another player: accept or decline without blocking your screen
+function offerToast(m) {
+  const el = document.createElement('div'); el.className = 'toast'; el.dataset.offer = m.id;
+  el.innerHTML = `<div>${who(m.from)} ${m.dir === 'buy' ? `offers <b>${m.price} souls</b> for one of your ${COLOR_NAMES[m.c]} tokens` : `offers you a ${COLOR_NAMES[m.c]} token for <b>${m.price} souls</b>`}.</div>
+    <div class="row"><button class="btn primary small" data-y="1">Accept</button><button class="btn small" data-y="0">Decline</button></div>`;
+  el.querySelectorAll('[data-y]').forEach(b => b.onclick = () => { Net.raw({ t: 'offerReply', id: m.id, yes: b.dataset.y === '1' }); el.remove(); });
+  $('#toasts').appendChild(el);
+}
+// one update from the server: replay its events over the table, then show the new state
+async function applyUpdate(m) {
+  const fresh = !G || !G.online || G.gameId !== m.gameId;
+  if (fresh) {
+    if ($('#dlg').open) closeDialog();
+    G = { online: true, gameId: m.gameId, q: [], cur: null, busy: false, ctx: {}, looks: m.looks, me: m.seat, idx: m.idx, over: false, myTurn: false, log: [], seats: m.seats, opts: { speed: store.get('speed') ?? 600, showTypes: false, xray: false } };
+    $('#chatForm').hidden = false;
+  }
+  G.seats = m.seats;
+  const wasMine = G.myTurn, g = hydrate(m.state);
+  g.log = m.log.slice(); G.g = g; G.idx = m.idx; G.q = fresh ? [] : m.events; G.myTurn = false;
+  if (fresh) { const p = ME(); log(`Room ${Net.code}: you are ${COLOR_NAMES[G.me]}. Your secret name is ${p.name.join('-')}: ${ROLES[p.role]}.`, 'mine'); }
+  await playQueue();
+  G.myTurn = m.myTurn; G.over = m.over;
+  render();
+  if (m.rid) Net.resolve(m.rid, m.res);
+  const p = ME();
+  if (G.myTurn && !wasMine) log(`Your turn: +2 souls${p.status !== 'free' && p.master !== null ? `, tribute paid to ${COLOR_NAMES[p.master]}` : ''}.`, 'mine');
+  if (p.needMask && !$('#dlg').open && !G.maskAsked) {
+    G.maskAsked = true;
+    chooseMask(G.g.round > 1 ? `You return as ${p.name.join('-')} (${ROLES[p.role]}): choose your mask` : 'Choose your starting mask', mk => Net.send('chooseMask', { m: mk }).then(() => { G.maskAsked = false; }));
+  }
+  if (m.over && !G.shownWin) { G.shownWin = true; const w = m.winner !== null ? G.g.P[m.winner] : null; log(w ? (w.id === G.me ? 'You win! Everyone else serves you.' : `${COLOR_NAMES[w.id]} wins the game.`) : 'The game ended.', 'big'); winDialog(w); }
+}
+$('#chatForm').onsubmit = e => { e.preventDefault(); const t = $('#chatIn').value.trim(); if (t) Net.raw({ t: 'chat', text: t }); $('#chatIn').value = ''; };
+
+$('#newBtn').onclick = newGameDialog;
+$('#rulesBtn').onclick = rulesDialog;
+$('#abilBtn').onclick = rolesDialog;
+$('#ledgerBtn').onclick = () => { if (!G) return; dialog('<h2>The court</h2><div class="ledger">' + $('#players').innerHTML + '</div><div class="row"><button class="btn" onclick="closeDialog()">Close</button></div>'); };
+// rejoin a game in progress after a reload
+(() => { const s = store.get('session'); if (Net.available() && s && s.code) Net.join(s.code, Net.nick() || 'Player', s.token).catch(() => newGameDialog()); else newGameDialog(); })();
+</script>
+</body>
+</html>

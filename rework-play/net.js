@@ -1,0 +1,191 @@
+// Shared by the page (solo and online) and the online server (server.js):
+// - HumanBot: how the engine asks a person's decisions (preset answers; their choices arrive with their commands)
+// - runCommand: every action a player can take, as a command with plain arguments (player ids, colours, numbers),
+//   checked and applied to the game. Solo play runs it in the page; online, the server runs it on the real game.
+// - redact / hydrate: what one player may see of the game (their own secrets, everyone's public facts), and turning
+//   that back into a Game object so the page can use the engine's own rules to show what is possible.
+// - snapView: a public snapshot of the table for animations.
+'use strict';
+(() => {
+const node = typeof require !== 'undefined' && typeof module !== 'undefined';
+const E = node ? require('../sim-rework/engine') : globalThis.ReworkEngine;
+const B = node ? require('../sim-rework/bots') : globalThis.ReworkBots;
+const { Game, NAMES, ARCH, EARL, masksFor, coverBits, key } = E;
+const { Bot, TYPES } = B;
+
+// A person's "bot": the engine asks it for decisions; a person's own choices (duel pick, fate when naming) are set
+// from their command just before the engine runs; decisions made on someone else's turn use these presets.
+class HumanBot {
+  constructor(type = 'you') { this.type = type; this.human = true; this.random = false; this.T = TYPES.balanced; this.nextFate = 'enslave'; this.wrongFate = 'enslave'; this.namingNow = false; this.pendingPick = null; this.autoWard = true; this.prefMask = null; }
+  pickMask(g, p, opts) { return opts.includes(this.prefMask) ? this.prefMask : opts[1]; }
+  cardPref(g, p, c) { return Bot.prototype.cardPref.call(this, g, p, c); }
+  keepMask() { return true; }
+  fate() { return this.namingNow ? this.nextFate : this.wrongFate; }
+  ward() { return this.autoWard; }
+  victorPick(g, W, L) {
+    if (this.pendingPick !== null) { const t = L.tokens.find(t => t.c === this.pendingPick); if (t) return t; }
+    return Bot.prototype.victorPick.call(this, g, W, L);
+  }
+  giveToken(g, p, to) { return Bot.prototype.giveToken.call(this, g, p, to); }
+  giveArrogation(g, p, subs) { return subs[0]; }
+  back() { return null; }
+  tokenWorth() { return 1e9; }      // bots never buy from a person on their own turn; people sell on theirs
+  defenceWorth() { return 0; }
+}
+
+const NAME_KEYS = new Set(NAMES.map(key));
+const no = msg => ({ ok: false, msg });
+
+// a bot's asking price for one of its tokens of colour c (null = won't sell)
+function botAsk(g, q, c) { const a = Math.ceil(q.bot.ask ? q.bot.ask(g, q, c) : Infinity); return isFinite(a) && a <= 999 ? a : null; }
+// what a bot offers for p's token of colour c (null = no offer)
+function botBid(g, p, q, c) {
+  if (q === p || !g.alive(q) || q.bot.human || q.bot.random || !q.bot.tokenWorth) return null;
+  if (g.against(p, g.P[c]) || (c === q.id && !g.masked(q))) return null;
+  const bid = Math.floor(c === q.id ? q.bot.defenceWorth(g, q, p) : q.bot.tokenWorth(g, q, c, g.count(q, c)));
+  return bid >= 2 && q.souls >= bid ? bid : null;
+}
+// may p buy a token of colour c from q?
+const mayBuyColour = (g, p, q, c) => !g.against(q, g.P[c]) && !(c === p.id && !g.masked(p)) && !(p.status === 'slave' && c === p.master);
+
+// Run one command for player p. Returns { ok, msg?, ...result }; result fields go only to p.
+// ctx keeps per-game state between commands (a draw-3 waiting for its keep).
+function runCommand(g, p, cmd, a = {}, ctx = {}) {
+  const P = i => (Number.isInteger(i) && i >= 0 && i < g.P.length ? g.P[i] : null);
+  const looks = ctx.looks || (ctx.looks = {});
+  const c = Number.isInteger(a.c) ? a.c : null;
+  if (looks[p.id] && cmd !== 'draw3Keep') return no('Choose a token to keep first.');
+  if (p.needMask && cmd !== 'chooseMask') return no('Choose your mask first.');
+  const free = g.free(p);
+  switch (cmd) {
+    case 'chooseMask': {
+      const m = a.m;
+      if (!p.needMask || !masksFor(p.role).includes(m)) return no('You cannot choose that mask.');
+      if (g.free(p) && p.mask !== null) { p.mask = m; p.lastMask = m; p.pubRoles = coverBits(m); }
+      p.bot.prefMask = m; p.needMask = false; return { ok: true };
+    }
+    case 'collect': return { ok: g.collect(p) };
+    case 'buyToken':
+      if (!(free || p.status === 'slave') || p.buys >= g.C.BUY_LIMIT || p.souls < g.C.BUY_COST || !g.bag.length) return no('You cannot buy a token now.');
+      return { ok: true, got: g.buyTokens(p, 1) };
+    case 'draw3Look': {
+      const kind = a.kind === 'arch' ? 'arch' : 'buy';
+      if (kind === 'buy' && !(free || p.status === 'slave')) return no('You cannot buy a token now.');
+      if (kind === 'arch' && !free) return no('Only a free player may use that.');
+      const look = kind === 'buy' ? g.buy3Look(p) : g.archLook(p);
+      if (!look) return no('Could not draw.');
+      const okList = kind === 'buy' ? g.keepable(p, look) : look.filter(t => !t.blank && g.live(t) && !(t.c === p.id && !g.masked(p)));
+      looks[p.id] = { kind, look, okList };
+      return { ok: true, look: look.map(t => ({ c: t.blank ? null : t.c, blank: !!t.blank, live: t.blank ? true : g.live(t), keep: okList.includes(t) })) };
+    }
+    case 'draw3Keep': {
+      const L = looks[p.id]; if (!L) return no('Nothing to keep.');
+      delete looks[p.id];
+      const keep = Number.isInteger(a.i) && L.okList.includes(L.look[a.i]) ? L.look[a.i] : null;
+      const kept = L.kind === 'buy' ? g.buy3Keep(p, L.look, keep) : g.archKeep(p, L.look, keep);
+      return { ok: true, kept };
+    }
+    case 'masterBuy': return { ok: free && !!P(a.s) && c !== null && g.princeBuy(p, P(a.s), c) };
+    case 'buyCard': {
+      const n0 = p.cards.length, card = g.buyCard(p);
+      return card ? { ok: true, card: p.cards.length > n0 ? p.cards[p.cards.length - 1] : card } : no('You cannot buy a card now.');
+    }
+    case 'quote': {        // a bot's asking price for one of its tokens
+      const q = P(a.q); if (!q || q === p || c === null || q.bot.human || !g.count(q, c) || !mayBuyColour(g, p, q, c)) return no('Not for sale.');
+      return { ok: true, ask: botAsk(g, q, c) };
+    }
+    case 'buyFrom': {      // buy from a bot at its asking price
+      const q = P(a.q); if (!q || q === p || c === null || q.bot.human || !g.alive(q) || !mayBuyColour(g, p, q, c)) return no('Not for sale.');
+      const ask = botAsk(g, q, c); if (ask === null || p.souls < ask) return no('Not for sale.');
+      return { ok: g.trade(p, q, c, ask), price: ask };
+    }
+    case 'bids': {         // what the bots offer for your tokens
+      const bids = [];
+      for (const cc of new Set(p.tokens.map(t => t.c))) for (const q of g.P) { const b = botBid(g, p, q, cc); if (b !== null) bids.push({ q: q.id, c: cc, bid: b }); }
+      return { ok: true, bids };
+    }
+    case 'sellTo': {       // sell to a bot at its offer
+      const q = P(a.q); if (!q || c === null || !g.count(p, c)) return no('No offer.');
+      const bid = botBid(g, p, q, c); if (bid === null) return no('No offer.');
+      return { ok: g.trade(q, p, c, bid), price: bid };
+    }
+    case 'duel': {
+      const t = P(a.t); if (!t || !g.canDuel(p, t)) return no('You cannot duel them.');
+      p.bot.pendingPick = Number.isInteger(a.pick) ? a.pick : null;
+      try { return { ok: true, won: g.duel(p, t) }; } finally { p.bot.pendingPick = null; }
+    }
+    case 'name': {
+      const t = P(a.t); if (!t || !g.eligible(p, t)) return no('You cannot name them.');
+      if (!NAME_KEYS.has(a.guess)) return no('That is not a name.');
+      p.bot.nextFate = a.fate === 'consume' ? 'consume' : 'enslave'; p.bot.namingNow = true;
+      try { const ok = g.name(p, t, a.guess); return { ok: true, correct: !!ok, guess: a.guess }; } finally { p.bot.namingNow = false; }
+    }
+    case 'seize': return { ok: free && !!P(a.q) && c !== null && g.seize(p, P(a.q), c) };
+    case 'restore': return { ok: free && !!P(a.q) && g.restore(p, P(a.q)) };
+    case 'unmask': return { ok: g.unmask(p) };
+    case 'remask': return { ok: Number.isInteger(a.m) && g.remask(p, a.m) };
+    case 'reveal': return { ok: g.reveal(p) };
+    case 'archFree':
+      if (!free || !g.has(p, ARCH, 1) || p.archFree) return no('Not now.');
+      return { ok: true, got: !!g.archFree(p) };
+    case 'ask': {
+      const t = P(a.t); if (!free || !t || !g.alive(t)) return no('Not now.');
+      const q = Number.isInteger(a.role) ? { role: a.role } : NAME_KEYS.has(a.name) ? { name: a.name } : null;
+      if (!q || !g.ask(p, t, q)) return no('Not now.');
+      return { ok: true, yes: q.role !== undefined ? t.role === q.role : key(t.name) === q.name };
+    }
+    case 'earlFree': {
+      if (!free || !g.has(p, EARL, 3) || p.earlFree) return no('Not now.');
+      const n0 = p.cards.length, got = g.earlFree(p);
+      return { ok: true, card: got && p.cards.length > n0 ? p.cards[p.cards.length - 1] : null };
+    }
+    case 'earlArrogation': return { ok: g.earlArrogation(p) };
+    case 'consume': return { ok: free && !!P(a.s) && g.consumeSlave(p, P(a.s)) };
+    case 'rebel': { const won = g.rebel(p); return won === null ? no('Not now.') : { ok: true, won }; }
+    case 'buyFreedom': return { ok: g.buyFreedom(p) };
+    default: return no('Unknown action.');
+  }
+}
+
+// ---------- what one player may see ----------
+const SELF_SKIP = new Set(['bot', 'tookMine', 'know', 'name', 'tokens', 'cards']);
+const PUBLIC = ['id', 'souls', 'status', 'master', 'gen', 'mask', 'lastMask', 'lv3', 'roleKnown', 'pubRoles', 'buys', 'trades', 'duels', 'earlBonus', 'archFree', 'arch2', 'asked', 'earlFree', 'maskLock', 'waitTurns', 'captures', 'wins', 'needMask'];
+function redact(g, viewer, all = false) {
+  return {
+    round: g.round, turnNo: g.turnNo, C: g.C,
+    bag: g.bag.map(t => t.blank ? { blank: true } : { c: t.c, gen: t.gen, ...(all ? { d: t.d } : {}) }),
+    deck: g.deck.map(x => all ? x : '?'), discard: [...g.discard],
+    claims: g.claims.map(c => ({ t: c.t.id, by: c.by.id, kind: c.kind })),
+    P: g.P.map(q => {
+      const see = all || q.id === viewer, o = {};
+      if (see) { for (const [k, v] of Object.entries(q)) if (!SELF_SKIP.has(k) && (typeof v !== 'object' || v === null)) o[k] = v; }
+      else for (const k of PUBLIC) o[k] = q[k] ?? null;
+      o.name = see ? [...q.name] : null;
+      o.role = see || q.lv3 ? q.role : null;
+      o.cards = see ? [...q.cards] : q.cards.map(() => '?');
+      o.tokens = q.tokens.map(t => ({ c: t.c, gen: t.gen, d: see ? t.d : 0 }));
+      o.tookMine = [...q.tookMine];
+      o.know = see ? Object.fromEntries(Object.entries(q.know).map(([k, v]) => [k, { ...v, notNames: [...v.notNames] }])) : {};
+      o.bot = { type: q.bot.type, human: !!q.bot.human };
+      return o;
+    }),
+  };
+}
+// a Game object built from a redacted view: the engine's checks (canDuel, eligible, candidates...) work on it; it is never played
+function hydrate(s) {
+  const g = Object.create(Game.prototype);
+  Object.assign(g, { round: s.round, turnNo: s.turnNo, C: s.C, bag: s.bag, deck: s.deck, discard: s.discard, log: [], trace: false, stats: {}, r: Math.random });
+  g.P = s.P.map(q => ({ ...q, tookMine: new Set(q.tookMine), know: Object.fromEntries(Object.entries(q.know || {}).map(([k, v]) => [k, { ...v, notNames: new Set(v.notNames) }])) }));
+  g.claims = s.claims.map(c => ({ t: g.P[c.t], by: g.P[c.by], kind: c.kind }));
+  return g;
+}
+// a public snapshot of the table (for animations); `all` shows everyone's secrets (game over, or testing)
+function snapView(g, idx, viewer, all = false) {
+  return { round: g.round, idx, bag: g.bag.length, blanks: g.bag.filter(t => t.blank).length, deck: g.deck.length, discard: g.discard.length, noblesse: g.noblesseOver(),
+    P: g.P.map(q => { const see = all || q.id === viewer; return { id: q.id, status: q.status, master: q.master, mask: q.mask, lastMask: q.lastMask, lv3: q.lv3, role: see || q.lv3 ? q.role : null, souls: q.souls, cards: q.cards.length,
+      tokens: q.tokens.map(t => ({ c: t.c, d: see ? t.d : 0 })), waitTurns: q.waitTurns, name: see && q.name ? [...q.name] : null, bot: { type: q.bot.type } }; }) };
+}
+
+const EXPORTS = { HumanBot, runCommand, redact, hydrate, snapView, botAsk, botBid, mayBuyColour };
+if (node) module.exports = EXPORTS; else globalThis.ReworkNet = EXPORTS;
+})();

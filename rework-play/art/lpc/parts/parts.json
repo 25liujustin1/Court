@@ -1,0 +1,60 @@
+{
+ "sexes": [
+  "male",
+  "female"
+ ],
+ "skins": [
+  "light",
+  "amber",
+  "bronze",
+  "lavender",
+  "blue",
+  "pale_green",
+  "zombie",
+  "taupe"
+ ],
+ "shirts": [
+  "red",
+  "blue",
+  "green",
+  "orange",
+  "purple",
+  "teal"
+ ],
+ "hairs": [
+  "bob",
+  "afro",
+  "lob",
+  "idol",
+  "curly_short",
+  "long_straight",
+  "natural",
+  "cowlick",
+  "dreadlocks_short"
+ ],
+ "hairColors": [
+  "black",
+  "raven",
+  "dark_brown",
+  "chestnut",
+  "white",
+  "ash",
+  "red",
+  "purple",
+  "blue",
+  "platinum"
+ ],
+ "masks": [
+  "gold",
+  "red",
+  "purple",
+  "blue",
+  "green"
+ ],
+ "crop": {
+  "x": 12,
+  "y": 8,
+  "w": 40,
+  "h": 40
+ }
+}
