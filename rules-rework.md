@@ -127,7 +127,7 @@ A consumed player waits 1 round: they skip their next turn and reincarnate at th
 
 ### Economy — Earl
 
-- Lv. 1: Event cards cost 2 souls, and for every trade you make, take 2 souls from the bank.
+- Lv. 1: Event cards cost 2 souls, and the first trade you make each turn gives you 2 souls from the bank.
 - Lv. 2: You may draw 2 cards and keep 1. Put the other back into the deck.
 - Lv. 3: Take 1 free event card every turn.
 
@@ -139,7 +139,7 @@ Each costs 3 souls.
 - **Collect** (6 copies): Trade in for 3 souls.
 - **Restoration** (2 copies): Choose one player to put one of your tokens back into the bag.
 - **Ward** (2 copies): Delay your enslavement/consumption until after your next turn.
-- **Pact** (2 copies): Make a contract with another player.
+- **Pact** (2 copies): Write a deal with another player, or with yourself, and propose it. A deal with another player takes effect once they accept it. A deal with yourself takes effect once every other player approves it, and its terms must also say who will receive your souls, your event cards, your name tokens and your slaves if you break it (only free players can receive). If anyone rejects it, the Pact card goes back to your hand. A Pact is kept or broken when every player but one agrees that it was, and never fewer than two players (with two players left, both must agree); for a deal between two players, they must also agree on which of the two broke it. Whoever breaks a deal with another player is enslaved or consumed, as the other party chooses (a revealed Marquis at Lv. 3 can't be enslaved; a Prince at Lv. 3 can't consume). If you break a Pact with yourself, you are consumed (Ward can delay either): your things go where the terms said, and as with any consumption, tokens of your color leave the game. Slaves can't make Pacts or be a party to one, though they still vote on them. When a party is enslaved or consumed, the Pact is void; a Pact card still waiting for approval goes back to the proposer if they are free.
 - **Arrogation** (9 copies): A slave may attempt to duel their master. If the slave wins, they gain a new name and swap places with their master: the master becomes their slave, and the master's other slaves transfer to them. If they lose, the master takes half of their souls. If Earl is your true role, for every 2 copies of Arrogation you possess, you may discard them to gain 7 souls.
 
 ---
@@ -162,14 +162,12 @@ Decided for the first playtests and the sim; fold into the sections above when t
 - Marquis Lv. 3: the final duel uses the table result or 50%, whichever is lower.
 - Prince Lv. 3: you choose which of your slave's tokens to buy, face down by color; the slave must sell.
 
-## Not yet decided
+- Pact (2026-11-17): taken from the old rules (`rules.md`), with bind/devour/thrall read as enslave/consume/slave. Pacts are still left out of the sim and the web version.
+- Archduke Lv. 3 (2026-11-17): any question that can be answered yes or no. (The sim and the web version only ask "is your role X?" or "is your name X?".)
+- Earl Lv. 1 (2026-11-17): the trade bonus counts once per turn, so it can't be farmed by passing souls back and forth.
 
-- Pact: what is the penalty for breaking one? (Left out of the sim.)
-- Archduke Lv. 3: what can be asked? (The sim asks "is your role X?" or "is your name X?".)
-- Earl Lv. 1 trade bonus: the sim caps it at once per turn, since it can repeat without limit.
 ## Known balance issues (abilities not yet changed)
 
-- Earl Lv. 1: "take 2 souls per trade" repeats without limit, because trades are free (pass 1 soul back and forth with a friend).
 - Earl Lv. 1: cards at 2 souls plus Collect paying 3 makes 1 soul per Collect, every time the deck reshuffles.
 - Archduke Lv. 1: a free token every turn is the strongest ability, at the weakest tier.
 - Archduke Lv. 3: a question every round can find any name in about 6 questions.
