@@ -1,6 +1,6 @@
 # Court — Rework draft
 
-A draft of the reworked rules (masks, duels, souls as power). Not yet played. The current rules stay in `rules.md` until this is adopted.
+A draft of the reworked rules (masks, duels, souls as power). Not yet played. The original rules (`rules.md`) were removed from the repo on 2026-11-17; they are in git history and in a local backup.
 
 ## Win condition
 
@@ -162,7 +162,7 @@ Decided for the first playtests and the sim; fold into the sections above when t
 - Marquis Lv. 3: the final duel uses the table result or 50%, whichever is lower.
 - Prince Lv. 3: you choose which of your slave's tokens to buy, face down by color; the slave must sell.
 
-- Pact (2026-11-17): taken from the old rules (`rules.md`), with bind/devour/thrall read as enslave/consume/slave. Pacts are still left out of the sim and the web version.
+- Pact (2026-11-17): taken from the original rules, with bind/devour/thrall read as enslave/consume/slave. Pacts are still left out of the sim and the web version.
 - Archduke Lv. 3 (2026-11-17): any question that can be answered yes or no. (The sim and the web version only ask "is your role X?" or "is your name X?".)
 - Earl Lv. 1 (2026-11-17): the trade bonus counts once per turn, so it can't be farmed by passing souls back and forth.
 

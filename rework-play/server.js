@@ -1,8 +1,8 @@
 // Court rework online: a small game server. Each room runs the rework engine (sim-rework/engine.js) and the sim's bots;
 // players send commands (net.js runCommand) and get updates with other players' secrets removed (net.js redact).
 //
-//   npm run rework-server            then open http://localhost:3010 (other devices on your network: http://<your-ip>:3010)
-//   PORT=8080 npm run rework-server  (hosts such as Render or Fly set PORT themselves)
+//   npm start            then open http://localhost:3010 (other devices on your network: http://<your-ip>:3010)
+//   PORT=8080 npm start  (hosts such as Render or Fly set PORT themselves)
 'use strict';
 const http = require('http');
 const fs = require('fs');

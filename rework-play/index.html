@@ -421,7 +421,7 @@ function newGameDialog() {
       <p class="muted">Each player on their own device. Empty seats are filled with bots.</p>
       <div class="row"><span class="label" style="width:110px">Your name</span><input type="text" id="on-nick" maxlength="16" value="${esc(Net.nick())}"></div>
       <div class="row"><button class="btn" id="on-create">Create a room</button><span class="muted">or</span><input type="text" id="on-code" maxlength="4" placeholder="CODE" style="width:80px;text-transform:uppercase" value="${esc(Net.linkCode())}"><button class="btn" id="on-join">Join</button></div>
-      <p class="muted" id="on-err"></p>` : '<p class="muted">Start the server to play online: <code>npm run rework-server</code>, then open the address it prints.</p>'}</div>`);
+      <p class="muted" id="on-err"></p>` : '<p class="muted">Start the server to play online: <code>npm start</code>, then open the address it prints.</p>'}</div>`);
   if (Net.available()) {
     const nick = () => { const v = $('#on-nick').value.trim().slice(0, 16) || 'Player'; Net.nick(v); return v; };
     const err = e => { $('#on-err').textContent = e.message || String(e); };

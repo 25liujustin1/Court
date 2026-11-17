@@ -1,9 +1,9 @@
 # Rework sim
 
-Bots play the draft rework in `rules-rework.md` (masks, duels, souls as power). Unlike `sim/`, this has its own rules engine (`engine.js`), because the rework has no playtest page yet. When a rework rule changes, change `rules-rework.md` first, then `engine.js`.
+Bots play the draft rework in `rules-rework.md` (masks, duels, souls as power). It has its own rules engine (`engine.js`), which the web version in `rework-play/` also runs. When a rework rule changes, change `rules-rework.md` first, then `engine.js`.
 
-    npm run sim:rework -- --games 2000 --players mix --bots mix
-    npm run sim:rework -- --trace 3 --games 4      # print the action log of game 3
+    npm run sim -- --games 2000 --players mix --bots mix
+    npm run sim -- --trace 3 --games 4      # print the action log of game 3
 
 - `--players` 3-6 or `mix`; `--bots` `mix` or a comma list (aggressor, balanced, turtle, random)
 - `--arrogation keep|give`: a free player who draws Arrogation keeps it (ruling) or must give it to a slave (discard if none; a true Earl may keep it)
