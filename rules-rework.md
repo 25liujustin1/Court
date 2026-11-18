@@ -32,7 +32,7 @@ Archduke → Duke → Prince → Marquis → Earl → (back to Archduke)
 | Marquis | Prince, Marquis, Earl |
 | Earl | Marquis, Earl, Archduke |
 
-A mask gives a weaker version of its role's power (Lv. 1). Unmasking unlocks a stronger version of your mask's power (Lv. 2). When you are unmasked, you may use your true role's third and final upgrade (Lv. 3), at the cost of revealing your true role. The levels do not stack: you have only the power of the level you are at.
+A mask gives a weaker version of its role's power (Lv. 1). Unmasking unlocks a stronger version of your mask's power (Lv. 2). When you are unmasked, you may use your true role's third and final upgrade (Lv. 3), at the cost of revealing your true role. The levels do not stack: you have only the power of the level you are at. Revealing is permanent: from then on, Lv. 3 replaces Lv. 2, so whenever you are unmasked you have Lv. 3 and never Lv. 2 again. If you remask, you have your mask's Lv. 1 while masked, and Lv. 3 again when the mask comes down. A new name (reincarnation or rebellion) starts over unrevealed.
 
 A mask comes down in two ways: by losing a duel, or by lowering it voluntarily on your turn, which gains you 4 souls. If you unmask voluntarily, you also return all of the tokens of your own color that you hold to the bag, and gain 3 souls for every token you return. Remasking costs 6 souls, on your turn. Each time you remask, you may choose a new mask.
 
@@ -40,9 +40,13 @@ While unmasked, you may not collect your own tokens (you may keep the ones you h
 
 ## Name tokens
 
-Each round, a player may buy up to 2 name tokens, at 2 souls each, drawn at random from the bag. Instead of a single draw, you may pay 6 souls to draw 3 tokens and keep 1 (choose by color; the dots stay hidden), putting the other 2 back; this counts as 1 of your 2 buys. If none of the 3 can be kept, get your 6 souls back. Name tokens can be traded freely. Their color shows on the back; they are kept face down until a naming attempt.
+Each round, a player may buy up to 2 name tokens, at 2 souls each, drawn at random from the bag. Instead of a single draw, you may pay 6 souls to draw 3 tokens and keep 1 (choose by color; the dots stay hidden), putting the other 2 back; this counts as 1 of your 2 buys. If none of the 3 can be kept, get your 6 souls back. Their color shows on the back; they are kept face down until a naming attempt.
 
 The bag also holds 1 blank token for each player. Blanks have no color. If you draw a blank, put it back and get your 2 souls back, but that draw is used up.
+
+## Trading
+
+On your turn, you may trade souls, name tokens and event cards with any player, in any mix, or give any of them away. Name tokens and event cards pass face down. The other player must agree to the trade. There is no limit on trades per turn. The usual limits still apply: a slave can't hand over their master's tokens, and you can't take your own tokens while unmasked.
 
 ## Duels
 
@@ -103,7 +107,7 @@ A consumed player waits 1 round: they skip their next turn and reincarnate at th
 
 ### Knowledge — Archduke
 
-- Lv. 1: Take 1 free name token per turn.
+- Lv. 1: Name token buys cost you 1 soul less (1 soul for a draw, 5 for draw 3 keep 1).
 - Lv. 2: You may draw 3 tokens, and choose 1 to keep.
 - Lv. 3: Ask anyone 1 yes or no question every round.
 
@@ -116,7 +120,7 @@ A consumed player waits 1 round: they skip their next turn and reincarnate at th
 ### Ruler — Prince
 
 - Lv. 1: When providing support in duels, you don't lose any souls if the player you aided loses.
-- Lv. 2: Duel any player you have 3 or more tokens of; if they lose, they are vassalized. Vassals provide 1 soul per turn. Vassals may break free through Arrogation or by buying their freedom for 6 souls.
+- Lv. 2: Duel any player you have 3 or more tokens of; if they lose, they are vassalized. Vassals provide 1 soul per turn. Vassals may break free through Arrogation, or by buying their own tokens back from the Prince at 10 souls each (the Prince must sell). A vassal is free as soon as the Prince holds fewer than 3 of their tokens.
 - Lv. 3: You may not consume. Your slaves pay you 3 souls each round instead of 1; if a slave can't pay it all, the bank pays the rest.
 
 ### Defender — Marquis
@@ -127,7 +131,7 @@ A consumed player waits 1 round: they skip their next turn and reincarnate at th
 
 ### Economy — Earl
 
-- Lv. 1: Event cards cost 2 souls, and the first trade you make each turn gives you 2 souls from the bank.
+- Lv. 1: Event cards cost 2 souls, and the first trade you make each turn gives you 2 souls from the bank. A gift (one side hands over nothing) doesn't count.
 - Lv. 2: You may draw 2 cards and keep 1. Put the other back into the deck.
 - Lv. 3: Take 1 free event card every turn.
 
@@ -149,27 +153,30 @@ Each costs 3 souls.
 Decided for the first playtests and the sim; fold into the sections above when the wording settles.
 
 - After a correct naming, the namer chooses enslave or consume; after a wrong one, the target chooses.
+- Vassal buy-back (2026-11-17): replaces buying freedom for 6 souls. A vassal may buy back their own tokens even while unmasked. Losing tokens any other way (Seize, Restoration, a lost duel) also frees the vassal once the Prince holds fewer than 3.
 - Vassals (Prince Lv. 2) count toward "enslave everyone", are not permanently masked, and can't act against their Prince.
 - A slave freed by Arrogation gets a new name: tokens of their old name leave the game (as for a consumed player) and their 4 new tokens go into the bag.
 - End of Noblesse Oblige (2026-11-15): if a third free player appears again (a reincarnation, or a rebellion that frees without a swap), Noblesse Oblige is back and players may remask again.
 - Marquis Lv. 3 against Prince Lv. 3 (2026-11-16): if a revealed Marquis guesses a revealed Prince's name wrong, the Marquis is consumed. "Cannot be enslaved" wins; the Prince's "may not consume" only limits choices the Prince is free to make.
 - Rebellion swap (2026-11-15): only for slaves. A vassal who wins with Arrogation is just freed. A master who can't be enslaved (a revealed Marquis at Lv. 3) is not swapped; the slave is just freed.
 - A free player who draws Arrogation keeps it; it can be traded.
+- Trading (2026-11-17): souls, name tokens and event cards can all be traded, in any mix, or given away (see Trading). No limit on trades per turn. Asking for a card the other player doesn't hold counts as a decline, so a trade can't be used to find out what someone holds.
 - Ward delays until the end of your next turn. If you capture the claimant meanwhile, the claim ends. One Ward per claim; not usable against your own wrong guess.
 - Seize takes a random token of a color you choose, from a player you choose.
 - When the deck runs out, shuffle the discards into a new deck. No limit on card buys per turn.
-- Ability draws (Archduke Lv. 1 and Lv. 2) don't count toward the 2-per-round token limit; Archduke Lv. 2 costs 2 souls.
+- Revealing (2026-11-17): permanent for that name; Lv. 3 replaces Lv. 2 (see Masks).
+- Archduke Lv. 2's draw doesn't count toward the 2-per-round token limit, and costs 2 souls.
+- Archduke Lv. 1 (2026-11-17): a 1-soul discount on token buys, replacing a free token every turn (it was the strongest ability at the weakest tier; the sim showed no change in win rates).
 - Marquis Lv. 3: the final duel uses the table result or 50%, whichever is lower.
 - Prince Lv. 3: you choose which of your slave's tokens to buy, face down by color; the slave must sell.
 
 - Pact (2026-11-17): taken from the original rules, with bind/devour/thrall read as enslave/consume/slave. Pacts are still left out of the sim and the web version.
 - Archduke Lv. 3 (2026-11-17): any question that can be answered yes or no. (The sim and the web version only ask "is your role X?" or "is your name X?".)
-- Earl Lv. 1 (2026-11-17): the trade bonus counts once per turn, so it can't be farmed by passing souls back and forth.
+- Earl Lv. 1 (2026-11-17): the trade bonus counts once per turn, and only for a real trade where both sides hand something over (not a gift), so it can't be farmed by passing souls back and forth or giving away 1 soul.
 
 ## Known balance issues (abilities not yet changed)
 
 - Earl Lv. 1: cards at 2 souls plus Collect paying 3 makes 1 soul per Collect, every time the deck reshuffles.
-- Archduke Lv. 1: a free token every turn is the strongest ability, at the weakest tier.
 - Archduke Lv. 3: a question every round can find any name in about 6 questions.
 - Prince Lv. 3 (changed 2026-11-16 to 3 souls of tribute per slave): watch whether it speeds up runaway wealth, since tribute is the main way the leader pulls ahead.
 - Duke Lv. 3: barely stronger than Lv. 2; the loser picks the token they give.

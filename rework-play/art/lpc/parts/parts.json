@@ -1,55 +1,47 @@
 {
- "sexes": [
+ "bodies": [
   "male",
-  "female"
+  "female",
+  "muscular",
+  "teen_m",
+  "teen_f"
  ],
- "skins": [
-  "light",
-  "amber",
-  "bronze",
-  "lavender",
-  "blue",
-  "pale_green",
-  "zombie",
-  "taupe"
+ "skinRamp": [
+  0.12549019607843137,
+  0.41764705882352937,
+  0.5980392156862745,
+  0.6901960784313725,
+  0.8529411764705882,
+  0.9431372549019608
  ],
  "shirts": [
-  "red",
-  "blue",
-  "green",
-  "orange",
-  "purple",
-  "teal"
+  "black"
  ],
  "hairs": [
-  "bob",
-  "afro",
-  "lob",
-  "idol",
-  "curly_short",
-  "long_straight",
-  "natural",
-  "cowlick",
-  "dreadlocks_short"
+  "page",
+  "wavy",
+  "princess",
+  "sara"
  ],
  "hairColors": [
   "black",
-  "raven",
-  "dark_brown",
-  "chestnut",
   "white",
-  "ash",
   "red",
-  "purple",
-  "blue",
-  "platinum"
+  "orange",
+  "blonde",
+  "chestnut"
+ ],
+ "eyes": [
+  "red",
+  "gold",
+  "black"
  ],
  "masks": [
+  "black",
+  "maroon",
   "gold",
-  "red",
-  "purple",
-  "blue",
-  "green"
+  "sky",
+  "forest"
  ],
  "crop": {
   "x": 12,

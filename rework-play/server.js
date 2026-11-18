@@ -12,7 +12,7 @@ const crypto = require('crypto');
 const { WebSocketServer } = require('ws');
 const { Game } = require('../sim-rework/engine');
 const { Bot, TYPES } = require('../sim-rework/bots');
-const { HumanBot, runCommand, redact, snapView } = require('./net');
+const { HumanBot, runCommand, redact, snapView, normDeal } = require('./net');
 
 const PORT = +process.env.PORT || 3010;
 const ROOT = path.join(__dirname, '..');
@@ -43,8 +43,9 @@ const newCode = () => { const A = 'BCDFGHJKLMNPQRSTVWXZ'; let c; do { c = Array.
 const send = (ws, m) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const COLOR_NAMES = ['Crimson', 'Cobalt', 'Emerald', 'Amber', 'Violet', 'Teal'];
-const LPC = { sexes: ['male', 'female'], skins: ['light', 'amber', 'bronze', 'lavender', 'blue', 'pale_green', 'zombie', 'taupe'],
-  hairs: ['bob', 'afro', 'lob', 'idol', 'curly_short', 'long_straight', 'natural', 'cowlick', 'dreadlocks_short'], hairColors: ['black', 'raven', 'dark_brown', 'chestnut', 'white', 'ash', 'red', 'purple', 'blue', 'platinum'] };
+const LPC = { bodies: ['male', 'female', 'muscular', 'teen'],   // a teen gets either head (body key teen_m or teen_f)
+ 
+  hairs: ['page', 'wavy', 'princess', 'sara'], hairColors: ['black', 'white', 'red', 'orange', 'blonde', 'chestnut'], eyes: ['red', 'gold', 'black'] };
 const pick = a => a[crypto.randomInt(a.length)];
 // roughly how long clients take to animate a batch of events at normal speed, so bot turns don't race ahead
 const EV_MS = { duel: 2600, name: 2600, enslave: 1300, consume: 1500, reveal: 1500, swap: 1300, reincarnate: 1000, rebel: 1000, maskoff: 800 };
@@ -72,7 +73,8 @@ class Room {
     for (const q of g.P) if (q.bot.human) q.needMask = true;
     this.backups = g.P.map(() => new Bot('balanced'));
     this.g = g; this.gameId++; this.phase = 'play'; this.idx = -1; this.ctx = {}; this.offers.clear(); this.winner = null;
-    this.looks = Array.from({ length: n }, () => ({ sex: pick(LPC.sexes), skin: pick(LPC.skins), hair: pick(LPC.hairs), hairColor: pick(LPC.hairColors) }));
+    // skin: any hue (h), saturation (s) and lightness scale (k), shown once released; natural: a human tone worn until then (rollSkin / rollNatural in index.html)
+    this.looks = Array.from({ length: n }, () => ({ body: (b => b === 'teen' ? pick(['teen_m', 'teen_f']) : b)(pick(LPC.bodies)), skin: { h: 50 + crypto.randomInt(305), s: (45 + crypto.randomInt(46)) / 100, k: (50 + crypto.randomInt(51)) / 100 }, natural: { h: 16 + crypto.randomInt(17), s: (30 + crypto.randomInt(31)) / 100, k: (40 + crypto.randomInt(63)) / 100 }, eyes: pick(LPC.eyes), hair: pick(LPC.hairs), hairColor: pick(LPC.hairColors) }));
     this.cur = this.snaps();
     this.broadcastLobby(); this.flush();
     this.loop().catch(err => { console.error(`room ${this.code}:`, err); this.say(`Server error: ${err.message}. The game stopped.`); this.phase = 'over'; this.flush(); });
@@ -159,25 +161,30 @@ class Room {
     reply(res);
     if (res.ok && this.checkWin() && this.endTurn) this.endTurn();
   }
-  offer(seat, m) {
-    const g = this.g, p = g.P[seat], q = g.P[m.to], c = m.c, price = Math.floor(+m.price);
+  offer(seat, m) {       // a trade offer to another person: { to, give, get } (see normDeal in net.js)
+    const g = this.g, p = g.P[seat], q = g.P[m.to];
     if (this.phase !== 'play' || !(this.turnOpen && this.idx === seat)) return this.note(seat, 'You can only make offers on your turn.');
-    if (!q || q === p || !this.seats[q.id] || !Number.isInteger(c) || !(price >= 0 && price <= 999)) return this.note(seat, 'That offer is not possible.');
-    const [buyer, seller] = m.dir === 'sell' ? [q, p] : [p, q];
-    if (!g.count(seller, c) || buyer.souls < price) return this.note(seat, 'That offer is not possible right now.');
-    const id = ++this.offerSeq; this.offers.set(id, { id, from: seat, to: q.id, dir: m.dir === 'sell' ? 'sell' : 'buy', c, price });
-    send(this.seats[q.id].ws, { t: 'offer', id, from: seat, dir: m.dir === 'sell' ? 'sell' : 'buy', c, price });
+    if (!q || q === p || !this.seats[q.id] || !q.bot.human) return this.note(seat, 'That offer is not possible.');
+    const give = normDeal(m.give), get = normDeal(m.get);
+    if (!g.dealOk(p, q, give, get, true)) return this.note(seat, 'That offer is not possible right now.');   // blind: their cards are hidden from you
+    const id = ++this.offerSeq; this.offers.set(id, { id, from: seat, to: q.id, give, get });
+    send(this.seats[q.id].ws, { t: 'offer', id, from: seat, give, get });
   }
   offerReply(seat, m) {
     const o = this.offers.get(m.id); if (!o || o.to !== seat) return;
     this.offers.delete(m.id);
-    if (!m.yes) return this.note(o.from, `${COLOR_NAMES[seat]} declines your offer.`);
-    const g = this.g, [buyer, seller] = o.dir === 'buy' ? [g.P[o.from], g.P[o.to]] : [g.P[o.to], g.P[o.from]];
+    const g = this.g, q = g.P[o.to];
+    // asking for cards they don't hold reads as a decline, so offers can't be used to probe a hand
+    const k = {}; for (const c of o.get.cards) k[c] = (k[c] || 0) + 1;
+    const lacks = Object.entries(k).some(([c, n]) => !g.hasCard(q, c, n));
+    if (m.yes && lacks) this.note(seat, "You don't hold the cards they asked for.");
+    if (!m.yes || lacks) return this.note(o.from, `${COLOR_NAMES[seat]} declines your offer.`);
     if (!(this.turnOpen && this.idx === o.from)) return this.note(seat, 'That offer has lapsed.');
-    const ok = g.trade(buyer, seller, o.c, o.price);
+    const ok = g.deal(g.P[o.from], g.P[o.to], o.give, o.get);
     if (!ok) { this.note(seat, 'The trade is no longer possible.'); this.note(o.from, `${COLOR_NAMES[seat]} accepted, but the trade is no longer possible.`); }
     else this.note(o.from, `${COLOR_NAMES[seat]} accepts your offer.`);
     this.flush();
+    if (ok && this.checkWin() && this.endTurn) this.endTurn();
   }
 }
 

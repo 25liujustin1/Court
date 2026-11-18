@@ -18,13 +18,16 @@ Bots play the draft rework in `rules-rework.md` (masks, duels, souls as power). 
 - `--remask-end flat|quarter|quarter-rich` (default flat): once Noblesse Oblige ends (2 free players), remasking costs 25% of your souls, or 25% of the richest free player's souls (at least 6)
 - `--end-unmask on|off` (default on, rules since 2026-11-15): once Noblesse Oblige ends (2 free players), both are unmasked and can't remask while it lasts
 - `--noblesse-end on|off` (default on, rules): Noblesse Oblige ends when only 2 free players remain
-- `--card-market on|off` (default off): bots trade event cards (Seize pairs, Arrogation to slaves); the rules do not say cards can be traded
+- `--card-market on|off` (default off): bots trade event cards (Seize pairs, Arrogation to slaves); the rules allow card trades, but bots only make them with this on
 - `--own-redraw on|off` (default off): drawing your own token while unmasked does not use up the draw
 - `--noblesse-strict on|off` (default off): Noblesse Oblige without the token exceptions (3+ tokens, actively trading)
 - `--duel-take on|off` (default off): an unmasked duel loser gives the chosen token to the victor instead of the bag
 - `--order duel-first|buy-first` (default duel-first): bot turn order; duel first so a token knocked into the bag can be drawn the same turn
 - `--fate rebel|enslave|threat` (default rebel): bots enslave unless the slave could rebel (rebellion odds ≥ 0.1 turtle, 0.2 balanced, 0.3 aggressor, x1.5 if they hold Arrogation), always enslave, or consume anyone holding their tokens (old bots)
 - `--reincarnate-wait N` (default 1, rules since 2026-11-15): a consumed player skips N turns before reincarnating
+- `--arch-lv1 discount|free` (default discount, rules since 2026-11-17): Archduke Lv. 1 is 1 soul off token buys (draw 3 too), or the old free token every turn
+- `--vassal-free buyback|flat` (default buyback, rules since 2026-11-17): a vassal buys their tokens back from the Prince at 10 each and is free once the Prince holds fewer than 3, or the old buy-your-freedom for 6
+- `--lv3-keep on|off` (default on, rules since 2026-11-17): revealing is permanent for that name, so Lv. 3 replaces Lv. 2 whenever you are unmasked, even after remasking; `off` is the old rule (remasking clears Lv. 3 and the next unmask gives Lv. 2)
 - `--seed`, `--max-rounds` (default 60; a game still going is a stalemate)
 
 Bot types (`bots.js`): aggressor names at a 1-in-3 chance and duels at even odds; balanced names at 1-in-2; turtle stays masked, names only when certain and never reveals; random is legal but aimless. All bots back the weaker side against the richest player, take long-shot duels against a masked target when a remask is cheap for them, and buy cards with souls above a reserve.

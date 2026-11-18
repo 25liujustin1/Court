@@ -23,9 +23,11 @@ function strongerWins(weak, strong) {
 }
 function winChance(a, b) { return a >= b ? strongerWins(b, a) : 1 - strongerWins(a, b); }
 
+const dealEmpty = x => !x.souls && !x.tokens.length && !x.cards.length;   // one side of a trade hands over nothing
+
 const DEFAULTS = {
   START_SOULS: 2, INCOME: 2, BUY_COST: 2, BUY_LIMIT: 2, CARD_COST: 3, UNMASK_GAIN: 4, RETURN_GAIN: 3, REMASK_COST: 6, REMASK: 'flat', MASK_LOCK: false, SLAVE_TOKENS: 'toss', NOBLESSE_END2: true,
-  WIN_SOULS: 30, TRIBUTE: 1, ARROG_FREE: 'keep', BLANKS_PER_PLAYER: 1, FREEDOM_COST: 6, MAX_ROUNDS: 60, CARD_MARKET: false, OWN_REDRAW: false, NOBLESSE_STRICT: false, BACK_CAP_RICH: false, DUEL_TAKE: false, REBEL_SWAP: true, SLAVE_DISCARD: true, BLANKS_TRACK: false, BUY3: true, BUY3_COST: 6, MARQ_LV1: 'remask3', REMASK_END: 'flat', END_UNMASK: true, PRINCE_LV3: 'tribute3', MASTER_BUY: true, TRADE_LIMIT: 3, REINCARNATE_WAIT: 1, EARL_TRADE_CAP: 1,
+  WIN_SOULS: 30, TRIBUTE: 1, ARROG_FREE: 'keep', BLANKS_PER_PLAYER: 1, FREEDOM_COST: 6, MAX_ROUNDS: 60, CARD_MARKET: false, OWN_REDRAW: false, NOBLESSE_STRICT: false, BACK_CAP_RICH: false, DUEL_TAKE: false, REBEL_SWAP: true, SLAVE_DISCARD: true, BLANKS_TRACK: false, BUY3: true, BUY3_COST: 6, MARQ_LV1: 'remask3', REMASK_END: 'flat', END_UNMASK: true, PRINCE_LV3: 'tribute3', MASTER_BUY: true, REINCARNATE_WAIT: 1, EARL_TRADE_CAP: 1, ARCH_LV1: 'discount', VASSAL_FREE: 'buyback', LV3_KEEP: true, BUYBACK_COST: 10, VASSAL_HOLD: 3,
   DECK: { Seize: 4, Collect: 6, Restoration: 2, Ward: 2, Pact: 2, Arrogation: 9 },
 };
 
@@ -36,7 +38,7 @@ class Game {
     this.C = { ...DEFAULTS, ...cfg, DECK: { ...DEFAULTS.DECK, ...(cfg.DECK || {}) } };
     this.r = rng(seed); this.round = 1; this.turnNo = 0; this.log = [];
     this.stats = { duels: 0, upsets: 0, namings: 0, correct: 0, enslaves: 0, consumes: 0, reincarnations: 0, rebellions: 0, rebellionWins: 0, swaps: 0, buy3: 0, endUnmasks: 0, masterBuys: 0, princeTribute: 0, cardTrades: 0,
-      vassals: 0, freedomBuys: 0, wards: 0, lastStands: 0, lastStandWins: 0, reveals: 0, unmasks: 0, remasks: 0, maskedTurns: 0, turns: 0,
+      vassals: 0, freedomBuys: 0, buybacks: 0, wards: 0, lastStands: 0, lastStandWins: 0, reveals: 0, unmasks: 0, remasks: 0, maskedTurns: 0, turns: 0,
       tokenBuys: 0, blanks: 0, cardBuys: 0, trades: 0, earlBonus: 0, seizes: 0, firstCapturer: null, backing: 0, tradeSouls: 0 };
     this.bag = []; this.deck = []; this.discard = []; this.claims = [];
     this.P = [];
@@ -86,7 +88,7 @@ class Game {
   // public: does the bag still hold a token p could keep? (token counts by colour are public)
   bagHasFor(p) { return this.bag.some(t => !t.blank && this.live(t) && !(t.c === p.id && !this.masked(p))); }
   gainToken(to, t, how) { if (this.C.SLAVE_TOKENS !== 'keep' && to.status === 'slave' && (t.c === to.master || this.C.SLAVE_TOKENS.startsWith('none'))) { this.bag.push(t); return; } to.tokens.push(t); if (how && t.c !== to.id) this.P[t.c].tookMine.add(to.id); }
-  toBag(from, t) { from.tokens.splice(from.tokens.indexOf(t), 1); this.bag.push(t); }
+  toBag(from, t) { from.tokens.splice(from.tokens.indexOf(t), 1); this.bag.push(t); this.checkVassals(); }
 
   // ---------- status ----------
   masked(p) { return p.status === 'slave' || p.mask !== null; }
@@ -121,7 +123,7 @@ class Game {
     const cost = this.remaskCost(p);
     if (!this.free(p) || p.mask !== null || p.souls < cost || !masksFor(p.role).includes(m) || p.maskLock > 0) return false;
     if (this.C.END_UNMASK && this.noblesseOver()) return false;   // no masks once Noblesse Oblige has ended
-    p.souls -= cost; p.mask = m; p.lastMask = m; p.lv3 = false; p.marqCheap = false; this.stats.remasks++;
+    p.souls -= cost; p.mask = m; p.lastMask = m; if (!this.C.LV3_KEEP) p.lv3 = false; p.marqCheap = false; this.stats.remasks++;
     p.pubRoles &= coverBits(m); this.say(`P${p.id} remasks as ${ROLES[m]}`); this.ev('maskon', { p: p.id, mask: m }); return true;
   }
   reveal(p) {
@@ -131,13 +133,17 @@ class Game {
   }
 
   // ---------- buying ----------
+  // Archduke Lv. 1 as ARCH_LV1 'discount': token buys cost 1 soul less (draw-3 too)
+  archOff(p) { return this.C.ARCH_LV1 === 'discount' && this.has(p, ARCH, 1) ? 1 : 0; }
+  buyCost(p) { return this.C.BUY_COST - this.archOff(p); }
+  buy3Cost(p) { return this.C.BUY3_COST - this.archOff(p); }
   buyTokens(p, n) {
     let got = 0, tries = 0;
-    while (got < n && p.buys < this.C.BUY_LIMIT && p.souls >= this.C.BUY_COST && this.bag.length && tries++ < 12) {
+    while (got < n && p.buys < this.C.BUY_LIMIT && p.souls >= this.buyCost(p) && this.bag.length && tries++ < 12) {
       p.buys++;
       const t = this.draw(p);
       if (t === 'own') { p.buys--; continue; }   // OWN_REDRAW: drawing your own token while unmasked doesn't use up the draw
-      if (t && t !== 'refund') { p.souls -= this.C.BUY_COST; got++; this.stats.tokenBuys++; this.say(`P${p.id} buys a token (P${t.c})`); } else this.say(`P${p.id} draws a dud (refunded)`);
+      if (t && t !== 'refund') { p.souls -= this.buyCost(p); got++; this.stats.tokenBuys++; this.say(`P${p.id} buys a token (P${t.c})`); } else this.say(`P${p.id} draws a dud (refunded)`);
     }
     return got;
   }
@@ -166,7 +172,7 @@ class Game {
   seize(p, v, c) {
     if (!this.hasCard(p, 'Seize', 2) || v === p || !this.alive(v) || !this.count(v, c) || this.against(p, v)) return false;
     this.useCard(p, 'Seize', 2); this.stats.seizes++;
-    const t = this.pick(v.tokens.filter(t => t.c === c)); v.tokens.splice(v.tokens.indexOf(t), 1); this.gainToken(p, t, 'seize'); this.ev('move', { from: v.id, to: p.id, c }); this.say(`P${p.id} plays Seize: takes a P${c} token from P${v.id}`); return true;
+    const t = this.pick(v.tokens.filter(t => t.c === c)); v.tokens.splice(v.tokens.indexOf(t), 1); this.gainToken(p, t, 'seize'); this.ev('move', { from: v.id, to: p.id, c }); this.say(`P${p.id} plays Seize: takes a P${c} token from P${v.id}`); this.checkVassals(); return true;
   }
   restore(p, h) {
     if (!this.hasCard(p, 'Restoration') || !this.count(h, p.id)) return false;
@@ -183,13 +189,56 @@ class Game {
     for (const e of [buyer, seller]) if (this.has(e, EARL, 1) && e.earlBonus < this.C.EARL_TRADE_CAP) { e.earlBonus++; e.souls += 2; this.stats.earlBonus++; }
     return true;
   }
+  // ---- general trades: any mix of souls, name tokens (by colour, face down) and event cards, either way; one side may be empty (a gift) ----
+  // give = what a hands to b, get = what b hands to a: { souls, tokens: [colour, ...], cards: [name, ...] }
+  canPass(from, to, c) {   // may a token of colour c pass from `from` to `to`?
+    if (this.against(from, this.P[c])) return false;                         // a slave or vassal may not hand over their master's tokens
+    if (c === to.id && !this.masked(to)) return false;                       // no collecting your own tokens while unmasked
+    if (to.status === 'slave' && (c === to.master || this.C.SLAVE_TOKENS.startsWith('none'))) return false;   // the token would only go to the bag
+    return true;
+  }
+  // blind: b's cards are hidden (a player's view), so only their number is checked
+  dealOk(a, b, give, get, blind = false) {
+    if (!a || !b || a === b || !this.alive(a) || !this.alive(b)) return false;
+    const side = (from, to, x, hidden) => {
+      if (!(Number.isInteger(x.souls) && x.souls >= 0 && x.souls <= from.souls)) return false;
+      const n = {}; for (const c of x.tokens) n[c] = (n[c] || 0) + 1;
+      for (const c in n) if (this.count(from, +c) < n[c] || !this.canPass(from, to, +c)) return false;
+      if (hidden) return x.cards.length <= from.cards.length;
+      const k = {}; for (const c of x.cards) k[c] = (k[c] || 0) + 1;
+      for (const c in k) if (!this.hasCard(from, c, k[c])) return false;
+      return true;
+    };
+    return !(dealEmpty(give) && dealEmpty(get)) && side(a, b, give, false) && side(b, a, get, blind);
+  }
+  deal(a, b, give, get) {
+    if (!this.dealOk(a, b, give, get)) return false;
+    const empty = dealEmpty;
+    const move = (from, to, x) => {
+      this.pay(from, to, x.souls);
+      for (const c of x.tokens) { const t = this.pick(from.tokens.filter(t => t.c === c)); from.tokens.splice(from.tokens.indexOf(t), 1); this.gainToken(to, t, 'trade'); }
+      for (const c of x.cards) { from.cards.splice(from.cards.indexOf(c), 1); to.cards.push(c); }
+    };
+    move(a, b, give); move(b, a, get);
+    a.trades = (a.trades || 0) + 1;
+    if (give.tokens.length || get.tokens.length) this.stats.trades++;
+    if (give.cards.length || get.cards.length) this.stats.cardTrades = (this.stats.cardTrades || 0) + 1;
+    const pub = x => ({ souls: x.souls, tokens: [...x.tokens], cards: x.cards.length });   // cards pass face down
+    this.ev('deal', { a: a.id, b: b.id, give: pub(give), get: pub(get) });
+    const desc = x => [x.souls && `${x.souls} souls`, x.tokens.length && `${x.tokens.length} token(s)`, x.cards.length && `${x.cards.length} card(s)`].filter(Boolean).join(', ') || 'nothing';
+    this.say(`P${a.id} trades with P${b.id}: gives ${desc(give)}, gets ${desc(get)}`);
+    // Earl Lv. 1: only a real trade (both sides hand something over) pays the bonus; a gift does not
+    if (!empty(give) && !empty(get)) for (const e of [a, b]) if (this.has(e, EARL, 1) && e.earlBonus < this.C.EARL_TRADE_CAP) { e.earlBonus++; e.souls += 2; this.stats.earlBonus++; }
+    this.checkVassals();
+    return true;
+  }
   // card trade (CARD_MARKET): buyer pays seller for one card
   tradeCard(buyer, seller, c, price) {
     if (!this.alive(buyer) || !this.alive(seller) || buyer === seller || buyer.souls < price || !this.hasCard(seller, c)) return false;
     seller.cards.splice(seller.cards.indexOf(c), 1); this.pay(buyer, seller, price); buyer.cards.push(c);
     this.stats.cardTrades = (this.stats.cardTrades || 0) + 1; return true;
   }
-  archFree(p) { if (!this.has(p, ARCH, 1) || p.archFree) return false; p.archFree = true; const t = this.draw(p); return t && t !== 'refund' && t !== 'own'; }
+  archFree(p) { if (this.C.ARCH_LV1 !== 'free' || !this.has(p, ARCH, 1) || p.archFree) return false; p.archFree = true; const t = this.draw(p); return t && t !== 'refund' && t !== 'own'; }
   archDraw3(p, want) {
     const look = this.archLook(p); if (!look) return false;
     return this.archKeep(p, look, look.filter(t => !t.blank && this.live(t) && !(t.c === p.id && !this.masked(p))).sort((a, b) => want(b) - want(a))[0]);
@@ -212,7 +261,7 @@ class Game {
   }
   keepable(p, look) { return look.filter(t => !t.blank && this.live(t) && !(t.c === p.id && !this.masked(p)) && !(p.status === 'slave' && t.c === p.master)); }
   buy3Look(p) {
-    if (!this.C.BUY3 || p.buys >= this.C.BUY_LIMIT || p.souls < this.C.BUY3_COST || !this.bag.length) return null;
+    if (!this.C.BUY3 || p.buys >= this.C.BUY_LIMIT || p.souls < this.buy3Cost(p) || !this.bag.length) return null;
     p.buys++; this.stats.buy3++;
     const look = []; for (let i = 0; i < 3 && this.bag.length; i++) look.push(this.bag.splice(Math.floor(this.r() * this.bag.length), 1)[0]);
     return look;
@@ -220,7 +269,7 @@ class Game {
   buy3Keep(p, look, keep) {
     for (const t of look) if (t !== keep && (t.blank || this.live(t))) this.bag.push(t);   // dead tokens are discarded
     if (!keep) { this.say(`P${p.id} draws 3, keeps none (refunded)`); this.ev('draw', { p: p.id, dud: 'blank', three: true }); return false; }
-    p.souls -= this.C.BUY3_COST; this.stats.tokenBuys++; p.tokens.push(keep); this.ev('draw', { p: p.id, c: keep.c, three: true }); this.say(`P${p.id} draws 3 and keeps a P${keep.c} token`); return true;
+    p.souls -= this.buy3Cost(p); this.stats.tokenBuys++; p.tokens.push(keep); this.ev('draw', { p: p.id, c: keep.c, three: true }); this.say(`P${p.id} draws 3 and keeps a P${keep.c} token`); return true;
   }
   // Archduke Lv3: one yes/no question per round. Kinds: role (is your role r?) or name (is your name n?)
   ask(p, t, q) {
@@ -342,7 +391,7 @@ class Game {
     if (kind === 'enslave') this.subjugate(m, v, 'slave'); else this.consume(m, v);
   }
   subjugate(m, v, status) {
-    v.status = status; v.master = m.id; v.lv3 = false;
+    v.status = status; v.master = m.id; if (status === 'slave' || !this.C.LV3_KEEP) v.lv3 = false;   // a vassal keeps their name, so a reveal stays
     // SLAVE_TOKENS 'master': the new slave's held tokens pass to the master (the master's own colour goes back to the bag)
     // SLAVE_TOKENS 'toss' (rules): the master's tokens go back to the bag, the slave keeps the rest; 'master': the rest pass to the master too
     if (status === 'slave' && this.C.SLAVE_TOKENS === 'master') for (const t of v.tokens.splice(0)) { if (t.c === m.id) this.bag.push(t); else m.tokens.push(t); }
@@ -405,7 +454,25 @@ class Game {
     } else this.pay(s, m, Math.floor(s.souls / 2));
     return won;
   }
-  buyFreedom(v) { if (v.status !== 'vassal' || v.souls < this.C.FREEDOM_COST) return false; this.pay(v, this.P[v.master], this.C.FREEDOM_COST); v.status = 'free'; v.master = null; this.stats.freedomBuys++; return true; }
+  // VASSAL_FREE 'buyback' (rules since 2026-11-17): a vassal buys their own tokens back from their Prince, BUYBACK_COST each
+  // (the Prince must sell), and is free once the Prince holds fewer than VASSAL_HOLD of them. 'flat': buy freedom for FREEDOM_COST.
+  buyBack(v) {
+    if (this.C.VASSAL_FREE !== 'buyback' || v.status !== 'vassal' || v.souls < this.C.BUYBACK_COST) return false;
+    const m = this.P[v.master]; if (!this.count(m, v.id)) return false;
+    this.pay(v, m, this.C.BUYBACK_COST);
+    const t = this.pick(m.tokens.filter(t => t.c === v.id)); m.tokens.splice(m.tokens.indexOf(t), 1); v.tokens.push(t);
+    this.stats.buybacks++;
+    this.ev('trade', { buyer: v.id, seller: m.id, c: v.id, price: this.C.BUYBACK_COST }); this.say(`P${v.id} buys back a token from P${m.id}`);
+    this.checkVassals(); return true;
+  }
+  // vassals whose Prince no longer holds enough of their tokens go free
+  checkVassals() {
+    if (this.C.VASSAL_FREE !== 'buyback') return;
+    for (const v of this.P) if (v.status === 'vassal' && this.count(this.P[v.master], v.id) < this.C.VASSAL_HOLD) {
+      this.say(`P${v.id} is no longer a vassal of P${v.master}`); this.ev('freed', { p: v.id, m: v.master }); v.status = 'free'; v.master = null; this.stats.freedomBuys++;
+    }
+  }
+  buyFreedom(v) { if (this.C.VASSAL_FREE !== 'flat' || v.status !== 'vassal' || v.souls < this.C.FREEDOM_COST) return false; this.pay(v, this.P[v.master], this.C.FREEDOM_COST); v.status = 'free'; v.master = null; this.stats.freedomBuys++; return true; }
   // MASTER_BUY (rules since 2026-11-15): any master may pay their slave 2 souls for a token of a chosen colour; counts as one of the master's 2 token buys
   princeBuy(p, s, c) {
     const any = this.C.MASTER_BUY && s.status === 'slave';
@@ -447,7 +514,7 @@ class Game {
   turn(p) { if (this.beginTurn(p)) { p.bot.turn(this, p); this.endTurn(p); } }
   // beginTurn returns false if p skips this turn (waiting to reincarnate). The web version calls these two around the player's actions.
   beginTurn(p) {
-    this.dropMasks();
+    this.dropMasks(); this.checkVassals();
     if (p.status === 'waiting' && p.waitTurns > 0) { p.waitTurns--; this.say(`P${p.id} waits to reincarnate`); return false; }   // REINCARNATE_WAIT
     if (p.status === 'waiting') this.reincarnate(p);
     p.buys = 0; p.trades = 0; p.duels = 1; p.earlBonus = 0; p.archFree = false; p.arch2 = false; p.asked = false; p.earlFree = false;

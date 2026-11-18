@@ -235,6 +235,8 @@ class Bot {
   }
   subjectTurn(g, p) {
     if (p.status === 'vassal' && g.buyFreedom(p)) return;
+    while (p.status === 'vassal' && g.buyBack(p)) {}
+    if (p.status !== 'vassal' && p.status !== 'slave') return;
     if (g.C.CARD_MARKET) this.buyArrogation(g, p);
     if (g.hasCard(p, 'Arrogation')) {
       const m = g.P[p.master];

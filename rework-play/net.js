@@ -48,6 +48,32 @@ function botBid(g, p, q, c) {
 // may p buy a token of colour c from q?
 const mayBuyColour = (g, p, q, c) => !g.against(q, g.P[c]) && !(c === p.id && !g.masked(p)) && !(p.status === 'slave' && c === p.master);
 
+// a trade offer as sent by a page: { souls, tokens: [colour...], cards: [name...] }, cleaned up
+const CARD_NAMES = ['Seize', 'Collect', 'Restoration', 'Ward', 'Pact', 'Arrogation'];
+function normDeal(x) {
+  x = x && typeof x === 'object' ? x : {};
+  const souls = Math.floor(+x.souls || 0);
+  return { souls: souls >= 0 && souls <= 999 ? souls : 0,
+    tokens: (Array.isArray(x.tokens) ? x.tokens : []).filter(c => Number.isInteger(c) && c >= 0 && c < 6).slice(0, 24),
+    cards: (Array.isArray(x.cards) ? x.cards : []).filter(c => CARD_NAMES.includes(c)).slice(0, 30) };
+}
+// what a card is worth to bot q, in souls
+function cardWorth(g, q, c) { if (c === 'Collect') return 3; const pref = q.bot.cardPref(g, q, c); return pref >= 9 ? 8 : pref >= 4 ? 3 : pref >= 2 ? 2 : pref > 0 ? 1 : 0; }
+// does bot q accept a trade from p? q receives `give` and hands over `get`. Accepts anything worth at least what it costs them.
+function botAccepts(g, q, p, give, get) {
+  let v = give.souls - get.souls;
+  const mine = {};                                   // q's token counts as the trade goes through
+  for (const c of give.tokens) {
+    const k = mine[c] ?? g.count(q, c);
+    v += c === q.id ? q.bot.defenceWorth(g, q, p) / Math.max(1, give.tokens.filter(x => x === c).length) : q.bot.tokenWorth(g, q, c, k);
+    mine[c] = k + 1;
+  }
+  for (const c of get.tokens) { const a = botAsk(g, q, c); if (a === null) return false; v -= a; }
+  for (const c of give.cards) v += cardWorth(g, q, c);
+  for (const c of get.cards) v -= cardWorth(g, q, c) + 1;
+  return v >= 0;
+}
+
 // Run one command for player p. Returns { ok, msg?, ...result }; result fields go only to p.
 // ctx keeps per-game state between commands (a draw-3 waiting for its keep).
 function runCommand(g, p, cmd, a = {}, ctx = {}) {
@@ -66,7 +92,7 @@ function runCommand(g, p, cmd, a = {}, ctx = {}) {
     }
     case 'collect': return { ok: g.collect(p) };
     case 'buyToken':
-      if (!(free || p.status === 'slave') || p.buys >= g.C.BUY_LIMIT || p.souls < g.C.BUY_COST || !g.bag.length) return no('You cannot buy a token now.');
+      if (!(free || p.status === 'slave') || p.buys >= g.C.BUY_LIMIT || p.souls < g.buyCost(p) || !g.bag.length) return no('You cannot buy a token now.');
       return { ok: true, got: g.buyTokens(p, 1) };
     case 'draw3Look': {
       const kind = a.kind === 'arch' ? 'arch' : 'buy';
@@ -90,24 +116,13 @@ function runCommand(g, p, cmd, a = {}, ctx = {}) {
       const n0 = p.cards.length, card = g.buyCard(p);
       return card ? { ok: true, card: p.cards.length > n0 ? p.cards[p.cards.length - 1] : card } : no('You cannot buy a card now.');
     }
-    case 'quote': {        // a bot's asking price for one of its tokens
-      const q = P(a.q); if (!q || q === p || c === null || q.bot.human || !g.count(q, c) || !mayBuyColour(g, p, q, c)) return no('Not for sale.');
-      return { ok: true, ask: botAsk(g, q, c) };
-    }
-    case 'buyFrom': {      // buy from a bot at its asking price
-      const q = P(a.q); if (!q || q === p || c === null || q.bot.human || !g.alive(q) || !mayBuyColour(g, p, q, c)) return no('Not for sale.');
-      const ask = botAsk(g, q, c); if (ask === null || p.souls < ask) return no('Not for sale.');
-      return { ok: g.trade(p, q, c, ask), price: ask };
-    }
-    case 'bids': {         // what the bots offer for your tokens
-      const bids = [];
-      for (const cc of new Set(p.tokens.map(t => t.c))) for (const q of g.P) { const b = botBid(g, p, q, cc); if (b !== null) bids.push({ q: q.id, c: cc, bid: b }); }
-      return { ok: true, bids };
-    }
-    case 'sellTo': {       // sell to a bot at its offer
-      const q = P(a.q); if (!q || c === null || !g.count(p, c)) return no('No offer.');
-      const bid = botBid(g, p, q, c); if (bid === null) return no('No offer.');
-      return { ok: g.trade(q, p, c, bid), price: bid };
+    case 'deal': {         // a trade with another player: bots answer at once; people online get it as an offer (server.js)
+      const q = P(a.q), give = normDeal(a.give), get = normDeal(a.get);
+      if (!q || q.bot.human) return no('They decide for themselves: send them an offer.');
+      // their cards are hidden from p: check only how many they hold, and treat asking for cards they lack as a plain decline
+      if (!g.dealOk(p, q, give, get, true)) return no('That trade is not possible.');
+      if (!g.dealOk(p, q, give, get) || !botAccepts(g, q, p, give, get)) return { ok: true, accepted: false };
+      return { ok: g.deal(p, q, give, get), accepted: true };
     }
     case 'duel': {
       const t = P(a.t); if (!t || !g.canDuel(p, t)) return no('You cannot duel them.');
@@ -143,6 +158,7 @@ function runCommand(g, p, cmd, a = {}, ctx = {}) {
     case 'consume': return { ok: free && !!P(a.s) && g.consumeSlave(p, P(a.s)) };
     case 'rebel': { const won = g.rebel(p); return won === null ? no('Not now.') : { ok: true, won }; }
     case 'buyFreedom': return { ok: g.buyFreedom(p) };
+    case 'buyBack': return { ok: g.buyBack(p) };
     default: return no('Unknown action.');
   }
 }
@@ -186,6 +202,6 @@ function snapView(g, idx, viewer, all = false) {
       tokens: q.tokens.map(t => ({ c: t.c, d: see ? t.d : 0 })), waitTurns: q.waitTurns, name: see && q.name ? [...q.name] : null, bot: { type: q.bot.type } }; }) };
 }
 
-const EXPORTS = { HumanBot, runCommand, redact, hydrate, snapView, botAsk, botBid, mayBuyColour };
+const EXPORTS = { HumanBot, runCommand, redact, hydrate, snapView, botAsk, botBid, mayBuyColour, normDeal, botAccepts, CARD_NAMES };
 if (node) module.exports = EXPORTS; else globalThis.ReworkNet = EXPORTS;
 })();
