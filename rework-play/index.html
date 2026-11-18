@@ -525,7 +525,7 @@ async function advance() {
     if (!go) { render(); return setTimeout(advance, G.opts.speed); }
     G.myTurn = true;
     if (wasWaiting) { log(`You reincarnate with a new name: ${p.name.join('-')}: ${ROLES[p.role]}.`, 'mine'); p.needMask = true; render(); return chooseMask('You reincarnate: choose your mask', m => doCmd('chooseMask', { m }).then(render)); }
-    log(`Your turn: +2 souls${p.status !== 'free' && p.master !== null ? `, tribute paid to ${COLOR_NAMES[p.master]}` : ''}.`, 'mine');
+    log(`Your turn: +${G.g.C.INCOME} souls${p.status !== 'free' && p.master !== null ? `, tribute paid to ${COLOR_NAMES[p.master]}` : ''}.`, 'mine');
     render(); return;
   }
   G.myTurn = false; render();
@@ -1088,7 +1088,7 @@ function askQuestion() {
 function rulesDialog() {
   dialog(`<h2>Quick rules</h2><div class="rules">
     <p><b>Goal.</b> Every other player is your slave (or vassal) and you have 30 souls. Players waiting to reincarnate don't count.</p>
-    <p><b>Turns.</b> +2 souls each turn; slaves pay their master 1 (3 to a revealed Prince). Up to 2 token buys a round: 2 souls for a random draw, or 6 to draw 3 and keep 1. Blanks, dead tokens and your own token while unmasked are refunded but use the draw. Masters may buy a token from their own slave for 2 (counts as a buy). Event cards cost 3.</p>
+    <p><b>Turns.</b> +3 souls each turn; slaves pay their master 1 (3 to a revealed Prince). Up to 2 token buys a round: 2 souls for a random draw, or 6 to draw 3 and keep 1. Blanks, dead tokens and your own token while unmasked are refunded but use the draw. Masters may buy a token from their own slave for 2 (counts as a buy). Event cards cost 3.</p>
     <p><b>Masks.</b> Nobody can name you while your mask is up, and you must be unmasked to name. Lower it on your turn for +4 souls (your own tokens go back to the bag, +3 each). Remask costs 6. Masked = Lv. 1 of your mask; unmasked = Lv. 2; revealing your true role = Lv. 3.</p>
     <p><b>Trading.</b> On your turn, trade souls, name tokens and event cards with anyone, in any mix, or give them away. Tokens and cards pass face down.</p>
     <p><b>Duels.</b> One per turn. Noblesse Oblige: you may duel someone richer, within 2 souls, whose 3+ tokens you hold, or who gained your token by trade or Seize since your last turn. Stronger side rolls a d20 on the ratio table. Losing masked = lose the mask; unmasked = the victor sends one of your tokens to the bag. With only 2 free players, Noblesse Oblige ends: anyone may duel, both are unmasked and nobody remasks.</p>
@@ -1194,7 +1194,7 @@ async function applyUpdate(m) {
   render();
   if (m.rid) Net.resolve(m.rid, m.res);
   const p = ME();
-  if (G.myTurn && !wasMine) log(`Your turn: +2 souls${p.status !== 'free' && p.master !== null ? `, tribute paid to ${COLOR_NAMES[p.master]}` : ''}.`, 'mine');
+  if (G.myTurn && !wasMine) log(`Your turn: +${G.g.C.INCOME} souls${p.status !== 'free' && p.master !== null ? `, tribute paid to ${COLOR_NAMES[p.master]}` : ''}.`, 'mine');
   if (p.needMask && !$('#dlg').open && !G.maskAsked) {
     G.maskAsked = true;
     chooseMask(G.g.round > 1 ? `You return as ${p.name.join('-')} (${ROLES[p.role]}): choose your mask` : 'Choose your starting mask', mk => Net.send('chooseMask', { m: mk }).then(() => { G.maskAsked = false; }));

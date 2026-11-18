@@ -26,7 +26,7 @@ function winChance(a, b) { return a >= b ? strongerWins(b, a) : 1 - strongerWins
 const dealEmpty = x => !x.souls && !x.tokens.length && !x.cards.length;   // one side of a trade hands over nothing
 
 const DEFAULTS = {
-  START_SOULS: 2, INCOME: 2, BUY_COST: 2, BUY_LIMIT: 2, CARD_COST: 3, UNMASK_GAIN: 4, RETURN_GAIN: 3, REMASK_COST: 6, REMASK: 'flat', MASK_LOCK: false, SLAVE_TOKENS: 'toss', NOBLESSE_END2: true,
+  START_SOULS: 2, INCOME: 3, BUY_COST: 2, BUY_LIMIT: 2, CARD_COST: 3, UNMASK_GAIN: 4, RETURN_GAIN: 3, REMASK_COST: 6, REMASK: 'flat', MASK_LOCK: false, SLAVE_TOKENS: 'toss', NOBLESSE_END2: true,
   WIN_SOULS: 30, TRIBUTE: 1, ARROG_FREE: 'keep', BLANKS_PER_PLAYER: 1, FREEDOM_COST: 6, MAX_ROUNDS: 60, CARD_MARKET: false, OWN_REDRAW: false, NOBLESSE_STRICT: false, BACK_CAP_RICH: false, DUEL_TAKE: false, REBEL_SWAP: true, SLAVE_DISCARD: true, BLANKS_TRACK: false, BUY3: true, BUY3_COST: 6, MARQ_LV1: 'remask3', REMASK_END: 'flat', END_UNMASK: true, PRINCE_LV3: 'tribute3', MASTER_BUY: true, REINCARNATE_WAIT: 1, EARL_TRADE_CAP: 1, ARCH_LV1: 'discount', VASSAL_FREE: 'buyback', LV3_KEEP: true, BUYBACK_COST: 10, VASSAL_HOLD: 3,
   DECK: { Seize: 4, Collect: 6, Restoration: 2, Ward: 2, Pact: 2, Arrogation: 9 },
 };

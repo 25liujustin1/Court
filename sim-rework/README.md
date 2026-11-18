@@ -28,6 +28,7 @@ Bots play the draft rework in `rules-rework.md` (masks, duels, souls as power). 
 - `--arch-lv1 discount|free` (default discount, rules since 2026-11-17): Archduke Lv. 1 is 1 soul off token buys (draw 3 too), or the old free token every turn
 - `--vassal-free buyback|flat` (default buyback, rules since 2026-11-17): a vassal buys their tokens back from the Prince at 10 each and is free once the Prince holds fewer than 3, or the old buy-your-freedom for 6
 - `--lv3-keep on|off` (default on, rules since 2026-11-17): revealing is permanent for that name, so Lv. 3 replaces Lv. 2 whenever you are unmasked, even after remasking; `off` is the old rule (remasking clears Lv. 3 and the next unmask gives Lv. 2)
+- `--income N` (default 3, rules since 2026-11-17): souls each player gains per turn (was 2)
 - `--seed`, `--max-rounds` (default 60; a game still going is a stalemate)
 
 Bot types (`bots.js`): aggressor names at a 1-in-3 chance and duels at even odds; balanced names at 1-in-2; turtle stays masked, names only when certain and never reveals; random is legal but aimless. All bots back the weaker side against the richest player, take long-shot duels against a masked target when a remask is cheap for them, and buy cards with souls above a reserve.

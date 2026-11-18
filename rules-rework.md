@@ -14,7 +14,7 @@ Everyone starts with 2 souls.
 
 ## Souls
 
-Each player gains 2 souls per turn. Souls are both currency and a measure of power. "Per round" below means once on each of your turns.
+Each player gains 3 souls per turn. Souls are both currency and a measure of power. "Per round" below means once on each of your turns.
 
 ## Masks
 
@@ -160,6 +160,7 @@ Decided for the first playtests and the sim; fold into the sections above when t
 - Marquis Lv. 3 against Prince Lv. 3 (2026-11-16): if a revealed Marquis guesses a revealed Prince's name wrong, the Marquis is consumed. "Cannot be enslaved" wins; the Prince's "may not consume" only limits choices the Prince is free to make.
 - Rebellion swap (2026-11-15): only for slaves. A vassal who wins with Arrogation is just freed. A master who can't be enslaved (a revealed Marquis at Lv. 3) is not swapped; the slave is just freed.
 - A free player who draws Arrogation keeps it; it can be traded.
+- Income (2026-11-17): 3 souls per turn (was 2).
 - Trading (2026-11-17): souls, name tokens and event cards can all be traded, in any mix, or given away (see Trading). No limit on trades per turn. Asking for a card the other player doesn't hold counts as a decline, so a trade can't be used to find out what someone holds.
 - Ward delays until the end of your next turn. If you capture the claimant meanwhile, the claim ends. One Ward per claim; not usable against your own wrong guess.
 - Seize takes a random token of a color you choose, from a player you choose.
