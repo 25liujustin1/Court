@@ -48,6 +48,7 @@ const LPC = { bodies: ['male', 'female', 'muscular', 'teen'],   // a teen gets e
   hairs: ['page', 'wavy', 'princess', 'sara'], hairColors: ['black', 'white', 'red', 'orange', 'blonde', 'chestnut'], eyes: ['red', 'gold', 'black'] };
 const pick = a => a[crypto.randomInt(a.length)];
 // roughly how long clients take to animate a batch of events at normal speed, so bot turns don't race ahead
+const ANIM_SLOW = 1.5;   // the page slows every animation by this (ANIM_SLOW in index.html); the pause after a bot turn follows it
 const EV_MS = { duel: 2600, name: 2600, enslave: 1300, consume: 1500, reveal: 1500, swap: 1300, reincarnate: 1000, rebel: 1000, maskoff: 800 };
 
 class Room {
@@ -139,8 +140,8 @@ class Room {
   }
   async pause(events) {
     if (!PACE) return;
-    const ms = 500 + events.reduce((s, e) => s + (EV_MS[e.type] || 600), 0);
-    await sleep(Math.min(ms, 12000) * PACE);
+    const ms = 500 + ANIM_SLOW * events.reduce((s, e) => s + (EV_MS[e.type] || 600), 0);
+    await sleep(Math.min(ms, 18000) * PACE);
   }
   // end the current player's turn for them if they stay disconnected
   watchAway(pid) {

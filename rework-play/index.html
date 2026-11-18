@@ -115,6 +115,8 @@ select{font:inherit; color:var(--ink); background:var(--surface); border:1px sol
 .log .chat b{color:var(--ink); font-family:var(--font-body); font-size:.9rem}
 .chatform{display:flex; gap:6px; margin-top:6px}
 .chatform input{flex:1; min-width:0; font:inherit; padding:5px 8px; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:4px}
+/* the left column scrolls and would clip an outside focus ring: draw it inside the border instead */
+.chatform input:focus-visible{outline:none; border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent)}
 .toasts{position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:8px; z-index:50; max-width:min(360px, calc(100vw - 32px))}
 .toast{background:var(--surface); border:2px solid var(--accent); border-radius:8px; padding:10px 12px; box-shadow:0 6px 24px rgb(0 0 0 / .25)}
 .toast .row{margin-top:8px}
@@ -136,6 +138,11 @@ button.namecell{font:inherit; color:var(--ink); background:var(--surface); borde
 button.namecell:hover{border-color:var(--accent)}
 button.namecell .tok{width:24px; height:24px}
 .rules{font-size:.95rem; display:flex; flex-direction:column; gap:10px}
+.odds{border-collapse:collapse; width:100%; font-size:.88rem; font-variant-numeric:tabular-nums lining-nums}
+.odds th{font-family:var(--font-head); font-size:.78rem; font-weight:600; text-align:left; padding:4px 8px; border-bottom:1.5px solid var(--accent)}
+.odds td{padding:3px 8px; border-bottom:1px solid var(--line)}
+.odds .n{text-align:right}
+.odds tbody tr:nth-child(odd) td{background:var(--surface)}
 .ability{margin:2px 0}
 details summary{cursor:pointer; font-family:var(--font-display); font-size:1.1rem; color:var(--accent)}
 @media (prefers-reduced-motion:no-preference){ .identity{animation:rise .25s ease-out} @keyframes rise{from{transform:translateY(6px); opacity:.6} to{transform:none; opacity:1}} }
@@ -317,6 +324,7 @@ h1{font-size:2.1rem}
       <button class="btn small" id="rulesBtn">Rules</button>
       <button class="btn small" id="abilBtn">Roles</button>
       <button class="btn small" id="newBtn">New game</button>
+      <button class="btn small" id="leaveBtn" hidden>Leave room</button>
     </div>
   </header>
   <main id="home" class="home" hidden></main>
@@ -343,7 +351,7 @@ h1{font-size:2.1rem}
 <script src="net.js"></script>
 <script>
 'use strict';
-const { Game, ROLES, NAMES, ARCH, DUKE, PRINCE, MARQ, EARL, masksFor, coverBits, roleOf, winChance, key } = ReworkEngine;
+const { Game, ROLES, NAMES, ARCH, DUKE, PRINCE, MARQ, EARL, masksFor, coverBits, roleOf, winChance, strongerWins, key } = ReworkEngine;
 const { Bot, TYPES } = ReworkBots;
 const { HumanBot, runCommand, hydrate, snapView, CARD_NAMES } = ReworkNet;
 const $ = s => document.querySelector(s);
@@ -454,7 +462,7 @@ function showHome() {
     <div class="home-hero">
       <div class="home-court" aria-hidden="true">${court}</div>
       <p class="lede">Every player is a demon behind a mask. Gather the tokens of someone's true name, then name them: they become your slave, or your meal. Rule the whole court with 30 souls to win.</p>
-      ${inGame ? `<div class="row" style="justify-content:center"><button class="btn primary" id="home-back">Back to your game</button><span class="muted">${G.online ? 'Online, round ' : 'Round '}${G.g.round}</span></div>` : ''}
+      ${inGame ? `<div class="row" style="justify-content:center"><button class="btn primary" id="home-back">Back to your game</button>${G.online ? '<button class="btn" id="home-leave">Leave the room</button>' : ''}<span class="muted">${G.online ? 'Online, round ' : 'Round '}${G.g.round}</span></div>` : ''}
     </div>
     <div class="home-modes">
       <section class="home-card">
@@ -478,10 +486,11 @@ function showHome() {
       </section>
     </div>
     <p class="home-foot muted">New to the court? Read the <button class="linkish" id="home-rules">rules</button> and the <button class="linkish" id="home-roles">roles</button>.</p>`;
-  $('#home').hidden = false; $('#board').hidden = true; $('#newBtn').hidden = true;
+  $('#home').hidden = false; $('#board').hidden = true; $('#newBtn').hidden = true; $('#leaveBtn').hidden = true;
   $('#sub').textContent = 'rework playtest';
   $('#home-rules').onclick = rulesDialog; $('#home-roles').onclick = rolesDialog;
   if (inGame) $('#home-back').onclick = () => { showBoard(); render(); };
+  if (inGame && G.online) $('#home-leave').onclick = leaveRoom;
   if (Net.available()) {
     const nick = () => { const v = $('#on-nick').value.trim().slice(0, 16) || 'Player'; Net.nick(v); return v; };
     const err = e => { $('#on-err').textContent = e.message || String(e); };
@@ -502,7 +511,13 @@ function showHome() {
     chooseMask('Choose your starting mask', m => doCmd('chooseMask', { m }).then(() => { render(); advance(); }));
   };
 }
-function showBoard() { $('#home').hidden = true; $('#board').hidden = false; $('#newBtn').hidden = false; }
+function showBoard() { $('#home').hidden = true; $('#board').hidden = false; $('#newBtn').hidden = false; $('#leaveBtn').hidden = !(G && G.online); }
+// leave an online room for good: a bot plays your seat for the rest of the game, and this browser forgets the room (so reopening the page goes to the start page)
+function leaveRoom() {
+  dialog(`<h2>Leave the room?</h2><p>${G && G.online && !G.over ? 'A bot plays your seat for the rest of the game. You can\'t come back to this seat.' : 'You leave the room.'}</p>
+    <div class="row"><button class="btn primary" id="lv-yes">Leave</button><button class="btn" onclick="closeDialog()">Stay</button></div>`, true);
+  $('#lv-yes').onclick = () => { closeDialog(); Net.leave(); history.replaceState(null, '', location.pathname); G = null; $('#log').innerHTML = ''; $('#chatForm').hidden = true; showHome(); };
+}
 function chooseMask(title, done) {
   const p = ME(), opts = masksFor(p.role);
   dialog(`<h2>${title}</h2><p class="muted">Your role is ${ROLES[p.role]}. A mask shows publicly and narrows your role to its 3 neighbours.</p>
@@ -745,7 +760,10 @@ new ResizeObserver(() => { if (G) renderTable(G.view); }).observe($('#court'));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 function animOn() { return G && G.opts.speed > 0 && !reduceMotion.matches && !document.hidden; }
-function T(ms) { return ms * (G.opts.speed / 600); }   // durations scale with the speed setting (normal = 1)
+// every animation's duration goes through T: ANIM_SLOW slows them all together (dice, tokens, cards, souls, masks, captions);
+// the speed setting then scales that (normal = 1). Keep ANIM_SLOW in step with the server's (server.js), which waits for animations between bot turns.
+const ANIM_SLOW = 1.5;
+function T(ms) { return ms * ANIM_SLOW * (G.opts.speed / 600); }
 // centre of a seat or a pile, in px within the court
 function spot(what) {
   const court = $('#court').getBoundingClientRect();
@@ -1085,6 +1103,14 @@ function askQuestion() {
     };
   }, true, true);
 }
+// the duel odds table, from the engine's own numbers (strongerWins), so it always matches the game: weaker ÷ stronger, rounded to 5%
+function oddsTable() {
+  const rows = [];
+  for (let r = 100; r >= 30; r -= 5) { const w = strongerWins(r, 100), from = Math.round(21 - w * 20); rows.push([`${r}%`, `${from}–20`, Math.round(w * 100), Math.round(100 - w * 100)]); }
+  rows.push(['25% or less', '1–20', 100, 0]);
+  return `<table class="odds"><thead><tr><th>Weaker ÷ stronger</th><th>Stronger wins on</th><th class="n">Stronger</th><th class="n">Weaker</th></tr></thead>
+    <tbody>${rows.map(([r, on, a, b]) => `<tr><td>${r}</td><td>${on}</td><td class="n">${a}%</td><td class="n">${b}%</td></tr>`).join('')}</tbody></table>`;
+}
 function rulesDialog() {
   dialog(`<h2>Quick rules</h2><div class="rules">
     <p><b>Goal.</b> Every other player is your slave (or vassal) and you have 30 souls. Players waiting to reincarnate don't count.</p>
@@ -1092,6 +1118,8 @@ function rulesDialog() {
     <p><b>Masks.</b> Nobody can name you while your mask is up, and you must be unmasked to name. Lower it on your turn for +4 souls (your own tokens go back to the bag, +3 each). Remask costs 6. Masked = Lv. 1 of your mask; unmasked = Lv. 2; revealing your true role = Lv. 3.</p>
     <p><b>Trading.</b> On your turn, trade souls, name tokens and event cards with anyone, in any mix, or give them away. Tokens and cards pass face down.</p>
     <p><b>Duels.</b> One per turn. Noblesse Oblige: you may duel someone richer, within 2 souls, whose 3+ tokens you hold, or who gained your token by trade or Seize since your last turn. Stronger side rolls a d20 on the ratio table. Losing masked = lose the mask; unmasked = the victor sends one of your tokens to the bag. With only 2 free players, Noblesse Oblige ends: anyone may duel, both are unmasked and nobody remasks.</p>
+    <p><b>Duel odds.</b> Divide the weaker side's strength by the stronger side's and round to the nearest 5%. The stronger side rolls a d20 and wins on the range shown.</p>
+    ${oddsTable()}
     <p><b>Naming.</b> You need the most of their tokens (at least 1), or nobody else holds any. Wrong: they enslave or consume you. Right: you choose.</p>
     <p><b>Slaves.</b> Permanently masked, can't name, never hold their master's tokens; their old name dies. Arrogation: duel your master; win = new name and you swap places, lose = they take half your souls.</p>
     <p><b>Consumed.</b> The consumer takes half your souls and your cards. You skip your next turn, then return free with a new name and 2 souls.</p>
@@ -1206,6 +1234,7 @@ $('#chatForm').onsubmit = e => { e.preventDefault(); const t = $('#chatIn').valu
 $('#newBtn').onclick = showHome;
 $('#rulesBtn').onclick = rulesDialog;
 $('#abilBtn').onclick = rolesDialog;
+$('#leaveBtn').onclick = leaveRoom;
 // rejoin a game in progress after a reload
 // open on the start page; if this browser was in an online room, rejoin it (the lobby or the game then shows over or instead of it)
 (() => { showHome(); const s = store.get('session'); if (Net.available() && s && s.code) Net.join(s.code, Net.nick() || 'Player', s.token).catch(() => {}); })();
