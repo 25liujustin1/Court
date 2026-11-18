@@ -43,7 +43,7 @@ const path = require('path');
     errors.push(...logErr);
     const r = await page.evaluate(() => ({ round: G.g.round, over: G.over }));
     console.log(`game ${gi + 1}: round ${r.round}, ${r.over ? 'finished' : 'unfinished'}`);
-    await page.evaluate(() => { closeDialog(); newGameDialog(); });
+    await page.evaluate(() => { closeDialog(); showHome(); });
   }
   console.log(`${finished}/${games} finished, ${clicks} clicks, ${errors.length} errors`);
   if (errors.length) { console.log([...new Set(errors)].slice(0, 10).join('\n')); process.exitCode = 1; }

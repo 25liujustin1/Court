@@ -120,8 +120,6 @@ select{font:inherit; color:var(--ink); background:var(--surface); border:1px sol
 .toast .row{margin-top:8px}
 .roomcode{font-family:var(--font-data); font-size:1.6rem; letter-spacing:.2em; color:var(--accent)}
 .seatlist{display:flex; flex-direction:column; gap:4px; margin:8px 0}
-.online-box{border-top:1px solid var(--line); margin-top:12px; padding-top:10px}
-.online-box input[type=text]{font:inherit; padding:5px 8px; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:4px; width:150px}
 /* modal sheet */
 dialog{border:1px solid var(--rule); border-radius:4px; background:var(--bg); color:var(--ink); width:calc(100% - 32px); max-width:580px; max-height:calc(100% - 32px); padding:20px}
 dialog::backdrop{background:rgb(10 6 14 / .55)}
@@ -291,6 +289,24 @@ h1{font-size:2.1rem}
   .seat .nm{font-size:.85rem} .seat .mask{width:34px; height:18px}
   .court .center{flex-direction:column; align-items:center; gap:10px; transform:translate(-50%,-46%) scale(.72)}   /* bag, deck and discard stacked inside the oval */
 }
+
+/* ---------- home: the start page ---------- */
+.board[hidden], .home[hidden]{display:none}
+.home{max-width:980px; margin:0 auto; padding:18px 0 32px; display:flex; flex-direction:column; gap:22px}
+.home-hero{display:flex; flex-direction:column; align-items:center; gap:14px; text-align:center}
+.home-court{display:flex; justify-content:center; gap:14px; flex-wrap:wrap}
+.home-demon{display:flex; flex-direction:column; align-items:center; gap:4px; font-family:var(--font-display); font-variant:small-caps; color:var(--pc); font-size:1rem}
+.home-demon .avatar{width:112px; height:112px}
+.home .lede{max-width:62ch; margin:0; font-size:1.08rem; color:var(--ink)}
+.home-modes{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+.home-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; gap:12px}
+.home-card h2, .home-card p{margin:0}
+.home-card input[type=text]{font:inherit; padding:5px 8px; border:1px solid var(--line); background:var(--bg); color:var(--ink); border-radius:4px; width:160px}
+.home-card label.row{flex-wrap:nowrap; align-items:flex-start}   /* a checkbox stays beside its text when it wraps */
+.home-card label.row input{margin-top:5px; flex:none}
+.home-foot{text-align:center; margin:0}
+.linkish{border:0; background:none; padding:0; font:inherit; color:var(--accent); text-decoration:underline; cursor:pointer}
+@media (max-width:700px){ .home-modes{grid-template-columns:1fr} .home-demon .avatar{width:64px; height:64px} .home-court{gap:6px} .home-demon{font-size:.8rem} }
 </style>
 </head>
 <body>
@@ -303,7 +319,8 @@ h1{font-size:2.1rem}
       <button class="btn small" id="newBtn">New game</button>
     </div>
   </header>
-  <div class="board">
+  <main id="home" class="home" hidden></main>
+  <div class="board" id="board" hidden>
     <aside class="col left">
       <section class="fill"><div class="section-head"><h2>Court record</h2></div><div class="log" id="log"></div><form class="chatform" id="chatForm" hidden><input id="chatIn" maxlength="200" autocomplete="off" placeholder="Say something to the court"><button class="btn small">Send</button></form></section>
     </aside>
@@ -420,22 +437,51 @@ function doCmd(cmd, a = {}) {
 }
 const failed = r => { if (!r.ok) log(r.msg || 'That did not work.', 'mine'); return !r.ok; };
 
-// ---------- new game ----------
-function newGameDialog() {
+// ---------- home: the start page (play against bots, or online with friends) ----------
+// Shown before any game, and from the masthead's New game button. A game in progress stays behind it ("Back to your game").
+function showHome() {
+  closeDialog();
   const types = ['mix', 'aggressor', 'balanced', 'turtle'];
-  dialog(`<h2>New game</h2>
-    <p class="muted">You play ${COLOR_NAMES[0]}, against bots that use the balance sim's strategies.</p>
-    <div class="row"><span class="label" style="width:110px">Players</span><select id="ng-n">${[3, 4, 5, 6].map(n => `<option ${n === 4 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
-    <div class="row"><span class="label" style="width:110px">Bots</span><select id="ng-b">${types.map(t => `<option>${t}</option>`).join('')}</select></div>
-    <div class="row"><span class="label" style="width:110px">Bot speed</span><select id="ng-s"><option value="600">normal</option><option value="1200">slow</option><option value="150">fast</option><option value="0">instant</option></select></div>
-    <label class="row"><input type="checkbox" id="ng-t"> Show bot styles</label>
-    <label class="row"><input type="checkbox" id="ng-x"> Show everything (names, roles, dots) — for testing</label>
-    <div class="row"><button class="btn primary" id="ng-go">Deal the names</button></div>
-    <div class="online-box"><h3>Online with friends</h3>${Net.available() ? `
-      <p class="muted">Each player on their own device. Empty seats are filled with bots.</p>
-      <div class="row"><span class="label" style="width:110px">Your name</span><input type="text" id="on-nick" maxlength="16" value="${esc(Net.nick())}"></div>
-      <div class="row"><button class="btn" id="on-create">Create a room</button><span class="muted">or</span><input type="text" id="on-code" maxlength="4" placeholder="CODE" style="width:80px;text-transform:uppercase" value="${esc(Net.linkCode())}"><button class="btn" id="on-join">Join</button></div>
-      <p class="muted" id="on-err"></p>` : '<p class="muted">Start the server to play online: <code>npm start</code>, then open the address it prints.</p>'}</div>`);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  // a row of the court: one random demon per role, masked, unmasked or released
+  const court = [0, 1, 2, 3, 4].map(r => {
+    const look = { body: bodyKey(pick(LPC.bodies), pick), skin: rollSkin(), natural: rollNatural(), eyes: pick(LPC.eyes), hair: pick(LPC.hairs), hairColor: pick(LPC.hairColors) };
+    const state = [{ mask: r, lv3: false }, { mask: null, lv3: false }, { mask: null, lv3: true }, { mask: null, lv3: false }, { mask: r, lv3: false }][r];
+    return `<span class="home-demon" style="--pc:${pc(r)}">${avatar({ id: r, status: 'free', lastMask: r, role: r, ...state }, 'avatar', look)}<span>${ROLES[r]}</span></span>`;
+  }).join('');
+  const inGame = G && !G.over;
+  $('#home').innerHTML = `
+    <div class="home-hero">
+      <div class="home-court" aria-hidden="true">${court}</div>
+      <p class="lede">Every player is a demon behind a mask. Gather the tokens of someone's true name, then name them: they become your slave, or your meal. Rule the whole court with 30 souls to win.</p>
+      ${inGame ? `<div class="row" style="justify-content:center"><button class="btn primary" id="home-back">Back to your game</button><span class="muted">${G.online ? 'Online, round ' : 'Round '}${G.g.round}</span></div>` : ''}
+    </div>
+    <div class="home-modes">
+      <section class="home-card">
+        <h2>Play against bots</h2>
+        <p class="muted">You play ${COLOR_NAMES[0]}, against bots that use the balance sim's strategies.</p>
+        <div class="row"><span class="label" style="width:110px">Players</span><select id="ng-n">${[3, 4, 5, 6].map(n => `<option ${n === 4 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+        <div class="row"><span class="label" style="width:110px">Bots</span><select id="ng-b">${types.map(t => `<option>${t}</option>`).join('')}</select></div>
+        <div class="row"><span class="label" style="width:110px">Bot speed</span><select id="ng-s"><option value="600">normal</option><option value="1200">slow</option><option value="150">fast</option><option value="0">instant</option></select></div>
+        <label class="row"><input type="checkbox" id="ng-t"> Show bot styles</label>
+        <label class="row"><input type="checkbox" id="ng-x"> Show everything (names, roles, dots) — for testing</label>
+        <div class="row"><button class="btn primary" id="ng-go">Deal the names</button></div>
+      </section>
+      <section class="home-card">
+        <h2>Play online</h2>${Net.available() ? `
+        <p class="muted">Each player on their own device. One player creates a room and shares the 4-letter code; empty seats are filled with bots.</p>
+        <div class="row"><span class="label" style="width:110px">Your name</span><input type="text" id="on-nick" maxlength="16" value="${esc(Net.nick())}"></div>
+        <div class="row"><button class="btn primary" id="on-create">Create a room</button></div>
+        <div class="row"><span class="label" style="width:110px">Room code</span><input type="text" id="on-code" maxlength="4" placeholder="CODE" style="width:90px;text-transform:uppercase" value="${esc(Net.linkCode())}"><button class="btn" id="on-join">Join</button></div>
+        <p class="muted" id="on-err"></p>` : `
+        <p class="muted">Each player on their own device. To play online, start the server with <code>npm start</code> and open the address it prints.</p>`}
+      </section>
+    </div>
+    <p class="home-foot muted">New to the court? Read the <button class="linkish" id="home-rules">rules</button> and the <button class="linkish" id="home-roles">roles</button>.</p>`;
+  $('#home').hidden = false; $('#board').hidden = true; $('#newBtn').hidden = true;
+  $('#sub').textContent = 'rework playtest';
+  $('#home-rules').onclick = rulesDialog; $('#home-roles').onclick = rolesDialog;
+  if (inGame) $('#home-back').onclick = () => { showBoard(); render(); };
   if (Net.available()) {
     const nick = () => { const v = $('#on-nick').value.trim().slice(0, 16) || 'Player'; Net.nick(v); return v; };
     const err = e => { $('#on-err').textContent = e.message || String(e); };
@@ -450,12 +496,13 @@ function newGameDialog() {
     g.on = (type, data) => { G.q.push({ type, data, before: G.cur, logN: g.log.length }); G.cur = snap(g); };
     if (G && G.online) Net.leave();
     G = { q: [], cur: null, busy: false, ctx: {}, looks: rollLooks(n), g, me: 0, idx: -1, over: false, myTurn: false, log: [], opts: { speed: +$('#ng-s').value, showTypes: $('#ng-t').checked, xray: $('#ng-x').checked } };
-    closeDialog();
+    showBoard();
     log(`New game: ${n} players. Your secret name is ${ME().name.join('-')}: ${ROLES[ME().role]}.`, 'mine');
     ME().needMask = true;
     chooseMask('Choose your starting mask', m => doCmd('chooseMask', { m }).then(() => { render(); advance(); }));
   };
 }
+function showBoard() { $('#home').hidden = true; $('#board').hidden = false; $('#newBtn').hidden = false; }
 function chooseMask(title, done) {
   const p = ME(), opts = masksFor(p.role);
   dialog(`<h2>${title}</h2><p class="muted">Your role is ${ROLES[p.role]}. A mask shows publicly and narrows your role to its 3 neighbours.</p>
@@ -509,7 +556,7 @@ function checkWin() {
 }
 function winDialog(w) {
   const names = G.g.P.map(q => `<tr><td>${who(q.id)}</td><td><span class="row" style="gap:8px;flex-wrap:nowrap">${q.name ? portrait(q.name, 'mini') + demonOf(q.name) + ` (${q.name.join('-')})` : ''}</span></td><td>${q.role !== null ? ROLES[q.role] : ''}</td><td class="muted">${q.id === G.me ? '' : seatLabel(q)}</td></tr>`).join('');
-  const again = G.online ? (Net.isHost() ? '<button class="btn primary" onclick="closeDialog();Net.restart()">Back to the lobby</button>' : '<span class="muted">The host can start another game.</span>') : '<button class="btn primary" onclick="closeDialog();newGameDialog()">New game</button>';
+  const again = G.online ? (Net.isHost() ? '<button class="btn primary" onclick="closeDialog();Net.restart()">Back to the lobby</button>' : '<span class="muted">The host can start another game.</span>') : '<button class="btn primary" onclick="closeDialog();showHome()">New game</button>';
   dialog(`<h2>${w ? (w.id === G.me ? 'You win' : COLOR_NAMES[w.id] + ' wins') : 'Game over'}</h2><p class="muted">Round ${G.g.round}.</p><div class="ledger"><table style="min-width:0">${names}</table></div>
     <div class="row">${again}<button class="btn" onclick="closeDialog()">Look at the board</button></div>`);
 }
@@ -605,8 +652,8 @@ function rollLooks(n) {
   const pick = a => a[Math.floor(Math.random() * a.length)];
   return Array.from({ length: n }, () => ({ body: bodyKey(pick(LPC.bodies), pick), skin: rollSkin(), natural: rollNatural(), eyes: pick(LPC.eyes), hair: pick(LPC.hairs), hairColor: pick(LPC.hairColors) }));
 }
-function avatar(q, cls = 'avatar') {
-  const L = (G.looks && G.looks[q.id]) || { body: 'male', skin: null, hair: 'page', hairColor: 'black' };
+function avatar(q, cls = 'avatar', look = null) {
+  const L = look || (G && G.looks && G.looks[q.id]) || { body: 'male', skin: null, hair: 'page', hairColor: 'black' };
   if (q.status === 'waiting') return `<span class="${cls} lpc gone" aria-label="consumed">${part(`skin_${L.body}`)}${part(`face_${L.body}_${L.eyes || 'black'}`)}</span>`;
   const masked = q.status === 'slave' || q.mask !== null, hc = L.hairColor;
   const feats = masked ? [] : q.lv3 ? REVEALED[q.role] : (FEATURE[q.lastMask] || []);
@@ -853,7 +900,7 @@ function act(label, cost, sub, ok, why, fn, primary) { return { label, cost, sub
 function renderActions() {
   const g = G.g, p = ME(), el = $('#actions');
   $('#actSec').hidden = false;
-  if (G.over) { el.innerHTML = G.online ? (Net.isHost() ? '<button class="btn primary" onclick="Net.restart()">Back to the lobby</button>' : '<p class="muted">Game over.</p>') : '<button class="btn primary" onclick="newGameDialog()">New game</button>'; $('#endRow').innerHTML = ''; return; }
+  if (G.over) { el.innerHTML = G.online ? (Net.isHost() ? '<button class="btn primary" onclick="Net.restart()">Back to the lobby</button>' : '<p class="muted">Game over.</p>') : '<button class="btn primary" onclick="showHome()">New game</button>'; $('#endRow').innerHTML = ''; return; }
   if (!G.myTurn) { el.innerHTML = `<p class="muted">${G.idx >= 0 ? COLOR_NAMES[G.idx] + (G.online && G.seats && G.seats[G.idx] && !G.seats[G.idx].bot ? ` (${esc(G.seats[G.idx].nick)})` : '') : 'The court'} is playing…</p>`; $('#endRow').innerHTML = ''; return; }
   const A = [], freeP = g.free(p), others = g.P.filter(q => q !== p && g.alive(q));
   const bc = g.buyCost(p), b3 = g.buy3Cost(p), left = p.buys < g.C.BUY_LIMIT;
@@ -1098,7 +1145,7 @@ const Net = {
       case 'chat': if (G) { G.log.push({ chat: m.from, s: m.text, r: 0 }); renderLog(); } break;
       case 'error':
         if ($('#on-err')) $('#on-err').textContent = m.text; else if (G) log(m.text, 'big');
-        if (m.fatal) { store.set('session', null); this.wanted = false; if (!(G && G.online) && !$('#on-err')) { newGameDialog(); if ($('#on-err')) $('#on-err').textContent = m.text; } }
+        if (m.fatal) { store.set('session', null); this.wanted = false; if (!(G && G.online) && !$('#on-err')) { showHome(); if ($('#on-err')) $('#on-err').textContent = m.text; } }
         break;
     }
   },
@@ -1118,7 +1165,7 @@ function lobbyDialog() {
     $('#lb-n').onchange = $('#lb-b').onchange = () => Net.raw({ t: 'config', n: +$('#lb-n').value, bots: $('#lb-b').value });
     $('#lb-go').onclick = () => Net.raw({ t: 'start' });
   }
-  $('#lb-leave').onclick = () => { Net.leave(); history.replaceState(null, '', location.pathname); if (G && G.online) G = null; newGameDialog(); };
+  $('#lb-leave').onclick = () => { Net.leave(); history.replaceState(null, '', location.pathname); if (G && G.online) G = null; showHome(); };
 }
 // a trade offer from another player: accept or decline without blocking your screen
 function offerToast(m) {
@@ -1135,6 +1182,7 @@ async function applyUpdate(m) {
   if (fresh) {
     if ($('#dlg').open) closeDialog();
     G = { online: true, gameId: m.gameId, q: [], cur: null, busy: false, ctx: {}, looks: m.looks, me: m.seat, idx: m.idx, over: false, myTurn: false, log: [], seats: m.seats, opts: { speed: store.get('speed') ?? 600, showTypes: false, xray: false } };
+    showBoard();   // an online game starts (or is rejoined): leave the start page
     $('#chatForm').hidden = false;
   }
   G.seats = m.seats;
@@ -1155,11 +1203,12 @@ async function applyUpdate(m) {
 }
 $('#chatForm').onsubmit = e => { e.preventDefault(); const t = $('#chatIn').value.trim(); if (t) Net.raw({ t: 'chat', text: t }); $('#chatIn').value = ''; };
 
-$('#newBtn').onclick = newGameDialog;
+$('#newBtn').onclick = showHome;
 $('#rulesBtn').onclick = rulesDialog;
 $('#abilBtn').onclick = rolesDialog;
 // rejoin a game in progress after a reload
-(() => { const s = store.get('session'); if (Net.available() && s && s.code) Net.join(s.code, Net.nick() || 'Player', s.token).catch(() => newGameDialog()); else newGameDialog(); })();
+// open on the start page; if this browser was in an online room, rejoin it (the lobby or the game then shows over or instead of it)
+(() => { showHome(); const s = store.get('session'); if (Net.available() && s && s.code) Net.join(s.code, Net.nick() || 'Player', s.token).catch(() => {}); })();
 </script>
 </body>
 </html>
