@@ -8,11 +8,11 @@ const { chromium } = require('playwright');
 const { server } = require('./server');
 
 const GAMES = +(process.argv[2] || 1), PLAYERS = 3, SEATS = 4, STEP_LIMIT = 6000;
-const errors = [], leaks = [], seen = { welcome: 0, offer: 0, chat: 0, trades: 0, myTurns: 0 };
+const errors = [], leaks = [], seen = { welcome: 0, offer: 0, backAsk: 0, humanBacks: 0, chat: 0, trades: 0, myTurns: 0 };
 
 function checkLeaks(who, m) {
   if (seen[m.t] !== undefined) seen[m.t]++;
-  if (m.t === 'update') { seen.trades += m.events.filter(e => e.type === 'deal').length; if (m.myTurn) seen.myTurns++; }
+  if (m.t === 'update') { seen.humanBacks += m.events.filter(e => e.type === 'duel' && (e.data.backers || []).some(b => b[0] < PLAYERS)).length; seen.trades += m.events.filter(e => e.type === 'deal').length; if (m.myTurn) seen.myTurns++; }
   if (m.t !== 'update' || m.over) return;
   const me = m.seat, bad = s => leaks.push(`${who}: ${s}`);
   for (const q of m.state.P) {
@@ -46,6 +46,11 @@ async function play(page, i, host, stop) {
     const st = await page.evaluate(() => typeof G === 'undefined' ? null : ({ online: !!(G && G.online), over: !!(G && G.over), my: !!(G && G.myTurn && !G.busy), dlg: document.querySelector('#dlg').open, lobby: !!document.querySelector('#lb-leave'), toasts: document.querySelectorAll('.toast').length })).catch(() => null);   // null while the page reloads
     if (!st) { await page.waitForTimeout(50); continue; }
     if (st.over) { stop.done = true; break; }
+    if (st.toasts && await page.locator('.toast.backing').count()) {   // a duel to back: back a random side, or pass
+      await page.evaluate(() => { const t = document.querySelector('.toast.backing'); if (!t) return; const r = [...t.querySelectorAll('input.bk-side:not([disabled])')];
+        if (r.length && Math.random() < 0.6) { const x = r[Math.floor(Math.random() * r.length)]; x.checked = true; x.dispatchEvent(new Event('change')); t.querySelector('.bk-go').click(); } else t.querySelector('.bk-pass').click(); }).catch(() => {});
+      continue;
+    }
     if (st.toasts) { await page.locator('.toast [data-y]').nth(Math.random() < 0.8 ? 0 : 1).click({ timeout: 1000 }).catch(() => {}); continue; }   // mostly accept
     if (st.dlg && st.lobby) { await page.waitForTimeout(30); continue; }
     if (st.dlg) {

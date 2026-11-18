@@ -165,7 +165,7 @@ function runCommand(g, p, cmd, a = {}, ctx = {}) {
 
 // ---------- what one player may see ----------
 const SELF_SKIP = new Set(['bot', 'tookMine', 'know', 'name', 'tokens', 'cards']);
-const PUBLIC = ['id', 'souls', 'status', 'master', 'gen', 'mask', 'lastMask', 'lv3', 'roleKnown', 'pubRoles', 'buys', 'trades', 'duels', 'earlBonus', 'archFree', 'arch2', 'asked', 'earlFree', 'maskLock', 'waitTurns', 'captures', 'wins', 'needMask'];
+const PUBLIC = ['id', 'souls', 'soulsIn', 'status', 'master', 'gen', 'mask', 'lastMask', 'lv3', 'roleKnown', 'pubRoles', 'buys', 'trades', 'duels', 'earlBonus', 'archFree', 'arch2', 'asked', 'earlFree', 'maskLock', 'waitTurns', 'captures', 'wins', 'needMask'];
 function redact(g, viewer, all = false) {
   return {
     round: g.round, turnNo: g.turnNo, C: g.C,
@@ -202,6 +202,47 @@ function snapView(g, idx, viewer, all = false) {
       tokens: q.tokens.map(t => ({ c: t.c, d: see ? t.d : 0 })), waitTurns: q.waitTurns, name: see && q.name ? [...q.name] : null, bot: { type: q.bot.type } }; }) };
 }
 
-const EXPORTS = { HumanBot, runCommand, redact, hydrate, snapView, botAsk, botBid, mayBuyColour, normDeal, botAccepts, CARD_NAMES };
+
+// ---------- backing by people ----------
+// A duel is settled inside one engine step (a bot's turn, the end of a turn, a command), so the engine can't stop and wait for a
+// person. Instead: run the step on a copy of the game; if a duel came up that a person could back (the engine's backRequests), ask
+// them, and repeat with their answers until nobody is left to ask; then run the step on the real game with all the answers.
+// The game draws its random numbers from its own state (g.rs), so the copy and the real run make exactly the same choices.
+
+// a deep copy that keeps prototypes (Game, Bot, HumanBot), Sets and Maps, and shared references; functions are shared
+function cloneGraph(root) {
+  const seen = new Map();
+  const c = x => {
+    if (x === null || typeof x !== 'object') return x;
+    if (seen.has(x)) return seen.get(x);
+    if (Array.isArray(x)) { const a = []; seen.set(x, a); for (const v of x) a.push(c(v)); return a; }
+    if (x instanceof Set) { const o = new Set(); seen.set(x, o); for (const v of x) o.add(c(v)); return o; }
+    if (x instanceof Map) { const o = new Map(); seen.set(x, o); for (const [k, v] of x) o.set(c(k), c(v)); return o; }
+    const o = Object.create(Object.getPrototypeOf(x)); seen.set(x, o);
+    for (const k of Object.keys(x)) o[k] = c(x[k]);
+    return o;
+  };
+  return c(root);
+}
+// step(game, ctx) does the work on whichever game it is given (look players up by id). ask(request) resolves to
+// { [player id]: { side: 'a'|'d', amount } } for the people in request.who; leaving someone out means they pass.
+async function withBacking(g, ctx, step, ask) {
+  if (!g.P.some(q => q.bot.human && g.free(q))) return step(g, ctx);   // nobody who could back: nothing to ask
+  const answers = {};
+  for (let round = 0; round < 12; round++) {
+    const log = g.log, on = g.on; g.log = []; g.on = null;
+    const [cg, cctx] = cloneGraph([g, ctx]);
+    g.log = log; g.on = on;
+    cg.backAnswers = answers; cg.backRequests = []; cg.fightNo = 0; cg.trace = false;
+    try { step(cg, cctx); } catch (err) { break; }   // the real run below reports any error
+    const req = cg.backRequests.find(r => !(r.fno in answers));
+    if (!req) break;
+    answers[req.fno] = (await ask(req)) || {};
+  }
+  g.backAnswers = answers; g.backRequests = null; g.fightNo = 0;
+  try { return step(g, ctx); } finally { g.backAnswers = null; }
+}
+
+const EXPORTS = { HumanBot, runCommand, redact, hydrate, snapView, botAsk, botBid, mayBuyColour, normDeal, botAccepts, CARD_NAMES, cloneGraph, withBacking };
 if (node) module.exports = EXPORTS; else globalThis.ReworkNet = EXPORTS;
 })();

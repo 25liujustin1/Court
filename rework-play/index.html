@@ -314,6 +314,18 @@ h1{font-size:2.1rem}
 .home-foot{text-align:center; margin:0}
 .linkish{border:0; background:none; padding:0; font:inherit; color:var(--accent); text-decoration:underline; cursor:pointer}
 @media (max-width:700px){ .home-modes{grid-template-columns:1fr} .home-demon .avatar{width:64px; height:64px} .home-court{gap:6px} .home-demon{font-size:.8rem} }
+
+/* backing a duel */
+.back-sides{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.back-side{display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:4px 8px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--surface); cursor:pointer}
+.back-side:has(input:checked){border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent)}
+.back-side.off{opacity:.55; cursor:not-allowed}
+.back-side b{font-size:1.1rem; font-variant-numeric:tabular-nums}
+.back-side small{grid-column:2 / -1; color:var(--muted)}
+.bk-amt{min-width:26px; text-align:center; font-size:1.1rem}
+.toast.backing{max-width:min(460px, calc(100vw - 32px))}
+.toast.backing h2{font-size:1.05rem; margin:0}
+.toast.backing p{font-size:.85rem; margin:0}
 </style>
 </head>
 <body>
@@ -353,7 +365,7 @@ h1{font-size:2.1rem}
 'use strict';
 const { Game, ROLES, NAMES, ARCH, DUKE, PRINCE, MARQ, EARL, masksFor, coverBits, roleOf, winChance, strongerWins, key } = ReworkEngine;
 const { Bot, TYPES } = ReworkBots;
-const { HumanBot, runCommand, hydrate, snapView, CARD_NAMES } = ReworkNet;
+const { HumanBot, runCommand, hydrate, snapView, CARD_NAMES, withBacking } = ReworkNet;
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -425,9 +437,9 @@ function flushEngineLog(max = Infinity) {
     let s = g.log.shift(); const rm = s.match(/^R(\d+) /), r = rm ? +rm[1] : g.round; s = s.replace(/^R\d+ /, '');
     const me = `P${G.me}`;
     s = s.replace(`(${me})`, '(yours)').replace(new RegExp(`\\ba ${me} token`, 'g'), 'one of your tokens').replace(new RegExp(`\\bfrom ${me} for`, 'g'), 'from you for')
-      .replace(new RegExp(`(duels|names|against|from|on|enslaves|consumes|vassalizes) ${me}\\b`, 'g'), '$1 you').replace(new RegExp(`\\b${me}\\b`, 'g'), 'You');
-    s = s.replace(/\bYou (buys|draws|duels|tries|plays|remasks|reveals|enslaves|consumes|vassalizes|reincarnates|trades|waits|discards|wins|loses their|lowers their|is)\b/g, (m, v) =>
-      'You ' + ({ tries: 'try', 'loses their': 'lose your', 'lowers their': 'lower your', is: 'are', wins: 'win' }[v] || v.replace(/s$/, '')));
+      .replace(new RegExp(`(duels|names|against|from|on|enslaves|consumes|vassalizes|backs) ${me}\\b`, 'g'), '$1 you').replace(new RegExp(`\\b${me}\\b`, 'g'), 'You');
+    s = s.replace(/\bYou (backs|buys|draws|duels|tries|plays|remasks|reveals|enslaves|consumes|vassalizes|reincarnates|trades|waits|discards|wins|loses their|lowers their|is)\b/g, (m, v) =>
+      'You ' + ({ backs: 'back', tries: 'try', 'loses their': 'lose your', 'lowers their': 'lower your', is: 'are', wins: 'win' }[v] || v.replace(/s$/, '')));
     s = s.replace(/: You win$/, ': you win');
     s = s.replace(/\bP(\d)\b/g, (m, i) => COLOR_NAMES[+i]);
     const big = /enslaves|consumes|name|Arrogation|reincarnates|swap|wins the game|Ward|last stand/.test(s);
@@ -444,6 +456,44 @@ function doCmd(cmd, a = {}) {
   return after().then(() => res);
 }
 const failed = r => { if (!r.ok) log(r.msg || 'That did not work.', 'mine'); return !r.ok; };
+
+
+// ---------- backing a duel ----------
+// The engine asks (see withBacking in net.js) before a duel you could back: { a, d, sa, sd, cap, kind, who: [{ q, souls, sides }] }.
+// Solo, a pop-up and the game waits; online, a panel with a timer (the server rolls without you when it runs out).
+function backingHTML(req, w) {
+  const label = req.kind === 'rebellion' ? 'Arrogation' : req.kind === 'last stand' ? 'Last stand' : 'Duel';
+  const max = Math.max(1, Math.min(w.souls, req.cap));
+  return `<h2>${label}: ${who(req.a)} vs ${who(req.d)}</h2>
+    <p class="muted">Before the roll, you may back a side with souls. If your side wins you get them back; if it loses, they go to the winner. Each side can take up to ${req.cap} soul${req.cap === 1 ? '' : 's'} of backing in all.</p>
+    <div class="back-sides">${['a', 'd'].map(sd => { const id = req[sd], ok = w.sides.includes(sd);
+      return `<label class="back-side ${ok ? '' : 'off'}"><input type="radio" name="bk-side-${req.fno}" class="bk-side" value="${sd}" ${ok ? '' : 'disabled'}><span>${who(id)}</span><b data-odds="${sd}"></b><small>${Math.round(sd === 'a' ? req.sa : req.sd)} strength${ok ? '' : ' · your master: you can\'t act against them'}</small></label>`; }).join('')}</div>
+    <div class="row"><span class="label">Souls</span><button class="btn small" data-bk="-1">−</button><b class="bk-amt">${Math.min(2, max)}</b><button class="btn small" data-bk="1">+</button><span class="muted">of ${w.souls}</span></div>
+    <div class="row"><button class="btn primary bk-go" data-y="1" disabled>Back</button><button class="btn bk-pass" data-y="0">Pass</button><span class="muted bk-timer"></span></div>`;
+}
+// wires the controls inside `root`; done({ side, amount }) or done(null) for a pass
+function wireBacking(root, req, w, done) {
+  const max = Math.max(1, Math.min(w.souls, req.cap)); let amt = Math.min(2, max), side = null;
+  const show = () => {
+    root.querySelector('.bk-amt').textContent = amt;
+    const sa = req.sa + (side === 'a' ? amt : 0), sd = req.sd + (side === 'd' ? amt : 0), pa = winChance(sa, sd);
+    root.querySelector('[data-odds="a"]').textContent = `${Math.round(pa * 100)}%`; root.querySelector('[data-odds="d"]').textContent = `${Math.round(100 - pa * 100)}%`;
+    root.querySelector('.bk-go').disabled = !side;
+  };
+  root.querySelectorAll('input.bk-side').forEach(r => r.onchange = () => { side = r.value; show(); });
+  root.querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { amt = Math.max(1, Math.min(max, amt + +b.dataset.bk)); show(); });
+  root.querySelector('.bk-go').onclick = () => done(side ? { side, amount: amt } : null);
+  root.querySelector('.bk-pass').onclick = () => done(null);
+  show();
+}
+// solo: a pop-up; the game waits for your answer
+function askBacking(req) {
+  const w = req.who.find(x => x.q === G.me); if (!w) return Promise.resolve({});
+  return new Promise(res => {
+    dialog(backingHTML(req, w));
+    wireBacking($('#dlgBody'), req, w, ans => { closeDialog(); res(ans ? { [G.me]: ans } : {}); });
+  });
+}
 
 // ---------- home: the start page (play against bots, or online with friends) ----------
 // Shown before any game, and from the masthead's New game button. A game in progress stays behind it ("Back to your game").
@@ -544,7 +594,8 @@ async function advance() {
     render(); return;
   }
   G.myTurn = false; render();
-  try { g.turn(p); } catch (err) { log('Engine error: ' + err.message, 'big'); console.error(err); }
+  try { await withBacking(g, G.ctx, gg => gg.turn(gg.P[p.id]), askBacking); } catch (err) { log('Engine error: ' + err.message, 'big'); console.error(err); }
+  if (G !== game) return;
   await playQueue(); if (G !== game) return;
   render();
   if (checkWin()) return;
@@ -554,7 +605,8 @@ async function endMyTurn() {
   if (G.online) { G.myTurn = false; render(); Net.raw({ t: 'end' }); return; }
   const g = G.g, p = ME(), game = G;
   flushEngineLog(); G.cur = snap(g); G.myTurn = false;
-  try { g.endTurn(p); } catch (err) { log('Engine error: ' + err.message, 'big'); console.error(err); }
+  try { await withBacking(g, G.ctx, gg => gg.endTurn(gg.P[p.id]), askBacking); } catch (err) { log('Engine error: ' + err.message, 'big'); console.error(err); }
+  if (G !== game) return;
   await playQueue(); if (G !== game) return;
   render();
   if (checkWin()) return;
@@ -636,7 +688,8 @@ const stackSvg = (n, face) => `<svg width="48" height="62" viewBox="0 0 48 62" a
 // ---------- avatars: LPC pixel characters (art/lpc, built by art/lpc/build-lpc.cjs; credits in art/lpc/CREDITS.md) ----------
 // masked = a plain mask in the colour of the role it shows; unmasked = the feature of the mask's role (never the true role: that would give it away);
 // revealed = the true role's two features, with a glow. Ears match the hair; bat wings are black, feathered wings white; skin is any colour, tinted with an SVG filter.
-const LPC = { bodies: ['male', 'female', 'muscular', 'teen'],   // a teen gets either head: body key teen_m or teen_f (see build-lpc.cjs)
+const LPC = { bodies: ['male', 'female', 'muscular', 'teen'],   // outfit: black coat, white cravat, black pants
+    // a teen gets either head: body key teen_m or teen_f (see build-lpc.cjs)
     // everyone wears a black coat, white cravat and black pants; released demons wear nothing. The seat's colour is the avatar's frame
   hairs: ['page', 'wavy', 'princess', 'sara'], hairColors: ['black', 'white', 'red', 'orange', 'blonde', 'chestnut'], eyes: ['red', 'gold', 'black'],
   masks: ['black', 'maroon', 'gold', 'sky', 'forest'] };   // Archduke Duke Prince Marquis Earl
@@ -856,6 +909,7 @@ async function play(e) {
       const label = d.kind === 'rebellion' ? 'Arrogation' : d.kind === 'last stand' ? 'Last stand' : 'Duel';
       caption(`${label}: ${nm(d.a)} ${Math.round(d.sa)} vs ${nm(d.d)} ${Math.round(d.sd)}`, 1700);
       pop(gi('crossed-swords', 'var(--danger)', 'fx-swords'), mid, 900, '', 0);
+      if (d.backers && d.backers.length) await Promise.all(d.backers.map(([q, sd, n], k) => fly(soulSvg.replace('soul-ic', 'fx-soul') + `<b class="fx-price">${n}</b>`, q, sd === 'a' ? d.a : d.d, 650, '', 30 + k * 6)));
       const center = { x: $('#court').clientWidth / 2, y: $('#court').clientHeight * .66 };
       const die = fxEl(`${gi('dice-twenty-faces-twenty', 'var(--accent)', 'fx-d20')}<b class="fx-face">?</b>`, center, 'fx-die');
       const roll = die.animate([{ transform: 'translate(-50%,-50%) rotate(0) scale(.6)' }, { transform: 'translate(-50%,-50%) rotate(540deg) scale(1.1)' }, { transform: 'translate(-50%,-50%) rotate(720deg) scale(1)' }], { duration: T(800), easing: 'cubic-bezier(.2,.7,.3,1)' });
@@ -933,7 +987,7 @@ function renderActions() {
   A.push(act('Buy an event card', `${g.cardCost(p)} souls`, g.has(p, EARL, 2) ? 'Draw 2, keep 1' : 'Top of the deck', p.souls >= g.cardCost(p) && (g.deck.length + g.discard.length) > 0, 'not enough souls',
     simple('buyCard', {}, r => log(`You draw ${r.card}.`, 'mine'))));
   A.push(act('Trade', '', 'Souls, name tokens and event cards, either way; or give something away', others.length > 0, 'nobody to trade with', tradeStart));
-  if (p.status !== 'waiting') A.push(act('Duel', '', 'Souls against souls on the d20 table', p.duels > 0 && others.some(t => g.canDuel(p, t)), p.duels <= 0 ? 'already dueled this turn' : 'nobody you may duel (Noblesse Oblige)', duel, true));
+  if (p.status !== 'waiting') A.push(act('Duel', '', 'Souls against souls on the d20 table', p.duels > 0 && others.some(t => g.canDuel(p, t)), p.duels <= 0 ? 'already dueled this turn' : p.soulsIn ? 'you received souls in a trade: no duel until your turn ends' : 'nobody you may duel (Noblesse Oblige)', duel, true));
   if (freeP) {
     A.push(act('Name a player', '', 'Commit, look at your tokens, then guess', g.P.some(t => g.eligible(p, t)), g.masked(p) ? 'you must be unmasked to name' : 'you are not eligible to name anyone', naming, true));
     if (g.hasCard(p, 'Seize', 2)) A.push(act('Play Seize', '2 cards', 'Take a token of a chosen colour', true, '', seize));
@@ -955,7 +1009,7 @@ function renderActions() {
     for (const s of g.subjects(p).filter(s => s.status === 'slave')) A.push(act(`Consume ${COLOR_NAMES[s.id]}`, `+${Math.floor(s.souls / 2)} souls`, 'Takes half their souls and their cards', !g.has(p, PRINCE, 3), 'a revealed Prince may not consume',
       () => { if (confirm(`Consume ${COLOR_NAMES[s.id]}? You take half their souls and their cards; they come back later with a new name.`)) simple('consume', { s: s.id })(); }));
   } else if (p.status === 'slave' || p.status === 'vassal') {
-    if (g.hasCard(p, 'Arrogation')) A.push(act(`Play Arrogation`, `${Math.round(100 * winChance(g.strength(p, 'att'), g.strength(g.P[p.master], 'def')))}%`, `Duel ${COLOR_NAMES[p.master]}: win to swap places, lose half your souls`, true, '',
+    if (g.hasCard(p, 'Arrogation')) A.push(act(`Play Arrogation`, `${Math.round(100 * winChance(g.strength(p, 'att'), g.strength(g.P[p.master], 'def')))}%`, `Duel ${COLOR_NAMES[p.master]}: win to swap places, lose half your souls`, !p.soulsIn, 'you received souls in a trade: no Arrogation until your turn ends',
       simple('rebel', {}, r => log(r.won ? 'Your rebellion succeeds!' : 'Your rebellion fails: your master takes half your souls.', 'mine')), true));
     if (p.status === 'vassal' && g.C.VASSAL_FREE === 'flat') A.push(act('Buy your freedom', `${g.C.FREEDOM_COST} souls`, '', p.souls >= g.C.FREEDOM_COST, 'not enough souls', simple('buyFreedom')));
     if (p.status === 'vassal' && g.C.VASSAL_FREE === 'buyback') { const held = g.count(g.P[p.master], p.id);
@@ -1117,7 +1171,7 @@ function rulesDialog() {
     <p><b>Turns.</b> +3 souls each turn; slaves pay their master 1 (3 to a revealed Prince). Up to 2 token buys a round: 2 souls for a random draw, or 6 to draw 3 and keep 1. Blanks, dead tokens and your own token while unmasked are refunded but use the draw. Masters may buy a token from their own slave for 2 (counts as a buy). Event cards cost 3.</p>
     <p><b>Masks.</b> Nobody can name you while your mask is up, and you must be unmasked to name. Lower it on your turn for +4 souls (your own tokens go back to the bag, +3 each). Remask costs 6. Masked = Lv. 1 of your mask; unmasked = Lv. 2; revealing your true role = Lv. 3.</p>
     <p><b>Trading.</b> On your turn, trade souls, name tokens and event cards with anyone, in any mix, or give them away. Tokens and cards pass face down.</p>
-    <p><b>Duels.</b> One per turn. Noblesse Oblige: you may duel someone richer, within 2 souls, whose 3+ tokens you hold, or who gained your token by trade or Seize since your last turn. Stronger side rolls a d20 on the ratio table. Losing masked = lose the mask; unmasked = the victor sends one of your tokens to the bag. With only 2 free players, Noblesse Oblige ends: anyone may duel, both are unmasked and nobody remasks.</p>
+    <p><b>Duels.</b> One per turn. Noblesse Oblige: you may duel someone richer, within 2 souls, whose 3+ tokens you hold, or who gained your token by trade or Seize since your last turn. No duel (or Arrogation) if you received souls in a trade since the end of your last turn. Before the roll, other players may back either side with souls (each side up to half the defender's souls): backers of the winner get theirs back, backers of the loser lose theirs to the winner. Stronger side rolls a d20 on the ratio table. Losing masked = lose the mask; unmasked = the victor sends one of your tokens to the bag. With only 2 free players, Noblesse Oblige ends: anyone may duel, both are unmasked and nobody remasks.</p>
     <p><b>Duel odds.</b> Divide the weaker side's strength by the stronger side's and round to the nearest 5%. The stronger side rolls a d20 and wins on the range shown.</p>
     ${oddsTable()}
     <p><b>Naming.</b> You need the most of their tokens (at least 1), or nobody else holds any. Wrong: they enslave or consume you. Right: you choose.</p>
@@ -1168,6 +1222,8 @@ const Net = {
       case 'lobby': this.lobby = m; if (m.phase === 'lobby') lobbyDialog(); else if (G && G.online) { G.seats = m.seats; if (!G.busy) renderTable(); } break;
       case 'update': this.chain = this.chain.then(() => applyUpdate(m)).catch(err => console.error(err)); break;
       case 'offer': offerToast(m); break;
+      case 'backAsk': backingToast(m); break;
+      case 'backGone': { const el = document.querySelector(`.toast[data-back="${m.id}"]`); if (el) { el._stop && el._stop(); el.remove(); } break; }
       case 'offerGone': { const el = document.querySelector(`.toast[data-offer="${m.id}"]`); if (el) el.remove(); break; }
       case 'note': if (G) log(m.text, 'mine'); break;
       case 'chat': if (G) { G.log.push({ chat: m.from, s: m.text, r: 0 }); renderLog(); } break;
@@ -1194,6 +1250,17 @@ function lobbyDialog() {
     $('#lb-go').onclick = () => Net.raw({ t: 'start' });
   }
   $('#lb-leave').onclick = () => { Net.leave(); history.replaceState(null, '', location.pathname); if (G && G.online) G = null; showHome(); };
+}
+// online: a panel that doesn't block your screen; the server rolls without you when its timer runs out
+function backingToast(m) {
+  const w = m.req.who[0]; if (!w) return;
+  const el = document.createElement('div'); el.className = 'toast backing'; el.dataset.back = m.id;
+  el.innerHTML = backingHTML(m.req, w);
+  const end = Date.now() + m.secs * 1000, timer = el.querySelector('.bk-timer');
+  const tick = setInterval(() => { const left = Math.max(0, Math.ceil((end - Date.now()) / 1000)); timer.textContent = `${left}s`; if (!left) clearInterval(tick); }, 250);
+  wireBacking(el, m.req, w, ans => { clearInterval(tick); el.remove(); Net.raw({ t: 'backReply', id: m.id, side: ans ? ans.side : null, amount: ans ? ans.amount : 0 }); });
+  el._stop = () => clearInterval(tick);
+  $('#toasts').appendChild(el);
 }
 // a trade offer from another player: accept or decline without blocking your screen
 function offerToast(m) {

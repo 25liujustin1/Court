@@ -50,7 +50,7 @@ On your turn, you may trade souls, name tokens and event cards with any player, 
 
 ## Duels
 
-**Who you can duel (Noblesse Oblige).** You may start a duel only with someone who has more souls than you, is within 2 souls of you, someone of whom you possess 3 or more tokens, or someone who is actively trading your tokens: since your last turn they gained one of your tokens by trading or Seize. Only souls count here, not role bonuses or Collect cards. Noblesse Oblige ends when only 2 free players remain: from then on, either may duel the other, both are unmasked (no souls are gained and no tokens returned), and neither may remask. You may only duel once per turn.
+**Who you can duel (Noblesse Oblige).** You may start a duel only with someone who has more souls than you, is within 2 souls of you, someone of whom you possess 3 or more tokens, or someone who is actively trading your tokens: since your last turn they gained one of your tokens by trading or Seize. Only souls count here, not role bonuses or Collect cards. Noblesse Oblige ends when only 2 free players remain: from then on, either may duel the other, both are unmasked (no souls are gained and no tokens returned), and neither may remask. You may only duel once per turn. You can't start a duel (Arrogation included) if you received souls in a trade since the end of your last turn.
 
 **Strength.** Your strength is your souls, plus any backing on your side and any role bonuses. Your own souls are counted, not spent. A slave's strength is their own souls, not their master's. Collect cards can only be traded in on your turn, not during a duel.
 
@@ -161,6 +161,7 @@ Decided for the first playtests and the sim; fold into the sections above when t
 - Rebellion swap (2026-11-15): only for slaves. A vassal who wins with Arrogation is just freed. A master who can't be enslaved (a revealed Marquis at Lv. 3) is not swapped; the slave is just freed.
 - A free player who draws Arrogation keeps it; it can be traded.
 - Income (2026-11-17): 3 souls per turn (was 2).
+- No duel after trading for souls (2026-11-18): a player who received souls in a trade can't start a duel or play Arrogation until the end of their turn, so souls can't be bought just before a duel. Forced sales (a vassal's buy-back, a master buying from their slave) don't count. Backing and being challenged are unaffected.
 - Trading (2026-11-17): souls, name tokens and event cards can all be traded, in any mix, or given away (see Trading). No limit on trades per turn. Asking for a card the other player doesn't hold counts as a decline, so a trade can't be used to find out what someone holds.
 - Ward delays until the end of your next turn. If you capture the claimant meanwhile, the claim ends. One Ward per claim; not usable against your own wrong guess.
 - Seize takes a random token of a color you choose, from a player you choose.

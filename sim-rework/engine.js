@@ -31,12 +31,13 @@ const DEFAULTS = {
   DECK: { Seize: 4, Collect: 6, Restoration: 2, Ward: 2, Pact: 2, Arrogation: 9 },
 };
 
-function rng(seed) { let s = seed >>> 0; return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+// mulberry32; its state lives on the game (g.rs) so a copy of a game draws the same numbers as the original
+function rngStep(s) { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return [s, ((t ^ (t >>> 14)) >>> 0) / 4294967296]; }
 
 class Game {
   constructor(n, bots, seed, cfg = {}) {
     this.C = { ...DEFAULTS, ...cfg, DECK: { ...DEFAULTS.DECK, ...(cfg.DECK || {}) } };
-    this.r = rng(seed); this.round = 1; this.turnNo = 0; this.log = [];
+    this.rs = seed >>> 0; this.round = 1; this.turnNo = 0; this.log = [];
     this.stats = { duels: 0, upsets: 0, namings: 0, correct: 0, enslaves: 0, consumes: 0, reincarnations: 0, rebellions: 0, rebellionWins: 0, swaps: 0, buy3: 0, endUnmasks: 0, masterBuys: 0, princeTribute: 0, cardTrades: 0,
       vassals: 0, freedomBuys: 0, buybacks: 0, wards: 0, lastStands: 0, lastStandWins: 0, reveals: 0, unmasks: 0, remasks: 0, maskedTurns: 0, turns: 0,
       tokenBuys: 0, blanks: 0, cardBuys: 0, trades: 0, earlBonus: 0, seizes: 0, firstCapturer: null, backing: 0, tradeSouls: 0 };
@@ -184,6 +185,7 @@ class Game {
     if (!this.alive(buyer) || !this.alive(seller) || buyer.souls < price || !this.count(seller, c) || (c === buyer.id && !this.masked(buyer))) return false;
     if (this.against(seller, this.P[c])) return false;
     this.pay(buyer, seller, price); buyer.trades = (buyer.trades || 0) + 1;
+    if (price > 0) seller.soulsIn = true;
     const t = this.pick(seller.tokens.filter(t => t.c === c)); seller.tokens.splice(seller.tokens.indexOf(t), 1); this.gainToken(buyer, t, 'trade');
     this.stats.trades++; this.ev('trade', { buyer: buyer.id, seller: seller.id, c, price }); this.say(`P${buyer.id} buys a P${c} token from P${seller.id} for ${price}`);
     for (const e of [buyer, seller]) if (this.has(e, EARL, 1) && e.earlBonus < this.C.EARL_TRADE_CAP) { e.earlBonus++; e.souls += 2; this.stats.earlBonus++; }
@@ -220,6 +222,7 @@ class Game {
       for (const c of x.cards) { from.cards.splice(from.cards.indexOf(c), 1); to.cards.push(c); }
     };
     move(a, b, give); move(b, a, get);
+    if (give.souls > 0) b.soulsIn = true; if (get.souls > 0) a.soulsIn = true;   // no duel until the end of their turn
     a.trades = (a.trades || 0) + 1;
     if (give.tokens.length || get.tokens.length) this.stats.trades++;
     if (give.cards.length || get.cards.length) this.stats.cardTrades = (this.stats.cardTrades || 0) + 1;
@@ -235,7 +238,7 @@ class Game {
   // card trade (CARD_MARKET): buyer pays seller for one card
   tradeCard(buyer, seller, c, price) {
     if (!this.alive(buyer) || !this.alive(seller) || buyer === seller || buyer.souls < price || !this.hasCard(seller, c)) return false;
-    seller.cards.splice(seller.cards.indexOf(c), 1); this.pay(buyer, seller, price); buyer.cards.push(c);
+    seller.cards.splice(seller.cards.indexOf(c), 1); this.pay(buyer, seller, price); buyer.cards.push(c); if (price > 0) seller.soulsIn = true;
     this.stats.cardTrades = (this.stats.cardTrades || 0) + 1; return true;
   }
   archFree(p) { if (this.C.ARCH_LV1 !== 'free' || !this.has(p, ARCH, 1) || p.archFree) return false; p.archFree = true; const t = this.draw(p); return t && t !== 'refund' && t !== 'own'; }
@@ -284,10 +287,13 @@ class Game {
   rolesKnown(o, t) { const k = o.know[t.id]; return k && k.gen === t.gen ? (t.pubRoles & k.roles) || t.pubRoles : t.pubRoles; }
   notNames(o, t) { const k = o.know[t.id]; return k && k.gen === t.gen ? k.notNames : new Set(); }
 
+  r() { const [s, x] = rngStep(this.rs); this.rs = s; return x; }
+
   // ---------- duels ----------
   against(a, b) { return (a.status === 'slave' || a.status === 'vassal') && a.master === b.id; }   // a may not act against their master
   canDuel(p, t) {
     if (p === t || !this.alive(t) || !this.alive(p) || p.duels <= 0 || this.against(p, t)) return false;
+    if (p.soulsIn) return false;   // received souls in a trade since the end of their last turn (rules since 2026-11-18)
     if (this.has(p, DUKE, 2) || this.has(p, DUKE, 3)) return true;
     if (this.C.NOBLESSE_END2 && this.free(p) && this.free(t) && this.P.filter(q => this.free(q)).length <= 2) return true;   // Noblesse Oblige ends with 2 free players
     if (t.souls > p.souls || Math.abs(t.souls - p.souls) <= 2) return true;
@@ -300,17 +306,28 @@ class Game {
     this.stats.duels++;
     let sa = this.strength(a, 'att'), sd = this.strength(d, 'def');
     const cap = Math.floor((this.C.BACK_CAP_RICH ? Math.max(a.souls, d.souls) : d.souls) / 2), back = { a: [], d: [] }, used = { a: 0, d: 0 };
+    // people decide for themselves: their answers come from backAnswers[fight number]; a dry run (backRequests set) records who is still to be asked
+    const fno = this.fightNo = (this.fightNo || 0) + 1, ans = (this.backAnswers && this.backAnswers[fno]) || {}, ask = [];
     for (const q of this.P) {
       if (q === a || q === d || !this.free(q)) continue;
-      const b = q.bot.back(this, q, a, d); if (!b || b.amount <= 0) continue;
+      let b;
+      if (q.bot.human) {
+        const sides = ['a', 'd'].filter(sd2 => !this.against(q, sd2 === 'a' ? d : a));
+        if (!sides.length || q.souls <= 0 || cap <= 0) continue;
+        if (q.id in ans) b = ans[q.id]; else { ask.push({ q: q.id, souls: q.souls, sides }); continue; }
+      } else b = q.bot.back(this, q, a, d);
+      if (!b || !(b.amount > 0) || (b.side !== 'a' && b.side !== 'd')) continue;
       const side = b.side; if (this.against(q, side === 'a' ? d : a)) continue;
-      const amt = Math.min(b.amount, q.souls, cap - used[side]); if (amt <= 0) continue;
+      const amt = Math.min(Math.floor(b.amount), q.souls, cap - used[side]); if (amt <= 0) continue;
       q.souls -= amt; used[side] += amt; back[side].push([q, amt]); this.stats.backing += amt;
     }
+    if (ask.length && this.backRequests) this.backRequests.push({ fno, a: a.id, d: d.id, sa, sd, cap, kind: opts.rebellion ? 'rebellion' : opts.lastStand ? 'last stand' : 'duel', who: ask });
+    for (const side of ['a', 'd']) for (const [q, amt] of back[side]) this.say(`P${q.id} backs P${(side === 'a' ? a : d).id} with ${amt}`);
     sa += used.a; sd += used.d;
     let pa = winChance(sa, sd); if (opts.cap !== undefined) pa = Math.min(pa, opts.cap);
     const aw = this.r() < pa;
-    this.ev('duel', { a: a.id, d: d.id, sa, sd, pa, aw, kind: opts.rebellion ? 'rebellion' : opts.lastStand ? 'last stand' : 'duel', backA: used.a, backD: used.d });
+    this.ev('duel', { a: a.id, d: d.id, sa, sd, pa, aw, kind: opts.rebellion ? 'rebellion' : opts.lastStand ? 'last stand' : 'duel', backA: used.a, backD: used.d,
+      backers: [...back.a.map(([q, amt]) => [q.id, 'a', amt]), ...back.d.map(([q, amt]) => [q.id, 'd', amt])] });
     if ((aw && pa < 0.5) || (!aw && pa > 0.5)) this.stats.upsets++;
     const W = aw ? a : d, ws = aw ? 'a' : 'd', ls = aw ? 'd' : 'a';
     for (const [q, amt] of back[ws]) q.souls += amt;
@@ -440,6 +457,7 @@ class Game {
   }
   // Arrogation: a slave (or vassal) duels their master; win = freedom and a new name, lose = master takes half their souls
   rebel(s) {
+    if (s.soulsIn) return null;   // received souls in a trade since the end of their last turn
     if ((s.status !== 'slave' && s.status !== 'vassal') || !this.hasCard(s, 'Arrogation')) return null;
     s.prevStatus = s.status;
     this.useCard(s, 'Arrogation'); this.stats.rebellions++; this.ev('rebel', { s: s.id, m: s.master }); this.say(`P${s.id} plays Arrogation against P${s.master}`);
@@ -529,6 +547,7 @@ class Game {
     this.cur = p; return true;
   }
   endTurn(p) {
+    p.soulsIn = false;
     this.dropMasks();
     this.resolveClaims(p);
     if (p.maskLock > 0) p.maskLock--;

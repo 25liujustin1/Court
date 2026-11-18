@@ -12,7 +12,7 @@ const crypto = require('crypto');
 const { WebSocketServer } = require('ws');
 const { Game } = require('../sim-rework/engine');
 const { Bot, TYPES } = require('../sim-rework/bots');
-const { HumanBot, runCommand, redact, snapView, normDeal } = require('./net');
+const { HumanBot, runCommand, redact, snapView, normDeal, withBacking } = require('./net');
 
 const PORT = +process.env.PORT || 3010;
 const ROOT = path.join(__dirname, '..');
@@ -48,6 +48,7 @@ const LPC = { bodies: ['male', 'female', 'muscular', 'teen'],   // a teen gets e
   hairs: ['page', 'wavy', 'princess', 'sara'], hairColors: ['black', 'white', 'red', 'orange', 'blonde', 'chestnut'], eyes: ['red', 'gold', 'black'] };
 const pick = a => a[crypto.randomInt(a.length)];
 // roughly how long clients take to animate a batch of events at normal speed, so bot turns don't race ahead
+const BACK_MS = +process.env.BACK_MS || 15000;   // how long people get to back a duel before the roll
 const ANIM_SLOW = 1.5;   // the page slows every animation by this (ANIM_SLOW in index.html); the pause after a bot turn follows it
 const EV_MS = { duel: 2600, name: 2600, enslave: 1300, consume: 1500, reveal: 1500, swap: 1300, reincarnate: 1000, rebel: 1000, maskoff: 800 };
 
@@ -113,24 +114,53 @@ class Room {
         this.turnOpen = true; this.flush();
         await new Promise(res => { this.endTurn = res; this.watchAway(p.id); });
         if (this.gameId !== id) return;
-        this.finishTurn(p);
+        await this.run(() => this.finishTurn(p));
       } else {
         // a bot, or a player who is away: a bot plays the turn
-        if (seat) { const hb = p.bot; p.bot = this.backups[p.id]; try { g.turn(p); } finally { p.bot = hb; } this.say(`${COLOR_NAMES[p.id]} is away: a bot played their turn.`); }
-        else g.turn(p);
+        const backup = seat ? this.backups[p.id] : null;
+        await this.run(() => withBacking(g, this.ctx, gg => { const pp = gg.P[p.id]; if (!backup) return gg.turn(pp); const hb = pp.bot; pp.bot = backup; try { gg.turn(pp); } finally { pp.bot = hb; } }, req => this.askBacking(req)));
+        if (this.gameId !== id) return;
+        if (seat) this.say(`${COLOR_NAMES[p.id]} is away: a bot played their turn.`);
         if (p.status !== 'waiting') p.needMask = false;
         const ev = this.flush(); await this.pause(ev);
       }
       if (this.phase !== 'play' || this.checkWin()) break;
     }
   }
-  finishTurn(p) {
+  async finishTurn(p) {
     const g = this.g;
     if (this.ctx.looks && this.ctx.looks[p.id]) runCommand(g, p, 'draw3Keep', {}, this.ctx);
     p.needMask = false; this.turnOpen = false; this.endTurn = null; clearTimeout(this.awayTimer);
     for (const [oid, o] of this.offers) if (o.from === p.id) { this.offers.delete(oid); const s = this.seats[o.to]; if (s) send(s.ws, { t: 'offerGone', id: oid }); }
-    g.endTurn(p);
+    await withBacking(g, this.ctx, gg => gg.endTurn(gg.P[p.id]), req => this.askBacking(req));
     this.flush();
+  }
+  // one engine step at a time: a backing window can be open while a command arrives
+  run(fn) { const r = (this.lock || Promise.resolve()).then(fn); this.lock = r.catch(() => {}); return r; }
+  // ask the connected people who could back this duel, all at once; whoever doesn't answer in time passes
+  askBacking(req) {
+    const people = req.who.filter(w => { const s = this.seats[w.q]; return s && s.ws && this.g.P[w.q].bot.human; });
+    if (!people.length) return Promise.resolve({});
+    const id = this.backSeq = (this.backSeq || 0) + 1, answers = {};
+    this.backs = this.backs || new Map();
+    return new Promise(res => {
+      const done = () => {
+        if (!this.backs.has(id)) return;
+        clearTimeout(timer); this.backs.delete(id);
+        for (const w of people) { const s = this.seats[w.q]; if (s) send(s.ws, { t: 'backGone', id }); }
+        res(answers);
+      };
+      const timer = setTimeout(done, BACK_MS);
+      this.backs.set(id, { people: new Set(people.map(w => w.q)), answers, done });
+      for (const w of people) send(this.seats[w.q].ws, { t: 'backAsk', id, secs: BACK_MS / 1000, req: { fno: req.fno, a: req.a, d: req.d, sa: req.sa, sd: req.sd, cap: req.cap, kind: req.kind, who: [w] } });
+    });
+  }
+  backReply(seat, m) {
+    const b = this.backs && this.backs.get(m.id); if (!b || !b.people.has(seat)) return;
+    b.people.delete(seat);
+    const amount = Math.floor(+m.amount);
+    if ((m.side === 'a' || m.side === 'd') && amount > 0 && amount <= 999) b.answers[seat] = { side: m.side, amount };
+    if (!b.people.size) b.done();
   }
   checkWin() {
     const w = this.g.winner();
@@ -157,10 +187,15 @@ class Room {
     if (this.phase !== 'play') return reply({ ok: false, msg: 'The game is over.' });
     const offTurn = m.cmd === 'chooseMask';
     if (!offTurn && !(this.turnOpen && this.idx === seat)) return reply({ ok: false, msg: 'It is not your turn.' });
-    let res;
-    try { res = runCommand(g, p, m.cmd, m.a || {}, this.ctx); } catch (err) { console.error(err); res = { ok: false, msg: 'Server error: ' + err.message }; }
-    reply(res);
-    if (res.ok && this.checkWin() && this.endTurn) this.endTurn();
+    const gid = this.gameId;
+    return this.run(async () => {
+      if (this.gameId !== gid || this.phase !== 'play') return reply({ ok: false, msg: 'The game is over.' });
+      if (!offTurn && !(this.turnOpen && this.idx === seat)) return reply({ ok: false, msg: 'It is not your turn.' });
+      let res;
+      try { res = await withBacking(g, this.ctx, (gg, cc) => runCommand(gg, gg.P[seat], m.cmd, m.a || {}, cc), req => this.askBacking(req)); } catch (err) { console.error(err); res = { ok: false, msg: 'Server error: ' + err.message }; }
+      reply(res);
+      if (res.ok && this.checkWin() && this.endTurn) this.endTurn();
+    });
   }
   offer(seat, m) {       // a trade offer to another person: { to, give, get } (see normDeal in net.js)
     const g = this.g, p = g.P[seat], q = g.P[m.to];
@@ -171,7 +206,8 @@ class Room {
     const id = ++this.offerSeq; this.offers.set(id, { id, from: seat, to: q.id, give, get });
     send(this.seats[q.id].ws, { t: 'offer', id, from: seat, give, get });
   }
-  offerReply(seat, m) {
+  offerReply(seat, m) { return this.run(() => this.offerReplyNow(seat, m)); }   // queued: a trade mustn't land while a backing window is open
+  offerReplyNow(seat, m) {
     const o = this.offers.get(m.id); if (!o || o.to !== seat) return;
     this.offers.delete(m.id);
     const g = this.g, q = g.P[o.to];
@@ -240,6 +276,7 @@ function handle(ws, m) {
     case 'offer': room.offer(seat, m); return;
     case 'offerReply': room.offerReply(seat, m); return;
     case 'chat': { const text = String(m.text || '').slice(0, 200).trim(); if (text) for (const s of room.seats) if (s) send(s.ws, { t: 'chat', from: seat, text }); return; }
+    case 'backReply': { const r = ws.room; if (r) { const seat = r.seatOf(ws); if (seat >= 0) r.backReply(seat, m); } return; }
     case 'leave': leave(ws, true); return;
   }
 }
