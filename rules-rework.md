@@ -1,4 +1,4 @@
-# Court — Rework draft
+# Solomon's Court — Rework draft
 
 A draft of the reworked rules (masks, duels, souls as power). Not yet played. The original rules (`rules.md`) were removed from the repo on 2026-11-17; they are in git history and in a local backup.
 

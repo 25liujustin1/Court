@@ -1,7 +1,7 @@
 {
   "name": "madk",
   "private": true,
-  "description": "Court: hidden-identity demon card game (rework): rules, sim, and online playable version",
+  "description": "Solomon's Court: hidden-identity demon card game (rework): rules, sim, and online playable version",
   "scripts": {
     "start": "node rework-play/server.js",
     "sim": "node sim-rework/run.js",

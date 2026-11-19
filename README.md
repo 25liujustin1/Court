@@ -1,4 +1,4 @@
-# Court
+# Solomon's Court
 
 A hidden-identity card game about demons whose true names give power over them.
 

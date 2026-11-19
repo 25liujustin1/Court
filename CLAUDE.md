@@ -1,4 +1,4 @@
-# Court — project notes (working title was MADK)
+# Solomon's Court — project notes (earlier titles: Court, MADK)
 
 A hidden-identity social deduction card game, inspired by the manga *MADK* (Ryo Suzuri). Players are demons with secret names; knowing a demon's name gives power over it. The noble ranks come from the Ars Goetia's hierarchy.
 

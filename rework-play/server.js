@@ -1,4 +1,4 @@
-// Court rework online: a small game server. Each room runs the rework engine (sim-rework/engine.js) and the sim's bots;
+// Solomon's Court online: a small game server. Each room runs the rework engine (sim-rework/engine.js) and the sim's bots;
 // players send commands (net.js runCommand) and get updates with other players' secrets removed (net.js redact).
 //
 //   npm start            then open http://localhost:3010 (other devices on your network: http://<your-ip>:3010)
@@ -311,7 +311,7 @@ setInterval(() => { for (const ws of wss.clients) { if (!ws.alive) { ws.terminat
 if (require.main === module) {
   server.listen(PORT, () => {
     const ips = Object.values(os.networkInterfaces()).flat().filter(a => a && a.family === 'IPv4' && !a.internal).map(a => a.address);
-    console.log(`Court rework server on http://localhost:${PORT}`);
+    console.log(`Solomon's Court server on http://localhost:${PORT}`);
     for (const ip of ips) console.log(`  other devices on your network: http://${ip}:${PORT}`);
   });
 }
