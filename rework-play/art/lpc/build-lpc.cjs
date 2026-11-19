@@ -14,6 +14,8 @@ fs.mkdirSync(OUT, { recursive: true }); fs.mkdirSync(CACHE, { recursive: true })
 const CROP = { x: 12, y: 8, w: 40, h: 40 };          // bust inside the 64x64 frame
 // body types: key -> LPC body and head. Teens get either head. Each key gets its own skin, face, coat, pants, cravat and chain layers.
 const BODIES = { male: ['male', 'male'], female: ['female', 'female'], muscular: ['muscular', 'male'], teen_m: ['teen', 'male'], teen_f: ['teen', 'female'] };
+// nipples on bare chests: crop pixels set to the skin ramp's edge shade (grey 106), so they take the seat's skin colour; the coat covers them until release
+const NIPPLES = { male: [[14, 34], [25, 34]], muscular: [[14, 34], [25, 34]], teen_m: [[16, 34], [23, 34]], female: [[15, 33], [24, 33]], teen_f: [[16, 34], [23, 34]] }, NIPPLE_GREY = 106;
 const SHIRTS = ['black'];                                                         // a black coat, white cravat and black pants; released demons wear nothing. The seat's colour is the avatar's frame
 const HAIRCOL = ['black', 'white', 'red', 'orange', 'blonde', 'chestnut'];       // hair and wolf ears (chestnut = brown); wings have their own colours
 const HAIRS = { page: 'short', wavy: 'long', princess: 'xlong', sara: 'xlong' };                 // style -> folder in sheet_definitions/hair/
@@ -118,6 +120,7 @@ const save = (name, png) => fs.writeFileSync(path.join(OUT, name + '.png'), PNG.
     const b = await frame('spritesheets/' + D.body.layer_1[bt] + 'walk.png'), h = await frame('spritesheets/' + D.head[ht].layer_1[bt] + 'walk.png');
     use(D.body, D.body.layer_1[bt]); use(D.head[ht], D.head[ht].layer_1[bt]);
     const { skin, rest } = splitSkin(over(b, h), pal.body.light);
+    for (const [x, y] of NIPPLES[sex] || []) { const i = (y * CROP.w + x) * 4; if (skin.data[i + 3]) skin.data[i] = skin.data[i + 1] = skin.data[i + 2] = NIPPLE_GREY; }
     save(`skin_${sex}`, skin);
     for (const [e, ramp] of Object.entries(EYES)) save(`face_${sex}_${e}`, recolor(PNG.sync.read(PNG.sync.write(rest)), IRIS, ramp));
     const shirt = D.shirt.layer_1[bt] ? await frame('spritesheets/' + D.shirt.layer_1[bt] + 'walk.png') : widen(maleShirt, maleBody, b); use(D.shirt, D.shirt.layer_1[bt] || D.shirt.layer_1.male);
