@@ -23,12 +23,12 @@ const ROOM_IDLE_MS = 3 * 3600 * 1000;
 const ASK_MS = +process.env.ASK_MS || 90000;      // how long a person has to answer an Archduke's free question
 
 // ---------- static files: the page, its art, and the two engine files it loads ----------
-const TYPES_MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.gif': 'image/gif', '.svg': 'image/svg+xml', '.md': 'text/markdown; charset=utf-8' };
+const TYPES_MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.gif': 'image/gif', '.svg': 'image/svg+xml', '.pdf': 'application/pdf', '.md': 'text/markdown; charset=utf-8' };
 function serveStatic(req, res) {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (p === '/' || p === '/index.html') p = '/rework-play/index.html';
   else if (!p.startsWith('/sim-rework/')) p = '/rework-play' + p;
-  const allowed = p === '/sim-rework/engine.js' || p === '/sim-rework/bots.js' || /^\/rework-play\/(index\.html|net\.js|art\/[\w\-./]+)$/.test(p);
+  const allowed = p === '/sim-rework/engine.js' || p === '/sim-rework/bots.js' || /^\/rework-play\/(index\.html|net\.js|Solomon's Court Rulebook\.pdf|art\/[\w\-./]+)$/.test(p);
   const file = path.normalize(path.join(ROOT, p));
   if (!allowed || !file.startsWith(ROOT) || p.includes('..')) { res.writeHead(404); return res.end('Not found'); }
   fs.readFile(file, (err, data) => {

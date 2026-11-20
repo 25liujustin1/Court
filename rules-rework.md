@@ -161,7 +161,7 @@ Decided for the first playtests and the sim; fold into the sections above when t
 - Rebellion swap (2026-11-15): only for slaves. A vassal who wins with Arrogation is just freed. A master who can't be enslaved (a revealed Marquis at Lv. 3) is not swapped; the slave is just freed.
 - A free player who draws Arrogation keeps it; it can be traded.
 - Income (2026-11-17): 3 souls per turn (was 2).
-- No duel after trading for souls (2026-11-18): a player who received souls in a trade can't start a duel or play Arrogation until the end of their turn, so souls can't be bought just before a duel. Forced sales (a vassal's buy-back, a master buying from their slave) don't count. Backing and being challenged are unaffected.
+- No duel after trading for souls (2026-11-18): a player who received souls in a trade can't start a duel or play Arrogation until the end of their turn, so souls can't be bought just before a duel. Forced sales (a vassal's buy-back, a master buying from their slave) don't count. Support and being challenged are unaffected.
 - Trading (2026-11-17): souls, name tokens and event cards can all be traded, in any mix, or given away (see Trading). No limit on trades per turn. Asking for a card the other player doesn't hold counts as a decline, so a trade can't be used to find out what someone holds.
 - Ward delays until the end of your next turn. If you capture the claimant meanwhile, the claim ends. One Ward per claim; not usable against your own wrong guess.
 - Seize takes a random token of a color you choose, from a player you choose.
