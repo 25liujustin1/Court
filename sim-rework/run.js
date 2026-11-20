@@ -46,7 +46,7 @@ for (const k of kinds) {
 const fc = done.filter(r => r.stats.firstCapturer !== null);
 L.push('', `First player to capture someone won ${pct(fc.filter(r => r.stats.firstCapturer === r.winner).length, fc.length)} of finished games`);
 L.push(`Turns spent masked: ${pct(sum('maskedTurns'), sum('turns'))} (slaves always count as masked)`);
-L.push(`Per game: duels ${per('duels')} (upsets ${pct(sum('upsets'), sum('duels'))}), souls committed as backing ${per('backing')}`);
+L.push(`Per game: duels ${per('duels')} (upsets ${pct(sum('upsets'), sum('duels'))}), souls committed as support ${per('backing')}`);
 L.push(`Per game: namings ${per('namings')} (${pct(sum('correct'), sum('namings'))} correct), enslaves ${per('enslaves')}, consumes ${per('consumes')}, reincarnations ${per('reincarnations')}`);
 L.push(`Per game: unmasks ${per('unmasks')}, remasks ${per('remasks')}, role reveals ${per('reveals')}`);
 L.push(`Per game: rebellions ${per('rebellions')} (${pct(sum('rebellionWins'), sum('rebellions'))} won, swaps ${per('swaps')}), vassals ${per('vassals')}, freed ${per('freedomBuys')}, buy-backs ${per('buybacks')}`);

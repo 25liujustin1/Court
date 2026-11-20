@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Solomon's Court</title>
+<link rel="icon" type="image/svg+xml" href="art/logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Fira+Sans:wght@500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
@@ -46,9 +47,11 @@ h3{font-size:1.15rem}
 p{margin:0}
 .muted{color:var(--muted)}
 .label{font-family:var(--font-head); font-size:.74rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600}
-.masthead{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:18px 0 14px; border-bottom:2px solid var(--rule)}
-.masthead .brand{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
-.masthead .brand span{color:var(--muted); font-style:italic}
+.masthead{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; padding:18px 0 14px}
+.masthead .brand{grid-column:2; text-align:center}
+.masthead #sub{grid-column:1; grid-row:1; color:var(--muted); font-style:italic}
+.masthead .toolbar{grid-column:3; grid-row:1; justify-self:end}
+@media (max-width:700px){ .masthead{grid-template-columns:1fr; justify-items:center; gap:6px} .masthead .brand, .masthead #sub, .masthead .toolbar{grid-column:1; grid-row:auto; justify-self:center} .masthead #sub:empty{display:none} }
 .toolbar{display:flex; gap:8px; flex-wrap:wrap}
 .btn{font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:9px 14px; cursor:pointer; min-height:42px; text-align:left}
 .btn:hover:not(:disabled){border-color:var(--muted)}
@@ -69,7 +72,7 @@ select{font:inherit; color:var(--ink); background:var(--surface); border:1px sol
 .toks{display:flex; flex-wrap:wrap; gap:6px; align-items:center}
 .held{display:inline-flex; flex-wrap:wrap; gap:10px; align-items:center}
 .held .grp{display:inline-flex; gap:3px; align-items:center}
-.held .dot{width:12px; height:12px; border-radius:50%; background:var(--pc); display:inline-block}
+.held .dot{width:12px; height:11px; background:var(--pc); display:inline-block; clip-path:polygon(50% 0, 100% 100%, 0 100%)}   /* a token: a small triangle */
 .held .n{font-family:var(--font-data); font-size:.8rem; color:var(--muted); margin-left:2px}
 /* identity callout */
 /* your card, tinted with your player colour */
@@ -188,7 +191,7 @@ details summary{cursor:pointer; font-family:var(--font-display); font-size:1.1re
 .seat .cardbacks{display:inline-flex}
 .seat .cardbacks i{width:11px; height:15px; border-radius:2px; background:var(--accent); border:1px solid var(--surface); margin-left:-4px; box-shadow:0 0 0 .5px var(--accent)}
 .seat .cardbacks i:first-child{margin-left:0}
-.seat .held .dot{width:10px; height:10px}
+.seat .held .dot{width:11px; height:10px}
 .seat .soul-ic, .souls-big .soul-ic{width:15px; height:15px}
 .seat .irons{width:15px; height:15px; vertical-align:-3px; margin-right:4px}
 .seat .crown-ic{width:22px; height:22px; vertical-align:-5px; margin-right:3px}
@@ -299,11 +302,33 @@ h1{font-size:2.1rem}
 
 /* ---------- home: the start page ---------- */
 .board[hidden], .home[hidden]{display:none}
+.wrap.front .masthead{padding-top:72px; align-items:start}
+.wrap.front h1{font-size:4.6rem}
+.masthead .logo{display:none}
+.wrap.front .masthead .logo{display:block; width:150px; height:auto; margin:0 auto 10px}
+.wrap.front .masthead .toolbar{margin-top:-56px}   /* Rules and Roles stay in the top corner */
+@media (max-width:700px){ .wrap.front .masthead{padding-top:36px} .wrap.front h1{font-size:2.5rem} .wrap.front .masthead .toolbar{margin-top:0} .wrap.front .masthead .logo{width:96px} }
+.home-name{display:flex; flex-direction:column; align-items:center; gap:4px}
+.home-name input{font:inherit; font-size:1.1rem; text-align:center; width:min(280px, 100%); padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink)}
+.home-actions{display:flex; justify-content:center; gap:14px; width:100%}
+.btn.big{flex:1 1 0; max-width:240px; min-height:54px; font-size:1.15rem; text-align:center; justify-content:center}
+.room{max-width:760px}
+.room-head{display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center}
+.room .roomcode{font-size:3rem; line-height:1.1}
+.room-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+.room-seats{display:flex; flex-direction:column; gap:8px}
+.room-seat{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; background:color-mix(in srgb, var(--pc) 10%, var(--bg))}
+.room-seat .muted{margin-left:auto; font-size:.85rem}
+.room .row.center{justify-content:center}
+.room select{font:inherit}
+#rm-host{display:flex; flex-direction:column; gap:12px}
+@media (max-width:700px){ .room-grid{grid-template-columns:1fr} .room .roomcode{font-size:2.4rem} }
 .home{max-width:980px; margin:0 auto; padding:18px 0 32px; display:flex; flex-direction:column; gap:22px}
-.home-hero{display:flex; flex-direction:column; align-items:center; gap:14px; text-align:center}
-.home-court{display:flex; justify-content:center; gap:14px; flex-wrap:wrap}
+.home-hero{display:flex; flex-direction:column; align-items:center; gap:42px; text-align:center}
+#home{min-height:calc(100vh - 330px); justify-content:space-between; padding-top:44px}   /* the start page fills the screen; the rules links sit at the bottom */
+.home-court{display:flex; justify-content:center; gap:20px; flex-wrap:wrap}
 .home-demon{display:flex; flex-direction:column; align-items:center; gap:4px; font-family:var(--font-display); font-variant:small-caps; color:var(--pc); font-size:1rem}
-.home-demon .avatar{width:112px; height:112px}
+.home-demon .avatar{width:136px; height:136px}
 .home .lede{max-width:62ch; margin:0; font-size:1.08rem; color:var(--ink)}
 .home-modes{display:grid; grid-template-columns:1fr 1fr; gap:18px}
 .home-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; gap:12px}
@@ -313,7 +338,7 @@ h1{font-size:2.1rem}
 .home-card label.row input{margin-top:5px; flex:none}
 .home-foot{text-align:center; margin:0}
 .linkish{border:0; background:none; padding:0; font:inherit; color:var(--accent); text-decoration:underline; cursor:pointer}
-@media (max-width:700px){ .home-modes{grid-template-columns:1fr} .home-demon .avatar{width:64px; height:64px} .home-court{gap:6px} .home-demon{font-size:.8rem} }
+@media (max-width:700px){ #home{min-height:0; padding-top:36px} .home-hero{gap:36px} .home-modes{grid-template-columns:1fr} .home-demon .avatar{width:64px; height:64px} .home-court{gap:6px} .home-demon{font-size:.8rem} }
 
 /* backing a duel */
 .back-sides{display:grid; grid-template-columns:1fr 1fr; gap:10px}
@@ -326,21 +351,93 @@ h1{font-size:2.1rem}
 .toast.backing{max-width:min(460px, calc(100vw - 32px))}
 .toast.backing h2{font-size:1.05rem; margin:0}
 .toast.backing p{font-size:.85rem; margin:0}
+
+/* ---------- no page scroll: every page fits the window; anything long scrolls inside its own panel ---------- */
+body{padding-bottom:0}
+.wrap{height:100vh; height:100dvh}
+#home, #room{flex:1; min-height:0; overflow-y:auto}
+.wrap.front:has(#home:not([hidden])) .masthead .toolbar{display:none}
+/* the start page: title, demons, name, buttons and links as one group in the middle of the window */
+.wrap.front:has(#home:not([hidden])){justify-content:center}
+.wrap.front:has(#home:not([hidden])) .masthead{padding-top:0}
+.wrap.front #home{flex:0 1 auto}   /* the start page links the rules and roles at its foot instead */
+/* start page and waiting room: sizes follow the window's height */
+.wrap.front{gap:clamp(6px, 1.6vh, 14px)}
+.wrap.front .masthead{padding-top:clamp(8px, 5vh, 72px); padding-bottom:clamp(4px, 1vh, 14px)}
+.wrap.front h1{font-size:clamp(1.8rem, min(7vh, 9.6vw), 4.6rem); white-space:nowrap}
+.wrap.front .masthead .logo{width:clamp(48px, 14vh, 150px); margin-bottom:clamp(2px, 1vh, 10px)}
+.wrap.front .masthead .toolbar{margin-top:calc(12px - clamp(8px, 5vh, 72px))}
+#home{padding:clamp(6px, 3vh, 44px) 0 clamp(6px, 2vh, 24px); justify-content:center; gap:clamp(10px, 4vh, 42px)}
+#on-err:empty{display:none}   /* no gap for an empty message line */   /* the demons, name, buttons and rules links stay together, centred below the title */
+.home-hero{gap:clamp(10px, 4vh, 42px)}
+.home-demon .avatar{width:clamp(52px, 13vh, 136px); height:clamp(52px, 13vh, 136px)}
+#room{padding:clamp(4px, 2vh, 18px) 0 clamp(6px, 1.5vh, 16px); gap:clamp(8px, 2.2vh, 22px)}
+.room .roomcode{font-size:clamp(1.8rem, 6vh, 3rem)}
+.room .home-card{padding:clamp(10px, 2vh, 18px) clamp(12px, 2vw, 20px); gap:clamp(6px, 1.4vh, 12px)}
+.room-seats{gap:clamp(4px, .8vh, 8px)}
+.room-seat{padding:clamp(3px, .7vh, 8px) 10px}
+#rm-host{gap:clamp(6px, 1.2vh, 12px)}
+/* the game: the board takes what the title leaves */
+.board{flex:1; min-height:0}
+@media (min-width:1100px){
+  .board{height:auto}
+  .col.mid .court{min-height:0}
+}
+/* tablets: the table on the left; your panel above the record on the right */
+@media (max-width:1099px){
+  .board{display:grid; grid-template-columns:minmax(0,1fr) minmax(290px,350px); grid-template-rows:minmax(0,3fr) minmax(0,2fr); gap:12px}
+  .col.mid{grid-column:1; grid-row:1 / span 2; order:0; min-height:0}
+  .col.right{grid-column:2; grid-row:1; order:0; overflow-y:auto; padding-right:4px}
+  .col.left{grid-column:2; grid-row:2; order:0; min-height:0}
+  .col.mid .court{flex:1; height:auto; min-height:0}
+  .col.left .fill{flex:1; min-height:0}
+  .col.left .log{flex:1; max-height:none}
+}
+/* phones: one panel at a time (Table, Actions, Record), switched by the tabs at the bottom */
+.tabs{display:none}
+@media (max-width:759px){
+  .wrap:not(.front){gap:8px}
+  .wrap:not(.front) .masthead{padding:6px 0 0; gap:4px}
+  .wrap:not(.front) h1{font-size:1.5rem}
+  .board{display:flex; flex-direction:column; gap:0}
+  .board > .col{flex:1; min-height:0; overflow-y:auto}
+  .board[data-tab="table"] > .col:not(.mid), .board[data-tab="you"] > .col:not(.right), .board[data-tab="record"] > .col:not(.left){display:none}
+  .col.mid .court{flex:1; height:auto; min-height:0; margin-top:0}
+  .tabs:not([hidden]){display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding-bottom:8px}
+  .tabs .btn{text-align:center; justify-content:center}
+  .tabs .btn.on{background:var(--accent); color:var(--on-accent); border-color:var(--accent)}
+  .tabs .btn.ping{box-shadow:inset 0 0 0 2px var(--gold)}
+  .tabs .btn.ping::after{content:" •"; color:var(--gold)}
+  .wrap.front .masthead .toolbar{margin-top:0}
+  .home-demon .avatar{width:min(13vh, 62px); height:min(13vh, 62px)}
+  .wrap.front:has(#room:not([hidden])) .masthead .logo{display:none}   /* the waiting room needs the space */
+  .room-seats{display:grid; grid-template-columns:1fr 1fr}
+  .room-seat .muted{display:none}
+  .home-court{gap:6px; flex-wrap:nowrap}
+  .wrap.front .masthead .logo{width:min(10vh, 84px)}
+  .wrap.front .toolbar .btn.small{min-height:30px; padding:3px 10px}
+  .room h2{font-size:1.15rem}
+  .room .home-card .row{margin:0}
+  .room select, #rm-nick{padding:3px 6px}
+  .room .btn{min-height:38px}
+}
+@media (max-width:759px) and (max-height:780px){ .room-head{gap:2px} .room-head .label{display:none} .room .roomcode{font-size:1.9rem} }
 </style>
 </head>
 <body>
 <div class="wrap" id="app">
   <header class="masthead">
-    <div class="brand"><h1>Solomon's Court</h1><span id="sub">rework playtest</span></div>
+    <span id="sub"></span>
+    <div class="brand"><svg class="logo" viewBox="-6 -9 212 188" aria-hidden="true"><path d="M100 0 L200 173.2 L0 173.2 Z" fill="var(--accent)" stroke="var(--accent)" stroke-width="8" stroke-linejoin="round"/><g fill="none" stroke="var(--bg)" stroke-width="6"><path d="M50 86.6 L150 86.6 L100 173.2 Z" stroke-linejoin="round"/><circle cx="100" cy="115.47" r="57.74"/></g></svg><h1>Solomon's Court</h1></div>
     <div class="toolbar">
       <button class="btn small" id="rulesBtn">Rules</button>
       <button class="btn small" id="abilBtn">Roles</button>
-      <button class="btn small" id="newBtn">New game</button>
       <button class="btn small" id="leaveBtn" hidden>Leave room</button>
     </div>
   </header>
   <main id="home" class="home" hidden></main>
-  <div class="board" id="board" hidden>
+  <main id="room" class="home room" hidden></main>
+  <div class="board" id="board" data-tab="table" hidden>
     <aside class="col left">
       <section class="fill"><div class="section-head"><h2>Court record</h2></div><div class="log" id="log"></div><form class="chatform" id="chatForm" hidden><input id="chatIn" maxlength="200" autocomplete="off" placeholder="Say something to the court"><button class="btn small">Send</button></form></section>
     </aside>
@@ -354,6 +451,7 @@ h1{font-size:2.1rem}
       <div id="endRow" class="endrow"></div>
     </aside>
   </div>
+  <nav class="tabs" id="tabs" hidden><button class="btn small on" data-tab="table">Table</button><button class="btn small" data-tab="you">Actions</button><button class="btn small" data-tab="record">Record</button></nav>
 </div>
 <dialog id="dlg"><div id="dlgBody"></div></dialog>
 <div class="toasts" id="toasts"></div>
@@ -390,7 +488,7 @@ const COLOR_NAMES = ['Crimson', 'Cobalt', 'Emerald', 'Amber', 'Violet', 'Teal'];
 const ABIL = {
   [ARCH]: ['Name token buys cost 1 soul less.', 'Draw 3 tokens, keep 1 (2 souls).', 'Ask anyone 1 yes/no question each round (role or name).'],
   [DUKE]: ['+25% strength in duel rolls.', 'You may duel anyone once per round.', 'Duel anyone; each win they give you a token of their choice.'],
-  [PRINCE]: ['Backing you give is refunded if your side loses.', 'Duel anyone you hold 3+ tokens of; if they lose they become your vassal.', 'You may not consume. Your slaves pay you 3 souls a round (the bank covers any shortfall).'],
+  [PRINCE]: ['Support you give is refunded if your side loses.', 'Duel anyone you hold 3+ tokens of; if they lose they become your vassal.', 'You may not consume. Your slaves pay you 3 souls a round (the bank covers any shortfall).'],
   [MARQ]: ['Lose this mask in a duel: your next remask costs 3.', '+50% strength when challenged.', 'Can\'t be enslaved. When named: +6 souls and a Ward, then a last-stand duel (max 50%).'],
   [EARL]: ['Event cards cost 2; +2 souls for a trade, not a gift (once a turn).', 'Buying a card: draw 2, keep 1.', 'Take 1 free event card each turn.'],
 };
@@ -411,10 +509,10 @@ const ME = () => G.g.P[G.me];
 const pc = c => `var(--c${c})`;
 const pn = i => i === G.me ? `${COLOR_NAMES[i]} (you)` : COLOR_NAMES[i];
 const who = (i, txt) => `<span class="who" style="--pc:${pc(i)}"><i></i>${esc(txt ?? pn(i))}</span>`;
-// a name token: a disc in the player's colour with its pips (0 pips = colour only)
+// a name token: a triangle in the player's colour with its pips (0 pips = colour only). Four of them make one big triangle (the logo).
 function tokSvg(c, d = 0, blank = false) {
-  const col = blank ? 'var(--muted)' : pc(c), pos = { 1: [[16, 16]], 2: [[11, 11], [21, 21]], 3: [[10, 10], [16, 16], [22, 22]], 4: [[11, 11], [21, 11], [11, 21], [21, 21]] }[d] || [];
-  return `<svg class="tok" viewBox="0 0 32 32" aria-label="${blank ? 'blank' : COLOR_NAMES[c] + (d ? ' ' + d : '')}"><circle cx="16" cy="16" r="14" fill="var(--surface)" stroke="${col}" stroke-width="3"/>${blank ? `<path d="M10 22 22 10" stroke="${col}" stroke-width="2"/>` : ''}${pos.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" fill="${col}"/>`).join('')}</svg>`;
+  const col = blank ? 'var(--muted)' : pc(c), pos = { 1: [[16, 20]], 2: [[12, 21], [20, 21]], 3: [[16, 14.5], [12, 22], [20, 22]], 4: [[16, 12.5], [11, 22.5], [16, 22.5], [21, 22.5]] }[d] || [];
+  return `<svg class="tok" viewBox="0 0 32 32" aria-label="${blank ? 'blank' : COLOR_NAMES[c] + (d ? ' ' + d : '')}"><path d="M16 3.5 L30 27.8 L2 27.8 Z" fill="var(--surface)" stroke="${col}" stroke-width="2.8" stroke-linejoin="round"/>${blank ? `<path d="M11 24 21 13" stroke="${col}" stroke-width="2"/>` : ''}${pos.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.3" fill="${col}"/>`).join('')}</svg>`;
 }
 function heldDots(q) {
   const by = {}; for (const t of q.tokens) by[t.c] = (by[t.c] || 0) + 1;
@@ -437,9 +535,9 @@ function flushEngineLog(max = Infinity) {
     let s = g.log.shift(); const rm = s.match(/^R(\d+) /), r = rm ? +rm[1] : g.round; s = s.replace(/^R\d+ /, '');
     const me = `P${G.me}`;
     s = s.replace(`(${me})`, '(yours)').replace(new RegExp(`\\ba ${me} token`, 'g'), 'one of your tokens').replace(new RegExp(`\\bfrom ${me} for`, 'g'), 'from you for')
-      .replace(new RegExp(`(duels|names|against|from|on|enslaves|consumes|vassalizes|backs) ${me}\\b`, 'g'), '$1 you').replace(new RegExp(`\\b${me}\\b`, 'g'), 'You');
-    s = s.replace(/\bYou (backs|buys|draws|duels|tries|plays|remasks|reveals|enslaves|consumes|vassalizes|reincarnates|trades|waits|discards|wins|loses their|lowers their|is)\b/g, (m, v) =>
-      'You ' + ({ backs: 'back', tries: 'try', 'loses their': 'lose your', 'lowers their': 'lower your', is: 'are', wins: 'win' }[v] || v.replace(/s$/, '')));
+      .replace(new RegExp(`(duels|names|against|from|on|enslaves|consumes|vassalizes|supports) ${me}\\b`, 'g'), '$1 you').replace(new RegExp(`\\b${me}\\b`, 'g'), 'You');
+    s = s.replace(/\bYou (supports|buys|draws|duels|tries|plays|remasks|reveals|enslaves|consumes|vassalizes|reincarnates|trades|waits|discards|wins|loses their|lowers their|is)\b/g, (m, v) =>
+      'You ' + ({ supports: 'support', tries: 'try', 'loses their': 'lose your', 'lowers their': 'lower your', is: 'are', wins: 'win' }[v] || v.replace(/s$/, '')));
     s = s.replace(/: You win$/, ': you win');
     s = s.replace(/\bP(\d)\b/g, (m, i) => COLOR_NAMES[+i]);
     const big = /enslaves|consumes|name|Arrogation|reincarnates|swap|wins the game|Ward|last stand/.test(s);
@@ -465,11 +563,11 @@ function backingHTML(req, w) {
   const label = req.kind === 'rebellion' ? 'Arrogation' : req.kind === 'last stand' ? 'Last stand' : 'Duel';
   const max = Math.max(1, Math.min(w.souls, req.cap));
   return `<h2>${label}: ${who(req.a)} vs ${who(req.d)}</h2>
-    <p class="muted">Before the roll, you may back a side with souls. If your side wins you get them back; if it loses, they go to the winner. Each side can take up to ${req.cap} soul${req.cap === 1 ? '' : 's'} of backing in all.</p>
+    <p class="muted">Before the roll, you may support a side with souls. If your side wins you get them back; if it loses, they go to the winner. Each side can take up to ${req.cap} soul${req.cap === 1 ? '' : 's'} of support in all.</p>
     <div class="back-sides">${['a', 'd'].map(sd => { const id = req[sd], ok = w.sides.includes(sd);
       return `<label class="back-side ${ok ? '' : 'off'}"><input type="radio" name="bk-side-${req.fno}" class="bk-side" value="${sd}" ${ok ? '' : 'disabled'}><span>${who(id)}</span><b data-odds="${sd}"></b><small>${Math.round(sd === 'a' ? req.sa : req.sd)} strength${ok ? '' : ' · your master: you can\'t act against them'}</small></label>`; }).join('')}</div>
     <div class="row"><span class="label">Souls</span><button class="btn small" data-bk="-1">−</button><b class="bk-amt">${Math.min(2, max)}</b><button class="btn small" data-bk="1">+</button><span class="muted">of ${w.souls}</span></div>
-    <div class="row"><button class="btn primary bk-go" data-y="1" disabled>Back</button><button class="btn bk-pass" data-y="0">Pass</button><span class="muted bk-timer"></span></div>`;
+    <div class="row"><button class="btn primary bk-go" data-y="1" disabled>Support</button><button class="btn bk-pass" data-y="0">Pass</button><span class="muted bk-timer"></span></div>`;
 }
 // wires the controls inside `root`; done({ side, amount }) or done(null) for a pass
 function wireBacking(root, req, w, done) {
@@ -495,11 +593,11 @@ function askBacking(req) {
   });
 }
 
-// ---------- home: the start page (play against bots, or online with friends) ----------
-// Shown before any game, and from the masthead's New game button. A game in progress stays behind it ("Back to your game").
+// ---------- home: the start page ----------
+// The title, a row of the court, and two buttons: create a room (you go to its waiting room) or join one by its code.
+// Shown before any game and from the masthead's Home button; a game in progress stays behind it ("Back to your game").
 function showHome() {
   closeDialog();
-  const types = ['mix', 'aggressor', 'balanced', 'turtle'];
   const pick = a => a[Math.floor(Math.random() * a.length)];
   // a row of the court: one random demon per role, masked, unmasked or released
   const court = [0, 1, 2, 3, 4].map(r => {
@@ -507,61 +605,66 @@ function showHome() {
     const state = [{ mask: r, lv3: false }, { mask: null, lv3: false }, { mask: null, lv3: true }, { mask: null, lv3: false }, { mask: r, lv3: false }][r];
     return `<span class="home-demon" style="--pc:${pc(r)}">${avatar({ id: r, status: 'free', lastMask: r, role: r, ...state }, 'avatar', look)}<span>${ROLES[r]}</span></span>`;
   }).join('');
-  const inGame = G && !G.over;
+  const inGame = G && !G.over, on = Net.available();
   $('#home').innerHTML = `
     <div class="home-hero">
       <div class="home-court" aria-hidden="true">${court}</div>
-      <p class="lede">Every player is a demon behind a mask. Gather the tokens of someone's true name, then name them: they become your slave, or your meal. Rule the whole court with 30 souls to win.</p>
-      ${inGame ? `<div class="row" style="justify-content:center"><button class="btn primary" id="home-back">Back to your game</button>${G.online ? '<button class="btn" id="home-leave">Leave the room</button>' : ''}<span class="muted">${G.online ? 'Online, round ' : 'Round '}${G.g.round}</span></div>` : ''}
-    </div>
-    <div class="home-modes">
-      <section class="home-card">
-        <h2>Play against bots</h2>
-        <p class="muted">You play ${COLOR_NAMES[0]}, against bots that use the balance sim's strategies.</p>
-        <div class="row"><span class="label" style="width:110px">Players</span><select id="ng-n">${[3, 4, 5, 6].map(n => `<option ${n === 4 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
-        <div class="row"><span class="label" style="width:110px">Bots</span><select id="ng-b">${types.map(t => `<option>${t}</option>`).join('')}</select></div>
-        <div class="row"><span class="label" style="width:110px">Bot speed</span><select id="ng-s"><option value="600">normal</option><option value="1200">slow</option><option value="150">fast</option><option value="0">instant</option></select></div>
-        <label class="row"><input type="checkbox" id="ng-t"> Show bot styles</label>
-        <label class="row"><input type="checkbox" id="ng-x"> Show everything (names, roles, dots) — for testing</label>
-        <div class="row"><button class="btn primary" id="ng-go">Deal the names</button></div>
-      </section>
-      <section class="home-card">
-        <h2>Play online</h2>${Net.available() ? `
-        <p class="muted">Each player on their own device. One player creates a room and shares the 4-letter code; empty seats are filled with bots.</p>
-        <div class="row"><span class="label" style="width:110px">Your name</span><input type="text" id="on-nick" maxlength="16" value="${esc(Net.nick())}"></div>
-        <div class="row"><button class="btn primary" id="on-create">Create a room</button></div>
-        <div class="row"><span class="label" style="width:110px">Room code</span><input type="text" id="on-code" maxlength="4" placeholder="CODE" style="width:90px;text-transform:uppercase" value="${esc(Net.linkCode())}"><button class="btn" id="on-join">Join</button></div>
-        <p class="muted" id="on-err"></p>` : `
-        <p class="muted">Each player on their own device. To play online, start the server with <code>npm start</code> and open the address it prints.</p>`}
-      </section>
+      <label class="home-name"><input type="text" id="on-nick" aria-label="Your name" maxlength="16" autocomplete="nickname" placeholder="Your name" value="${esc(Net.nick())}" ${on ? '' : 'disabled'}></label>
+      <div class="home-actions">
+        <button class="btn primary big" id="on-create" ${on ? '' : 'disabled'}>Create a room</button>
+        <button class="btn big" id="on-join" ${on ? '' : 'disabled'}>Join a room</button>
+      </div>
+      <p class="muted" id="on-err">${on ? '' : 'To play, start the server with <code>npm start</code> and open the address it prints.'}</p>
+      ${inGame ? `<div class="row" style="justify-content:center"><button class="btn" id="home-back">Back to your game</button>${G.online ? '<button class="btn" id="home-leave">Leave the room</button>' : ''}<span class="muted">${G.online ? 'Online, round ' : 'Round '}${G.g.round}</span></div>` : ''}
     </div>
     <p class="home-foot muted">New to the court? Read the <button class="linkish" id="home-rules">rules</button> and the <button class="linkish" id="home-roles">roles</button>.</p>`;
-  $('#home').hidden = false; $('#board').hidden = true; $('#newBtn').hidden = true; $('#leaveBtn').hidden = true;
-  $('#sub').textContent = 'rework playtest';
+  $('#app').classList.add('front'); $('#tabs').hidden = true; $('#home').hidden = false; $('#board').hidden = true; $('#room').hidden = true; $('#leaveBtn').hidden = true;
+  $('#sub').textContent = '';
   $('#home-rules').onclick = rulesDialog; $('#home-roles').onclick = rolesDialog;
   if (inGame) $('#home-back').onclick = () => { showBoard(); render(); };
   if (inGame && G.online) $('#home-leave').onclick = leaveRoom;
-  if (Net.available()) {
-    const nick = () => { const v = $('#on-nick').value.trim().slice(0, 16) || 'Player'; Net.nick(v); return v; };
-    const err = e => { $('#on-err').textContent = e.message || String(e); };
-    $('#on-create').onclick = () => Net.create(nick()).catch(err);
-    $('#on-join').onclick = () => { const c = $('#on-code').value.trim().toUpperCase(); if (c.length !== 4) return err('Enter the 4-letter room code.'); Net.join(c, nick()).catch(err); };
+  if (on) {
+    $('#on-create').onclick = () => { leaveForNewRoom(); Net.create(homeNick()).catch(e => { $('#on-err').textContent = e.message || String(e); }); };
+    $('#on-join').onclick = joinDialog;
+    $('#on-nick').oninput = () => Net.nick($('#on-nick').value.replace(/[<>&"]/g, '').trim().slice(0, 16));   // saved as you type, so clearing it sticks too
+    if (Net.linkCode() && !(store.get('session') || {}).code) joinDialog();   // opened from an invite link
   }
-  $('#ng-go').onclick = () => {
-    const n = +$('#ng-n').value, bt = $('#ng-b').value, kinds = Object.keys(TYPES);
-    const bots = Array.from({ length: n }, (_, i) => i === 0 ? new HumanBot() : new Bot(bt === 'mix' ? kinds[Math.floor(Math.random() * kinds.length)] : bt));
-    const g = new Game(n, bots, Math.floor(Math.random() * 1e9), {});
-    g.trace = true; g.log = [];
-    g.on = (type, data) => { G.q.push({ type, data, before: G.cur, logN: g.log.length }); G.cur = snap(g); };
-    if (G && G.online) Net.leave();
-    G = { q: [], cur: null, busy: false, ctx: {}, looks: rollLooks(n), g, me: 0, idx: -1, over: false, myTurn: false, log: [], opts: { speed: +$('#ng-s').value, showTypes: $('#ng-t').checked, xray: $('#ng-x').checked } };
-    showBoard();
-    log(`New game: ${n} players. Your secret name is ${ME().name.join('-')}: ${ROLES[ME().role]}.`, 'mine');
-    ME().needMask = true;
-    chooseMask('Choose your starting mask', m => doCmd('chooseMask', { m }).then(() => { render(); advance(); }));
+}
+// the name typed on the start page (remembered in this browser); empty means "Player"
+function homeNick() { const el = $('#on-nick'), v = (el ? el.value : Net.nick()).replace(/[<>&"]/g, '').trim().slice(0, 16); Net.nick(v); return v || 'Player'; }
+// creating or joining a room from the start page leaves the game you were in (a bot takes your seat there)
+function leaveForNewRoom() {
+  if (G && G.online) { Net.leave(); G = null; $('#log').innerHTML = ''; $('#chatForm').hidden = true; }
+  else if (G && !G.over) G = null;
+}
+function joinDialog() {
+  dialog(`<h2>Join a room</h2><p class="muted">Enter the 4-letter code from whoever made the room.</p>
+    <form class="row" id="jn-form"><input type="text" id="on-code" maxlength="4" placeholder="CODE" autocomplete="off" style="width:110px;text-transform:uppercase;font:inherit;font-size:1.2rem;letter-spacing:.15em;padding:6px 10px" value="${esc(Net.linkCode())}"><button class="btn primary" id="jn-go">Join</button></form>
+    <p class="muted" id="jn-err"></p>`, true);
+  $('#on-code').focus();
+  $('#jn-form').onsubmit = e => {
+    e.preventDefault();
+    const c = $('#on-code').value.trim().toUpperCase();
+    if (c.length !== 4) { $('#jn-err').textContent = 'Enter the 4-letter room code.'; return; }
+    leaveForNewRoom();
+    Net.join(c, homeNick()).catch(err => { $('#jn-err').textContent = err.message || String(err); });
   };
 }
-function showBoard() { $('#home').hidden = true; $('#board').hidden = false; $('#newBtn').hidden = false; $('#leaveBtn').hidden = !(G && G.online); }
+// solo play against bots: no longer on the start page; the click test (smoke.js) still uses it
+function startSolo({ n = 4, bots: bt = 'mix', speed = 600, showTypes = false, xray = false } = {}) {
+  const kinds = Object.keys(TYPES);
+  const bots = Array.from({ length: n }, (_, i) => i === 0 ? new HumanBot() : new Bot(bt === 'mix' ? kinds[Math.floor(Math.random() * kinds.length)] : bt));
+  const g = new Game(n, bots, Math.floor(Math.random() * 1e9), {});
+  g.trace = true; g.log = [];
+  g.on = (type, data) => { G.q.push({ type, data, before: G.cur, logN: g.log.length }); G.cur = snap(g); };
+  if (G && G.online) Net.leave();
+  G = { q: [], cur: null, busy: false, ctx: {}, looks: rollLooks(n), g, me: 0, idx: -1, over: false, myTurn: false, log: [], opts: { speed, showTypes, xray } };
+  showBoard();
+  log(`New game: ${n} players. Your secret name is ${ME().name.join('-')}: ${ROLES[ME().role]}.`, 'mine');
+  ME().needMask = true;
+  chooseMask('Choose your starting mask', m => doCmd('chooseMask', { m }).then(() => { render(); advance(); }));
+}
+function showBoard() { $('#app').classList.remove('front'); $('#tabs').hidden = false; $('#home').hidden = true; $('#room').hidden = true; $('#board').hidden = false; $('#leaveBtn').hidden = !(G && G.online); }
 // leave an online room for good: a bot plays your seat for the rest of the game, and this browser forgets the room (so reopening the page goes to the start page)
 function leaveRoom() {
   dialog(`<h2>Leave the room?</h2><p>${G && G.online && !G.over ? 'A bot plays your seat for the rest of the game. You can\'t come back to this seat.' : 'You leave the room.'}</p>
@@ -656,6 +759,7 @@ function level(g, p) {
 }
 function render() {
   const g = G.g, p = ME();
+  $('#tabs [data-tab="you"]').classList.toggle('ping', !!G.myTurn && !G.over && $('#board').dataset.tab !== 'you');
   $('#sub').textContent = G.over ? `Round ${g.round} · game over` : `Round ${g.round}${g.noblesseOver() ? ' · Noblesse Oblige has ended' : ''}`;
   const lv = level(g, p);
   const tagMask = p.status === 'waiting' ? '<span class="tag">consumed</span>' : g.masked(p) ? `<span class="tag ok">${p.status === 'slave' ? 'slave · ' : ''}${ROLES[p.mask]} mask</span>` : p.lv3 ? '<span class="tag gold">role revealed</span>' : '<span class="tag warn">unmasked</span>';
@@ -729,7 +833,7 @@ function avatar(q, cls = 'avatar', look = null) {
   const front = [...feats.filter(f => f.startsWith('horns')), ...feats.filter(f => f === 'ears').map(() => `ears_${hc}`)];
   // a released (revealed) demon wears nothing while unmasked; remasking puts the coat, cravat and pants back on
   const released = q.lv3 && !masked;
-  const mid = [`face_${L.body}_${L.eyes || 'black'}`, ...(released ? [] : [`pants_${L.body}`, `shirt_${L.body}_black`, `cravat_${L.body}_white`])];
+  const mid = [`face_${L.body}_${L.eyes || 'black'}`, ...(released ? [] : [`pants_${L.body}`, `shirt_${L.body}_black`, `cravat_${L.body}_${masked ? 'white' : 'maroon'}`])];   // the cravat turns maroon once the mask is down
   if (q.status === 'slave') mid.push(`chain_${L.body}_iron`);
   if (masked) mid.push(`mask_${LPC.masks[q.mask]}`);
   const skin = `<img src="art/lpc/parts/skin_${L.body}.png" alt="" draggable="false" style="filter:url(#${skinFilter(q.lv3 ? L.skin : (L.natural || L.skin))})">`;   // vivid skin once released, for good (until a new name)
@@ -744,7 +848,7 @@ const narrowCourt = () => matchMedia('(max-width:700px)').matches;
 const avSize = () => Math.round(seatW() * (narrowCourt() ? 0.56 : 0.62));
 // x-ray (solo games: the x-ray option, or once the game is over): seats also show each player's true name and role
 const xrayOn = () => !!(G && !G.online && (G.opts.xray || G.over));
-const seatH = () => avSize() + (seatW() < 160 ? 92 : 104) + (xrayOn() ? 18 : 0);   // measured: name, status, souls and tokens lines take about 92-104px
+const seatH = () => avSize() + (seatW() < 160 ? 92 : 104) + (xrayOn() ? 18 : 0) + (G && G.online ? 18 : 0);   // measured: name, status, souls and tokens lines take about 92-104px; online seats add a line for the player's name
 function seatPos(i, n) {
   // you at the bottom; the others clockwise round the table
   const k = (i - G.me + n) % n, a = Math.PI / 2 + (2 * Math.PI * k) / n;
@@ -952,10 +1056,21 @@ async function play(e) {
   }
 }
 // play queued events one by one, showing the table as it was before each; then the final state
+// phones show one panel at a time (see .tabs in the CSS)
+const narrowBoard = () => matchMedia('(max-width:759px)').matches;
+function setTab(t) {
+  $('#board').dataset.tab = t;
+  document.querySelectorAll('#tabs [data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  if (t === 'you') $('#tabs [data-tab="you"]').classList.remove('ping');
+  if (t === 'record') $('#tabs [data-tab="record"]').classList.remove('ping');
+}
+document.querySelectorAll('#tabs [data-tab]').forEach(b => b.onclick = () => setTab(b.dataset.tab));
 async function playQueue() {
   const q = G.q; G.q = [];
   if (!q.length || !animOn()) { G.view = null; flushEngineLog(); return; }
   G.busy = true;
+  const back = narrowBoard() && $('#board').dataset.tab !== 'table' ? $('#board').dataset.tab : null;
+  if (back) { setTab('table'); await new Promise(r => requestAnimationFrame(r)); }
   let flushed = 0;
   for (const e of q) {
     renderTable(e.before);
@@ -965,6 +1080,7 @@ async function playQueue() {
   }
   $('#fx').innerHTML = '';
   G.view = null; flushEngineLog(); G.busy = false;
+  if (back && G.myTurn) setTab(back);
 }
 
 // ---------- actions ----------
@@ -1003,7 +1119,7 @@ function renderActions() {
     }));
     if (g.C.ARCH_LV1 === 'free' && g.has(p, ARCH, 1) && !p.archFree) A.push(act('Archduke: free token', 'free', 'One random draw', g.bagHasFor(p), 'nothing usable in the bag', simple('archFree', {}, r => log(r.got ? 'You take a free token.' : 'Your free draw was a dud.', 'mine'))));
     if (g.has(p, ARCH, 2) && !p.arch2) A.push(act('Archduke: draw 3, keep 1', '2 souls', 'Doesn\'t use a buy', p.souls >= 2, 'not enough souls', () => draw3('arch')));
-    if (g.has(p, ARCH, 3) && !p.asked) A.push(act('Archduke: ask a question', '', 'One truthful yes/no answer', true, '', askQuestion));
+    if (g.has(p, ARCH, 3) && !p.asked) A.push(act('Archduke: ask a question', '', 'One truthful yes/no answer', true, '', askQuestion));   // online, a person can be asked anything (server: askFree)
     if (g.has(p, EARL, 3) && !p.earlFree) A.push(act('Earl: free event card', 'free', 'Top of the deck', true, '', simple('earlFree', {}, r => log(`You take ${r.card || 'nothing'}.`, 'mine'))));
     if (p.role === EARL && g.hasCard(p, 'Arrogation', 2) && !g.masked(p)) A.push(act('Earl: discard 2 Arrogation', '+7 souls', 'Reveals you are an Earl', true, '', simple('earlArrogation')));
     for (const s of g.subjects(p).filter(s => s.status === 'slave')) A.push(act(`Consume ${COLOR_NAMES[s.id]}`, `+${Math.floor(s.souls / 2)} souls`, 'Takes half their souls and their cards', !g.has(p, PRINCE, 3), 'a revealed Prince may not consume',
@@ -1103,9 +1219,9 @@ function duel() {
   const g = G.g, p = ME();
   const opts = g.P.filter(t => g.canDuel(p, t)).map(t => {
     const ch = winChance(g.strength(p, 'att'), g.strength(t, 'def'));
-    return { label: `${who(t.id)} · ${t.souls} souls`, value: t, note: `${Math.round(ch * 100)}% before backing · ${g.masked(t) ? 'masked: a win strips the mask' : 'unmasked: a win sends one of their tokens to the bag'}` };
+    return { label: `${who(t.id)} · ${t.souls} souls`, value: t, note: `${Math.round(ch * 100)}% before support · ${g.masked(t) ? 'masked: a win strips the mask' : 'unmasked: a win sends one of their tokens to the bag'}` };
   });
-  pickOne('Duel whom?', 'Strength is your souls plus role bonuses and backing. Others may back either side.', opts, t => {
+  pickOne('Duel whom?', 'Strength is your souls plus role bonuses and support. Others may support either side.', opts, t => {
     const go = pick => doCmd('duel', { t: t.id, pick }).then(r => { if (!failed(r)) log(r.won ? 'You win the duel.' : 'You lose the duel.', 'mine'); });
     if (!g.masked(t) && t.tokens.length) {
       pickOne('If you win: which token goes back to the bag?', 'Pick a colour they hold.', [...new Set(t.tokens.map(x => x.c))].map(c => ({ label: `${tokSvg(c)} ${COLOR_NAMES[c]}`, value: c, note: `they hold ${g.count(t, c)}` })), go);
@@ -1144,15 +1260,22 @@ function restoration() {
 function askQuestion() {
   const g = G.g, p = ME();
   pickOne('Ask whom?', 'One truthful yes/no answer: "is your role X?" or "is your name X?"', g.P.filter(t => t !== p && g.alive(t)).map(t => ({ label: who(t.id), value: t })), t => {
-    const roles = g.rolesKnown(p, t);
+    const roles = g.rolesKnown(p, t), s = G.online && G.seats && G.seats[t.id], freeOk = !!(s && !s.bot && s.connected);
     dialog(`<h2>A question for ${esc(COLOR_NAMES[t.id])}</h2><div class="opts">${[0, 1, 2, 3, 4].filter(r => (roles >> r) & 1).map(r => `<button class="btn" data-r="${r}">Is your role ${ROLES[r]}?</button>`).join('')}</div>
-      <div class="row"><span class="label">Or a name</span><select id="q-n">${g.candidates(p, t).map(key).map(k => `<option value="${k}">${k.split('').join('-')}</option>`).join('')}</select><button class="btn small" id="q-go">Ask</button></div>`);
+      <form class="row" id="q-form"><span class="label">Or a name</span><input type="text" id="q-n" inputmode="numeric" maxlength="7" autocomplete="off" placeholder="e.g. 1-2-3-4" style="width:120px;font:inherit;letter-spacing:.1em;padding:4px 8px"><button class="btn small" id="q-go">Ask</button></form>
+      <p class="muted" id="q-err">Four digits from 1 to 4.</p>
+      ${freeOk ? `<form class="free-q" id="q-free"><span class="label">Or ask ${esc(G.seats[t.id].nick)} anything</span><div class="row" style="flex-wrap:nowrap"><input type="text" id="q-text" maxlength="200" autocomplete="off" placeholder="A yes or no question" style="flex:1;min-width:0;font:inherit;padding:4px 8px"><button class="btn small">Ask</button></div><p class="muted" style="font-size:.85rem">They answer yes or no themselves; only you see the answer.</p></form>` : ''}`);
     document.querySelectorAll('#dlgBody [data-r]').forEach(b => b.onclick = async () => {
       const r = +b.dataset.r; closeDialog();
       const res = await doCmd('ask', { t: t.id, role: r }); if (!failed(res)) log(`You ask ${COLOR_NAMES[t.id]} "is your role ${ROLES[r]}?": ${res.yes ? 'YES' : 'no'}.`, 'mine');
     });
-    $('#q-go').onclick = async () => {
-      const k = $('#q-n').value; closeDialog();
+    $('#q-n').focus();
+    if (freeOk) $('#q-free').onsubmit = e => { e.preventDefault(); const text = $('#q-text').value.trim(); if (!text) return; closeDialog(); Net.raw({ t: 'askFree', to: t.id, text }); };
+    $('#q-form').onsubmit = async e => {
+      e.preventDefault();
+      const k = $('#q-n').value.replace(/[^0-9]/g, '');   // "1-2-3-4", "1 2 3 4" and "1234" all work
+      if (!/^[1-4]{4}$/.test(k)) { $('#q-err').textContent = 'A name is four digits, each from 1 to 4, like 1-2-3-4.'; $('#q-err').style.color = 'var(--danger)'; return; }
+      closeDialog();
       const res = await doCmd('ask', { t: t.id, name: k }); if (!failed(res)) log(`You ask ${COLOR_NAMES[t.id]} "is your name ${k.split('').join('-')}?": ${res.yes ? 'YES' : 'no'}.`, 'mine');
     };
   }, true, true);
@@ -1171,7 +1294,7 @@ function rulesDialog() {
     <p><b>Turns.</b> +3 souls each turn; slaves pay their master 1 (3 to a revealed Prince). Up to 2 token buys a round: 2 souls for a random draw, or 6 to draw 3 and keep 1. Blanks, dead tokens and your own token while unmasked are refunded but use the draw. Masters may buy a token from their own slave for 2 (counts as a buy). Event cards cost 3.</p>
     <p><b>Masks.</b> Nobody can name you while your mask is up, and you must be unmasked to name. Lower it on your turn for +4 souls (your own tokens go back to the bag, +3 each). Remask costs 6. Masked = Lv. 1 of your mask; unmasked = Lv. 2; revealing your true role = Lv. 3.</p>
     <p><b>Trading.</b> On your turn, trade souls, name tokens and event cards with anyone, in any mix, or give them away. Tokens and cards pass face down.</p>
-    <p><b>Duels.</b> One per turn. Noblesse Oblige: you may duel someone richer, within 2 souls, whose 3+ tokens you hold, or who gained your token by trade or Seize since your last turn. No duel (or Arrogation) if you received souls in a trade since the end of your last turn. Before the roll, other players may back either side with souls (each side up to half the defender's souls): backers of the winner get theirs back, backers of the loser lose theirs to the winner. Stronger side rolls a d20 on the ratio table. Losing masked = lose the mask; unmasked = the victor sends one of your tokens to the bag. With only 2 free players, Noblesse Oblige ends: anyone may duel, both are unmasked and nobody remasks.</p>
+    <p><b>Duels.</b> One per turn. Noblesse Oblige: you may duel someone richer, within 2 souls, whose 3+ tokens you hold, or who gained your token by trade or Seize since your last turn. No duel (or Arrogation) if you received souls in a trade since the end of your last turn. Before the roll, other players may support either side with souls (each side up to half the defender's souls): supporters of the winner get theirs back, supporters of the loser lose theirs to the winner. Stronger side rolls a d20 on the ratio table. Losing masked = lose the mask; unmasked = the victor sends one of your tokens to the bag. With only 2 free players, Noblesse Oblige ends: anyone may duel, both are unmasked and nobody remasks.</p>
     <p><b>Duel odds.</b> Divide the weaker side's strength by the stronger side's and round to the nearest 5%. The stronger side rolls a d20 and wins on the range shown.</p>
     ${oddsTable()}
     <p><b>Naming.</b> You need the most of their tokens (at least 1), or nobody else holds any. Wrong: they enslave or consume you. Right: you choose.</p>
@@ -1203,7 +1326,7 @@ const Net = {
   },
   raw(m) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(m)); },
   async create(nick) { this.wanted = true; await this.connect(); this.raw({ t: 'create', nick }); },
-  async join(code, nick, token = null) { this.wanted = true; await this.connect(); const s = store.get('session') || {}; this.raw({ t: 'join', code, nick, token: token || (s.code === code ? s.token : null) }); },
+  async join(code, nick, token = null, auto = false) { this.auto = auto ? code : null; this.wanted = true; await this.connect(); const s = store.get('session') || {}; this.raw({ t: 'join', code, nick, token: token || (s.code === code ? s.token : null) }); },
   send(cmd, a) { return new Promise(res => { const rid = ++this.rid; this.pending.set(rid, res); this.raw({ t: 'cmd', rid, cmd, a }); }); },
   resolve(rid, res) { const f = this.pending.get(rid); if (f) { this.pending.delete(rid); f(res || { ok: false }); } },
   offer(to, give, get) { this.raw({ t: 'offer', to, give, get }); log(`Offer sent to ${COLOR_NAMES[to]}.`, 'mine'); },
@@ -1218,38 +1341,70 @@ const Net = {
   },
   onMsg(m) {
     switch (m.t) {
-      case 'welcome': this.code = m.code; this.seat = m.seat; this.token = m.token; store.set('session', { code: m.code, token: m.token }); history.replaceState(null, '', '?room=' + m.code); break;
-      case 'lobby': this.lobby = m; if (m.phase === 'lobby') lobbyDialog(); else if (G && G.online) { G.seats = m.seats; if (!G.busy) renderTable(); } break;
+      case 'welcome': this.auto = null; this.code = m.code; this.seat = m.seat; this.token = m.token; store.set('session', { code: m.code, token: m.token }); history.replaceState(null, '', '?room=' + m.code); break;
+      case 'lobby': this.lobby = m; if (m.phase === 'lobby') showRoom(); else if (G && G.online) { G.seats = m.seats; if (!G.busy) renderTable(); } break;
       case 'update': this.chain = this.chain.then(() => applyUpdate(m)).catch(err => console.error(err)); break;
       case 'offer': offerToast(m); break;
       case 'backAsk': backingToast(m); break;
       case 'backGone': { const el = document.querySelector(`.toast[data-back="${m.id}"]`); if (el) { el._stop && el._stop(); el.remove(); } break; }
+      case 'question': questionToast(m); break;
+      case 'questionGone': { const el = document.querySelector(`.toast[data-question="${m.id}"]`); if (el) { el._stop && el._stop(); el.remove(); } break; }
       case 'offerGone': { const el = document.querySelector(`.toast[data-offer="${m.id}"]`); if (el) el.remove(); break; }
       case 'note': if (G) log(m.text, 'mine'); break;
-      case 'chat': if (G) { G.log.push({ chat: m.from, s: m.text, r: 0 }); renderLog(); } break;
-      case 'error':
-        if ($('#on-err')) $('#on-err').textContent = m.text; else if (G) log(m.text, 'big');
-        if (m.fatal) { store.set('session', null); this.wanted = false; if (!(G && G.online) && !$('#on-err')) { showHome(); if ($('#on-err')) $('#on-err').textContent = m.text; } }
+      case 'chat': if (G) { G.log.push({ chat: m.from, s: m.text, r: 0 }); renderLog(); if (m.from !== G.me && $('#board').dataset.tab !== 'record') $('#tabs [data-tab="record"]').classList.add('ping'); } break;
+      case 'error': {
+        if (m.fatal) { store.set('session', null); this.wanted = false; }
+        if (this.auto && m.fatal) { if (Net.linkCode() === this.auto) history.replaceState(null, '', location.pathname); this.auto = null; if (!$('#home').hidden) showHome(); break; }
+        const box = !$('#home').hidden && ($('#jn-err') || $('#on-err'));
+        if (box) box.textContent = m.text;
+        else if (m.fatal && !(G && G.online)) { $('#room').dataset.code = ''; showHome(); $('#on-err').textContent = m.text; }
+        else if (G) log(m.text, 'big');
         break;
+      }
     }
   },
 };
-function lobbyDialog() {
-  const L = Net.lobby, host = Net.isHost(), link = `${location.origin}${location.pathname}?room=${L.code}`;
-  const seats = Array.from({ length: L.n }, (_, i) => { const s = L.seats[i]; return `<div class="row" style="gap:8px">${who(i, COLOR_NAMES[i])}<span>${s && !s.bot ? esc(s.nick) + (i === Net.seat ? ' (you)' : '') + (s.connected ? '' : ' · away') + (i === L.host ? ' · host' : '') : '<span class="muted">bot</span>'}</span></div>`; }).join('');
-  dialog(`<h2>Room <span class="roomcode">${L.code}</span></h2>
-    <p class="muted">Share the code, or this link: <a href="${link}">${esc(link)}</a></p>
-    <div class="seatlist">${seats}</div>
-    ${host ? `<div class="row"><span class="label" style="width:110px">Seats</span><select id="lb-n">${[3, 4, 5, 6].map(n => `<option ${n === L.n ? 'selected' : ''} ${n < L.humans ? 'disabled' : ''}>${n}</option>`).join('')}</select></div>
-      <div class="row"><span class="label" style="width:110px">Bots</span><select id="lb-b">${['mix', 'aggressor', 'balanced', 'turtle'].map(t => `<option ${t === L.bots ? 'selected' : ''}>${t}</option>`).join('')}</select></div>` : `<p class="muted">Waiting for the host to start.</p>`}
-    <div class="row"><span class="label" style="width:110px">Animation</span><select id="lb-s">${[['600', 'normal'], ['1200', 'slow'], ['150', 'fast'], ['0', 'instant']].map(([v, t]) => `<option value="${v}" ${String(store.get('speed') ?? 600) === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
-    <div class="row">${host ? '<button class="btn primary" id="lb-go">Start</button>' : ''}<button class="btn" id="lb-leave">Leave</button></div>`);
-  $('#lb-s').onchange = () => store.set('speed', +$('#lb-s').value);
-  if (host) {
-    $('#lb-n').onchange = $('#lb-b').onchange = () => Net.raw({ t: 'config', n: +$('#lb-n').value, bots: $('#lb-b').value });
-    $('#lb-go').onclick = () => Net.raw({ t: 'start' });
+// ---------- waiting room: after creating or joining a room, until the host starts ----------
+// Built once per room; each lobby message from the server refreshes the seats and the host's settings (your name field is left alone while you type).
+function showRoom() {
+  const L = Net.lobby, el = $('#room'), link = `${location.origin}${location.pathname}?room=${L.code}`;
+  closeDialog();
+  $('#app').classList.add('front'); $('#tabs').hidden = true; el.hidden = false; $('#home').hidden = true; $('#board').hidden = true; $('#leaveBtn').hidden = true; $('#sub').textContent = '';
+  if (el.dataset.code !== L.code) {
+    el.dataset.code = L.code;
+    el.innerHTML = `
+      <div class="room-head">
+        <span class="label">Waiting room · room code</span>
+        <div class="roomcode">${L.code}</div>
+        <div class="row center"><button class="btn small" id="rm-copy">Copy invite link</button><span class="muted" id="rm-copied"></span></div>
+      </div>
+      <div class="room-grid">
+        <section class="home-card"><h2>Players</h2><div class="room-seats" id="rm-seats"></div></section>
+        <section class="home-card"><h2>Settings</h2>
+          <div class="row"><span class="label" style="width:100px">Your name</span><input type="text" id="rm-nick" maxlength="16" autocomplete="off"></div>
+          <div id="rm-host"></div>
+          <div class="row"><span class="label" style="width:100px">Animation</span><select id="lb-s">${[['600', 'normal'], ['1200', 'slow'], ['150', 'fast'], ['0', 'instant']].map(([v, t]) => `<option value="${v}" ${String(store.get('speed') ?? 600) === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+        </section>
+      </div>
+      <div class="row center"><span id="rm-go"></span><button class="btn" id="lb-leave">Leave</button></div>`;
+    $('#rm-copy').onclick = () => { const done = t => { $('#rm-copied').textContent = t; }; (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(() => done('Copied.'), () => done(link)); };
+    $('#lb-s').onchange = () => store.set('speed', +$('#lb-s').value);
+    const nick = $('#rm-nick');
+    nick.onchange = () => { const v = nick.value.replace(/[<>&"]/g, '').trim().slice(0, 16) || 'Player'; nick.value = v; Net.nick(v); Net.raw({ t: 'nick', nick: v }); };
+    nick.onkeydown = e => { if (e.key === 'Enter') nick.blur(); };
+    $('#lb-leave').onclick = () => { Net.leave(); history.replaceState(null, '', location.pathname); if (G && G.online) G = null; el.dataset.code = ''; showHome(); };
   }
-  $('#lb-leave').onclick = () => { Net.leave(); history.replaceState(null, '', location.pathname); if (G && G.online) G = null; showHome(); };
+  const host = Net.isHost(), mine = L.seats[Net.seat];
+  if (document.activeElement !== $('#rm-nick') && mine && !mine.bot) $('#rm-nick').value = mine.nick;
+  $('#rm-seats').innerHTML = Array.from({ length: L.n }, (_, i) => { const s = L.seats[i], person = s && !s.bot;
+    return `<div class="room-seat" style="--pc:${pc(i)}">${who(i, COLOR_NAMES[i])}<span>${person ? esc(s.nick) + (i === Net.seat ? ' (you)' : '') : '<span class="muted">bot</span>'}</span>${person ? `<span class="muted">${[i === L.host ? 'host' : '', s.connected ? '' : 'away'].filter(Boolean).join(' · ')}</span>` : ''}</div>`; }).join('');
+  $('#rm-host').innerHTML = host
+    ? `<div class="row"><span class="label" style="width:100px">Seats</span><select id="lb-n">${[3, 4, 5, 6].map(n => `<option ${n === L.n ? 'selected' : ''} ${n < L.humans ? 'disabled' : ''}>${n}</option>`).join('')}</select></div>
+       <div class="row"><span class="label" style="width:100px">Bots</span><select id="lb-b">${['mix', 'aggressor', 'balanced', 'turtle'].map(t => `<option ${t === L.bots ? 'selected' : ''}>${t}</option>`).join('')}</select></div>`
+    : `<p class="muted">${L.n} seats · ${L.bots} bots. The host picks these.</p>`;
+  if (host) $('#lb-n').onchange = $('#lb-b').onchange = () => Net.raw({ t: 'config', n: +$('#lb-n').value, bots: $('#lb-b').value });
+  $('#rm-go').innerHTML = host ? '<button class="btn primary" id="lb-go">Start the game</button>' : '<span class="muted">Waiting for the host to start.</span>';
+  if (host) $('#lb-go').onclick = () => Net.raw({ t: 'start' });
 }
 // online: a panel that doesn't block your screen; the server rolls without you when its timer runs out
 function backingToast(m) {
@@ -1260,6 +1415,17 @@ function backingToast(m) {
   const tick = setInterval(() => { const left = Math.max(0, Math.ceil((end - Date.now()) / 1000)); timer.textContent = `${left}s`; if (!left) clearInterval(tick); }, 250);
   wireBacking(el, m.req, w, ans => { clearInterval(tick); el.remove(); Net.raw({ t: 'backReply', id: m.id, side: ans ? ans.side : null, amount: ans ? ans.amount : 0 }); });
   el._stop = () => clearInterval(tick);
+  $('#toasts').appendChild(el);
+}
+// an Archduke's free question to you: answer yes or no (truthfully, by the rules); only they see the answer
+function questionToast(m) {
+  const el = document.createElement('div'); el.className = 'toast'; el.dataset.question = m.id;
+  el.innerHTML = `<div>${who(m.from)} (Archduke) asks you: <b>"${esc(m.text)}"</b></div><p class="muted" style="font-size:.85rem;margin:0">Answer truthfully. Only they see your answer.</p>
+    <div class="row"><button class="btn primary small" data-y="1">Yes</button><button class="btn small" data-y="0">No</button><span class="muted q-timer"></span></div>`;
+  const end = Date.now() + m.secs * 1000, timer = el.querySelector('.q-timer');
+  const tick = setInterval(() => { const left = Math.max(0, Math.ceil((end - Date.now()) / 1000)); timer.textContent = `${left}s`; if (!left) clearInterval(tick); }, 250);
+  el._stop = () => clearInterval(tick);
+  el.querySelectorAll('[data-y]').forEach(b => b.onclick = () => { clearInterval(tick); el.remove(); Net.raw({ t: 'answer', id: m.id, yes: b.dataset.y === '1' }); });
   $('#toasts').appendChild(el);
 }
 // a trade offer from another player: accept or decline without blocking your screen
@@ -1298,13 +1464,12 @@ async function applyUpdate(m) {
 }
 $('#chatForm').onsubmit = e => { e.preventDefault(); const t = $('#chatIn').value.trim(); if (t) Net.raw({ t: 'chat', text: t }); $('#chatIn').value = ''; };
 
-$('#newBtn').onclick = showHome;
 $('#rulesBtn').onclick = rulesDialog;
 $('#abilBtn').onclick = rolesDialog;
 $('#leaveBtn').onclick = leaveRoom;
 // rejoin a game in progress after a reload
-// open on the start page; if this browser was in an online room, rejoin it (the lobby or the game then shows over or instead of it)
-(() => { showHome(); const s = store.get('session'); if (Net.available() && s && s.code) Net.join(s.code, Net.nick() || 'Player', s.token).catch(() => {}); })();
+// open on the start page; if this browser was in an online room, rejoin it (its waiting room or game then shows instead)
+(() => { showHome(); const s = store.get('session'); if (Net.available() && s && s.code) Net.join(s.code, Net.nick() || 'Player', s.token, true).catch(() => {}); })();
 </script>
 </body>
 </html>

@@ -20,6 +20,7 @@ const MIN_SEATS = 3, MAX_SEATS = 6;
 const AWAY_MS = +process.env.AWAY_MS || 45000;      // a player gone this long during their turn has it ended for them
 const PACE = process.env.PACE !== undefined ? +process.env.PACE : 1;                 // scales the pause after each bot turn (0 = no pause, for tests)
 const ROOM_IDLE_MS = 3 * 3600 * 1000;
+const ASK_MS = +process.env.ASK_MS || 90000;      // how long a person has to answer an Archduke's free question
 
 // ---------- static files: the page, its art, and the two engine files it loads ----------
 const TYPES_MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.gif': 'image/gif', '.svg': 'image/svg+xml', '.md': 'text/markdown; charset=utf-8' };
@@ -206,7 +207,32 @@ class Room {
     const id = ++this.offerSeq; this.offers.set(id, { id, from: seat, to: q.id, give, get });
     send(this.seats[q.id].ws, { t: 'offer', id, from: seat, give, get });
   }
-  offerReply(seat, m) { return this.run(() => this.offerReplyNow(seat, m)); }   // queued: a trade mustn't land while a backing window is open
+  offerReply(seat, m) { return this.run(() => this.offerReplyNow(seat, m)); }
+  // Archduke Lv. 3 with a person: any yes/no question, typed out; the person asked answers it (truthfully, by the rules).
+  // Only the asker learns the answer. If nobody answers in time, the Archduke gets the question back.
+  askFree(seat, m) {
+    const g = this.g, p = g && g.P[seat], t = g && g.P[m.to], text = String(m.text || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+    if (this.phase !== 'play' || !(this.turnOpen && this.idx === seat) || !t || t === p || !g.alive(t) || !text) return this.note(seat, 'You can\'t ask that now.');
+    if (!g.free(p) || !g.has(p, 0, 3) || p.asked) return this.note(seat, 'You can\'t ask a question now.');
+    const ts = this.seats[t.id];
+    if (!ts || !ts.ws || !t.bot.human) return this.note(seat, `${COLOR_NAMES[t.id]} isn't a person who is here: ask about their role or name instead.`);
+    p.asked = true; this.flush();
+    const id = this.askSeq = (this.askSeq || 0) + 1; this.questions = this.questions || new Map();
+    const timer = setTimeout(() => this.answer(t.id, { id, yes: null }), ASK_MS);
+    this.questions.set(id, { from: seat, to: t.id, text, timer, gameId: this.gameId, round: g.round });
+    send(ts.ws, { t: 'question', id, from: seat, text, secs: ASK_MS / 1000 });
+    this.note(seat, `You ask ${COLOR_NAMES[t.id]}: "${text}" Waiting for their answer…`);
+  }
+  answer(seat, m) {
+    const q = this.questions && this.questions.get(m.id); if (!q || q.to !== seat) return;
+    clearTimeout(q.timer); this.questions.delete(m.id);
+    const ts = this.seats[q.to]; if (ts) send(ts.ws, { t: 'questionGone', id: m.id });
+    if (q.gameId !== this.gameId) return;
+    if (m.yes === true || m.yes === false) return this.note(q.from, `${COLOR_NAMES[q.to]} answers "${q.text}": ${m.yes ? 'YES' : 'no'}.`);
+    const p = this.g.P[q.from];   // no answer: the question comes back (if it is still that round)
+    if (this.g.round === q.round) { p.asked = false; this.flush(); }
+    this.note(q.from, `${COLOR_NAMES[q.to]} didn't answer in time.${this.g.round === q.round ? ' You can ask again.' : ''}`);
+  }   // queued: a trade mustn't land while a backing window is open
   offerReplyNow(seat, m) {
     const o = this.offers.get(m.id); if (!o || o.to !== seat) return;
     this.offers.delete(m.id);
@@ -267,6 +293,7 @@ function handle(ws, m) {
       if (['mix', ...Object.keys(TYPES)].includes(m.bots)) room.bots = m.bots;
       room.broadcastLobby(); return;
     case 'start': if (seat === room.host && room.phase === 'lobby') room.start(); return;
+    case 'nick': if (room.phase === 'lobby') { room.seats[seat].nick = clean(m.nick); room.broadcastLobby(); } return;
     case 'restart':
       if ((seat !== room.host && (room.seats[room.host] || {}).ws) || room.phase !== 'over') return;
       room.host = seat;
@@ -275,6 +302,8 @@ function handle(ws, m) {
     case 'end': if (room.phase === 'play' && room.turnOpen && room.idx === seat && room.endTurn) room.endTurn(); return;
     case 'offer': room.offer(seat, m); return;
     case 'offerReply': room.offerReply(seat, m); return;
+    case 'askFree': room.askFree(seat, m); return;
+    case 'answer': room.answer(seat, m); return;
     case 'chat': { const text = String(m.text || '').slice(0, 200).trim(); if (text) for (const s of room.seats) if (s) send(s.ws, { t: 'chat', from: seat, text }); return; }
     case 'backReply': { const r = ws.room; if (r) { const seat = r.seatOf(ws); if (seat >= 0) r.backReply(seat, m); } return; }
     case 'leave': leave(ws, true); return;

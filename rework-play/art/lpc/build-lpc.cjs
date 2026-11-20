@@ -16,7 +16,7 @@ const CROP = { x: 12, y: 8, w: 40, h: 40 };          // bust inside the 64x64 fr
 const BODIES = { male: ['male', 'male'], female: ['female', 'female'], muscular: ['muscular', 'male'], teen_m: ['teen', 'male'], teen_f: ['teen', 'female'] };
 // nipples on bare chests: crop pixels set to the skin ramp's edge shade (grey 106), so they take the seat's skin colour; the coat covers them until release
 const NIPPLES = { male: [[14, 34], [25, 34]], muscular: [[14, 34], [25, 34]], teen_m: [[16, 34], [23, 34]], female: [[15, 33], [24, 33]], teen_f: [[16, 34], [23, 34]] }, NIPPLE_GREY = 106;
-const SHIRTS = ['black'];                                                         // a black coat, white cravat and black pants; released demons wear nothing. The seat's colour is the avatar's frame
+const SHIRTS = ['black'];                                                         // a black coat, a white cravat (maroon while unmasked) and black pants; released demons wear nothing. The seat's colour is the avatar's frame
 const HAIRCOL = ['black', 'white', 'red', 'orange', 'blonde', 'chestnut'];       // hair and wolf ears (chestnut = brown); wings have their own colours
 const HAIRS = { page: 'short', wavy: 'long', princess: 'xlong', sara: 'xlong' };                 // style -> folder in sheet_definitions/hair/
 // eye colours: the head's blue iris (light, mid, dark) recoloured; the white of the eye stays
@@ -126,7 +126,9 @@ const save = (name, png) => fs.writeFileSync(path.join(OUT, name + '.png'), PNG.
     const shirt = D.shirt.layer_1[bt] ? await frame('spritesheets/' + D.shirt.layer_1[bt] + 'walk.png') : widen(maleShirt, maleBody, b); use(D.shirt, D.shirt.layer_1[bt] || D.shirt.layer_1.male);
     for (const c of SHIRTS) save(`shirt_${sex}_${c}`, recolor(PNG.sync.read(PNG.sync.write(shirt)), pal.cloth.white, pal.cloth[c]));
     { const rel = D.pants.layer_1[bt] + 'walk.png'; save(`pants_${sex}`, recolor(await frame('spritesheets/' + rel), pal.cloth.white, pal.cloth.black)); use(D.pants, D.pants.layer_1[bt]); }   // black pants: the bottom of the bust shows the hips
-    for (const c of ['white']) { const rel = D.cravat.layer_1.male + `walk/${c}.png`; save(`cravat_${sex}_${c}`, await frame('spritesheets/' + rel)); use(D.cravat, D.cravat.layer_1.male); }   // the thin (female) cravat has no white; the full one fits both
+    { const rel = D.cravat.layer_1.male + 'walk/white.png', cr = await frame('spritesheets/' + rel); use(D.cravat, D.cravat.layer_1.male);
+      save(`cravat_${sex}_white`, cr);                                                                   // masked
+      save(`cravat_${sex}_maroon`, recolor(PNG.sync.read(PNG.sync.write(cr)), pal.cloth.white, pal.cloth.maroon)); }   // unmasked   // the thin (female) cravat has no white; the full one fits both
     { const rel = D.chain.layer_1[bt] + 'walk/iron.png'; save(`chain_${sex}_iron`, await frame('spritesheets/' + rel)); use(D.chain, D.chain.layer_1[bt]); }   // slaves
   }
   // hair: styles offered under CC0 / OGA-BY / CC-BY only

@@ -14,9 +14,7 @@ const path = require('path');
   await page.goto('file://' + path.resolve(__dirname, 'index.html'));
   let finished = 0, clicks = 0;
   for (let gi = 0; gi < games; gi++) {
-    await page.selectOption('#ng-n', String(3 + (gi % 4)));
-    await page.selectOption('#ng-s', '0');
-    await page.click('#ng-go');
+    await page.evaluate(n => startSolo({ n, speed: 0 }), 3 + (gi % 4));
     // starting mask
     await page.locator('#dlgBody [data-m]').first().click();
     for (let step = 0; step < 4000; step++) {

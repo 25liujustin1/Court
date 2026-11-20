@@ -52,9 +52,9 @@ On your turn, you may trade souls, name tokens and event cards with any player, 
 
 **Who you can duel (Noblesse Oblige).** You may start a duel only with someone who has more souls than you, is within 2 souls of you, someone of whom you possess 3 or more tokens, or someone who is actively trading your tokens: since your last turn they gained one of your tokens by trading or Seize. Only souls count here, not role bonuses or Collect cards. Noblesse Oblige ends when only 2 free players remain: from then on, either may duel the other, both are unmasked (no souls are gained and no tokens returned), and neither may remask. You may only duel once per turn. You can't start a duel (Arrogation included) if you received souls in a trade since the end of your last turn.
 
-**Strength.** Your strength is your souls, plus any backing on your side and any role bonuses. Your own souls are counted, not spent. A slave's strength is their own souls, not their master's. Collect cards can only be traded in on your turn, not during a duel.
+**Strength.** Your strength is your souls, plus any support on your side and any role bonuses. Your own souls are counted, not spent. A slave's strength is their own souls, not their master's. Collect cards can only be traded in on your turn, not during a duel.
 
-**Backing.** Before the roll, other players may back either side by committing souls. Each side's total backing can't be more than half the defender's souls. Backing adds to that side's strength. The losing side's backing goes to the winner.
+**Support.** Before the roll, other players may support either side by committing souls. Each side's total support can't be more than half the defender's souls. Support adds to that side's strength. The losing side's support goes to the winner.
 
 **The roll.** Divide the weaker side's strength by the stronger side's and round to the nearest 5%. The stronger side rolls a d20 and wins on the range shown.
 
@@ -173,7 +173,7 @@ Decided for the first playtests and the sim; fold into the sections above when t
 - Prince Lv. 3: you choose which of your slave's tokens to buy, face down by color; the slave must sell.
 
 - Pact (2026-11-17): taken from the original rules, with bind/devour/thrall read as enslave/consume/slave. Pacts are still left out of the sim and the web version.
-- Archduke Lv. 3 (2026-11-17): any question that can be answered yes or no. (The sim and the web version only ask "is your role X?" or "is your name X?".)
+- Archduke Lv. 3 (2026-11-17): any question that can be answered yes or no. (The sim only asks "is your role X?" or "is your name X?". The web version asks bots those too; online, a person can be asked any question, and answers it themselves.)
 - Earl Lv. 1 (2026-11-17): the trade bonus counts once per turn, and only for a real trade where both sides hand something over (not a gift), so it can't be farmed by passing souls back and forth or giving away 1 soul.
 
 ## Known balance issues (abilities not yet changed)

@@ -322,7 +322,7 @@ class Game {
       q.souls -= amt; used[side] += amt; back[side].push([q, amt]); this.stats.backing += amt;
     }
     if (ask.length && this.backRequests) this.backRequests.push({ fno, a: a.id, d: d.id, sa, sd, cap, kind: opts.rebellion ? 'rebellion' : opts.lastStand ? 'last stand' : 'duel', who: ask });
-    for (const side of ['a', 'd']) for (const [q, amt] of back[side]) this.say(`P${q.id} backs P${(side === 'a' ? a : d).id} with ${amt}`);
+    for (const side of ['a', 'd']) for (const [q, amt] of back[side]) this.say(`P${q.id} supports P${(side === 'a' ? a : d).id} with ${amt}`);
     sa += used.a; sd += used.d;
     let pa = winChance(sa, sd); if (opts.cap !== undefined) pa = Math.min(pa, opts.cap);
     const aw = this.r() < pa;

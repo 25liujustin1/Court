@@ -43,7 +43,7 @@ async function player(browser, url, i) {
 async function play(page, i, host, stop) {
   let clicks = 0;
   for (let step = 0; step < STEP_LIMIT && !stop.done; step++) {
-    const st = await page.evaluate(() => typeof G === 'undefined' ? null : ({ online: !!(G && G.online), over: !!(G && G.over), my: !!(G && G.myTurn && !G.busy), dlg: document.querySelector('#dlg').open, lobby: !!document.querySelector('#lb-leave'), toasts: document.querySelectorAll('.toast').length })).catch(() => null);   // null while the page reloads
+    const st = await page.evaluate(() => typeof G === 'undefined' ? null : ({ online: !!(G && G.online), over: !!(G && G.over), my: !!(G && G.myTurn && !G.busy), dlg: document.querySelector('#dlg').open, lobby: !document.querySelector('#room').hidden, toasts: document.querySelectorAll('.toast').length })).catch(() => null);   // null while the page reloads
     if (!st) { await page.waitForTimeout(50); continue; }
     if (st.over) { stop.done = true; break; }
     if (st.toasts && await page.locator('.toast.backing').count()) {   // a duel to back: back a random side, or pass
@@ -52,7 +52,7 @@ async function play(page, i, host, stop) {
       continue;
     }
     if (st.toasts) { await page.locator('.toast [data-y]').nth(Math.random() < 0.8 ? 0 : 1).click({ timeout: 1000 }).catch(() => {}); continue; }   // mostly accept
-    if (st.dlg && st.lobby) { await page.waitForTimeout(30); continue; }
+    if (st.lobby) { await page.waitForTimeout(30); continue; }
     if (st.dlg) {
       const btns = page.locator('#dlgBody button:not([disabled]):visible');
       const n = await btns.count().catch(() => 0);
@@ -89,10 +89,11 @@ async function play(page, i, host, stop) {
     for (let gi = 0; gi < GAMES; gi++) {
       const pages = [];
       for (let i = 0; i < PLAYERS; i++) pages.push(await player(browser, url, i));
-      await pages[0].fill('#on-nick', 'Host'); await pages[0].click('#on-create');
-      await pages[0].waitForSelector('.roomcode');
+      await pages[0].fill('#on-nick', 'Host'); await pages[0].click('#on-create');   // name typed on the start page
+      await pages[0].waitForSelector('#room .roomcode');
+      if (await pages[0].inputValue('#rm-nick') !== 'Host') errors.push('name from the start page did not reach the room');
       const code = await pages[0].textContent('.roomcode');
-      for (let i = 1; i < PLAYERS; i++) { await pages[i].fill('#on-nick', 'P' + i); await pages[i].fill('#on-code', code); await pages[i].click('#on-join'); await pages[i].waitForSelector('#lb-leave'); }
+      for (let i = 1; i < PLAYERS; i++) { await pages[i].click('#on-join'); await pages[i].fill('#on-code', code); await pages[i].click('#jn-go'); await pages[i].waitForSelector('#lb-leave'); await pages[i].fill('#rm-nick', 'P' + i); await pages[i].press('#rm-nick', 'Enter'); }
       await pages[0].selectOption('#lb-n', String(SEATS));
       await pages[0].waitForTimeout(100);
       await pages[0].click('#lb-go');
