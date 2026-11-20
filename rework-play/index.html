@@ -168,7 +168,7 @@ details summary{cursor:pointer; font-family:var(--font-display); font-size:1.1re
   text-shadow:0 0 3px var(--bg), 0 0 3px var(--bg), 0 0 6px var(--bg)}
 .seat .nm{color:var(--pc)}
 .seat.turn .avatar{outline:3px solid var(--gold); outline-offset:3px}   /* whose turn: a gold ring around the headshot (an outline, so it doesn't clash with the revealed glow) */
-.seat.me .avatar.lpc:not(.revealed){box-shadow:inset 0 0 0 2px var(--pc), 0 0 14px 3px color-mix(in srgb, var(--pc) 45%, transparent)}   /* you: a soft halo in your colour */
+.seat.me .avatar.lpc:not(.revealed){box-shadow:0 0 14px 3px color-mix(in srgb, var(--pc) 45%, transparent)}   /* you: a soft halo in your colour */
 .seat.out{opacity:.5}
 .seat .top{text-align:center}
 .seat .nm{font-weight:700; font-size:.98rem; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
@@ -176,9 +176,10 @@ details summary{cursor:pointer; font-family:var(--font-display); font-size:1.1re
 .seat .mask{width:34px; height:34px; flex:none}
 .seat .avatar{width:var(--av,110px); height:var(--av,110px); flex:none; display:block; margin:2px auto 4px}   /* the headshot is the seat's main thing */
 .seat > .st{text-align:center}
-.avatar.lpc{position:relative; display:inline-block; border-radius:6px; background:var(--sunk); overflow:hidden; box-shadow:inset 0 0 0 2px var(--pc)}
+.avatar.lpc{position:relative; display:inline-block; border-radius:6px; background:var(--sunk); overflow:hidden}
+.avatar.lpc::after{content:''; position:absolute; inset:0; border-radius:inherit; box-shadow:inset 0 0 0 2px var(--pc); pointer-events:none}   /* the colour border, drawn over the art so wings and hair can't cover it */
 .avatar.lpc img{position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; pointer-events:none}
-.avatar.lpc.revealed{box-shadow:inset 0 0 0 2px var(--pc), 0 0 0 2px var(--gold), 0 0 10px 2px rgb(184 149 79 / .6)}
+.avatar.lpc.revealed{box-shadow:0 0 0 2px var(--gold), 0 0 10px 2px rgb(184 149 79 / .6)}
 .avatar.lpc.gone img{filter:grayscale(1) opacity(.35)}
 .fx-lpcmask img{width:100%; image-rendering:pixelated; display:block}
 .seat .avatar.gone{opacity:.7}
